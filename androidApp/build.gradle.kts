@@ -20,6 +20,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.shared.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
 }
