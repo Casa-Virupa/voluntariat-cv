@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat
+package com.casavirupa.android
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

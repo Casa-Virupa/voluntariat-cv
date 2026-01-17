@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat
+package com.casavirupa.android
 
 import android.os.Build
 

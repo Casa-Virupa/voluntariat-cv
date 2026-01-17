@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat
+package com.casavirupa.android
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
