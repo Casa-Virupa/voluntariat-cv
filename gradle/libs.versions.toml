@@ -34,5 +34,6 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 
 voluntariatcv-android-application = { id = "voluntariatcv.android.application" }
 voluntariatcv-android-application-compose = { id = "voluntariatcv.android.application.compose" }
+voluntariatcv-android-application-flavors = { id = "voluntariatcv.android.application.flavors" }
 voluntariatcv-kotlin-multiplatform-library = { id = "voluntariatcv.kotlin.multiplatform.library" }
 voluntariatcv-compose-multiplatform-library = { id = "voluntariatcv.compose.multiplatform.library" }

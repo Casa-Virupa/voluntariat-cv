@@ -11,5 +11,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.shared.dependencies)
         }
+        iosMain.dependencies {
+            implementation(projects.shared.dependencies)
+        }
     }
 }

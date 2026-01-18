@@ -4,7 +4,9 @@ import Shared
 @main
 struct iOSApp: App {
     init() {
-        DependenciesKt.doInitKoin()
+        InitKoinIosKt.doInitKoinIOS(
+            buildEnvironment: EnvironmentConfig.getBuildEnvironment()
+        )
     }
     
     var body: some Scene {

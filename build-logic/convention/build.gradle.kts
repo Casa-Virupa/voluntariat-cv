@@ -40,6 +40,10 @@ gradlePlugin {
             id = libs.plugins.voluntariatcv.android.application.compose.get().pluginId
             implementationClass = "AndroidApplicationComposeConventionPlugin"
         }
+        register("androidApplicationFlavors") {
+            id = libs.plugins.voluntariatcv.android.application.flavors.get().pluginId
+            implementationClass = "AndroidApplicationFlavorsConventionPlugin"
+        }
         register("kotlinMultiplatformLibrary") {
             id = libs.plugins.voluntariatcv.kotlin.multiplatform.library.get().pluginId
             implementationClass = "KotlinMultiplatformLibraryConventionPlugin"

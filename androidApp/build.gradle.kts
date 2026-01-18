@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.voluntariatcv.android.application)
     alias(libs.plugins.voluntariatcv.android.application.compose)
+    alias(libs.plugins.voluntariatcv.android.application.flavors)
 }
 
 android {
@@ -20,6 +21,8 @@ android {
 }
 
 dependencies {
+    implementation(projects.shared.core)
+    implementation(projects.shared.dependencies)
     implementation(projects.shared.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
