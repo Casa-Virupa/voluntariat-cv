@@ -1,3 +1,5 @@
+import com.casavirupa.VoluntariatCVBuildType
+
 plugins {
     alias(libs.plugins.voluntariatcv.android.application)
     alias(libs.plugins.voluntariatcv.android.application.compose)
@@ -11,6 +13,16 @@ android {
         applicationId = "com.casavirupa.voluntariat.android"
         versionCode = 1
         versionName = "1.0"
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = VoluntariatCVBuildType.Debug.applicationIdSuffix
+            isMinifyEnabled = false
+        }
+        release {
+            applicationIdSuffix = VoluntariatCVBuildType.Release.applicationIdSuffix
+        }
     }
 
     packaging {
