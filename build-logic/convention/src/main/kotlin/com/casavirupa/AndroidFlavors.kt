@@ -49,12 +49,6 @@ fun configureFlavors(commonExtension: CommonExtension<*, *, *, *, *, *>) {
                 register(flavor.flavorName) {
                     dimension = flavor.dimension.name
                     setFlavorConfigBuild(flavor)
-
-                    if (this@apply is ApplicationExtension && this is ApplicationProductFlavor) {
-                        if (flavor.applicationIdSuffix != null) {
-                            applicationIdSuffix = flavor.applicationIdSuffix
-                        }
-                    }
                 }
             }
         }

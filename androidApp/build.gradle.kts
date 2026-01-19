@@ -18,11 +18,7 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = VoluntariatCVBuildType.Debug.applicationIdSuffix
             isMinifyEnabled = false
-        }
-        release {
-            applicationIdSuffix = VoluntariatCVBuildType.Release.applicationIdSuffix
         }
     }
 
@@ -39,5 +35,6 @@ dependencies {
     implementation(projects.shared.ui)
     implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.firebase.analytics)
     implementation(libs.koin.android)
 }
