@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.voluntariatcv.android.application)
     alias(libs.plugins.voluntariatcv.android.application.compose)
     alias(libs.plugins.voluntariatcv.android.application.flavors)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -36,6 +37,7 @@ dependencies {
     implementation(projects.shared.core)
     implementation(projects.shared.dependencies)
     implementation(projects.shared.ui)
+    implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.koin.android)
 }

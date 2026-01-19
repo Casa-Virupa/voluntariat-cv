@@ -4,6 +4,9 @@ androidxComposeBom = "2026.01.00"
 androidxActivity = "1.12.2"
 androidx-lifecycle = "2.9.6"
 composeMultiplatform = "1.10.0"
+firebase = "34.8.0"
+gitlive = "2.4.0"
+googleServices = "4.4.4"
 koin = "4.1.1"
 kotlin = "2.3.0"
 kotlinxCoroutines = "1.10.2"
@@ -17,6 +20,9 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 compose-gradlePlugin = { group = "org.jetbrains.compose", name = "org.jetbrains.compose.gradle.plugin", version.ref = "composeMultiplatform" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase" }
+gitlive-firebase-auth = { group = "dev.gitlive", name = "firebase-auth", version.ref = "gitlive" }
+gitlive-firebase-firestore = { group = "dev.gitlive", name = "firebase-firestore", version.ref = "gitlive" }
 koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
@@ -31,6 +37,7 @@ androidLibrary = { id = "com.android.library", version.ref = "androidGradlePlugi
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 
 voluntariatcv-android-application = { id = "voluntariatcv.android.application" }
 voluntariatcv-android-application-compose = { id = "voluntariatcv.android.application.compose" }

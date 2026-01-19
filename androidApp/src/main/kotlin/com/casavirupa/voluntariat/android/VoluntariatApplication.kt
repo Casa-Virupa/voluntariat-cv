@@ -10,14 +10,15 @@ class VoluntariatApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        val environment = when (BuildConfig.BUILD_TYPE) {
-            "dev" -> BuildEnvironment.Dev
-            else -> BuildEnvironment.Prod
-        }
-
-        initKoin(environment) {
+        initKoin(getBuildEnvironment()) {
             androidLogger()
             androidContext(this@VoluntariatApplication)
         }
     }
 }
+
+private fun getBuildEnvironment() =
+    when (BuildConfig.BUILD_TYPE) {
+        "dev" -> BuildEnvironment.Dev
+        else -> BuildEnvironment.Prod
+    }
