@@ -1,0 +1,16 @@
+//
+//  Dev.xcconfig
+//  iosApp
+//
+//  Created by Jordi Bujaldon on 19/1/26.
+//
+
+TEAM_ID=
+
+PRODUCT_NAME=Voluntariat Casa Virupa Dev
+PRODUCT_BUNDLE_IDENTIFIER=com.casavirupa.voluntariat.VoluntariatCV-Dev$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
+
+ENVIRONMENT_CONFIGURATION=dev

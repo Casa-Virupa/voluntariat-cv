@@ -8,7 +8,9 @@
 import Shared
 
 class EnvironmentConfig {
-    private let configKey = "EnvironmentConfiguration"
+    private struct Constants {
+        static let environmentConfigurationKey = "EnvironmentConfiguration"
+    }
 
     private enum BuildEnvironment: String {
         case prod = "prod"
@@ -16,7 +18,7 @@ class EnvironmentConfig {
     }
 
     static func getBuildEnvironment() -> CoreBuildEnvironment {
-        let config = Bundle.main.infoDictionary?[String(describing: BuildEnvironment.self)] as? String ?? "dev"
+        let config = Bundle.main.infoDictionary?[Constants.environmentConfigurationKey] as? String
         switch config {
         case BuildEnvironment.dev.rawValue:
             return .dev
