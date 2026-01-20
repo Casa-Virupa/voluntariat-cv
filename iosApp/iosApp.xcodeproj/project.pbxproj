@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		78E11FAE2F1EA3BE00D172AD /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		6DCD8797A2A4BE1A84F155B9 /* Voluntariat Casa Virupa Dev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Voluntariat Casa Virupa Dev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -41,6 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78E11FAE2F1EA3BE00D172AD /* FirebaseAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +77,7 @@
 			buildConfigurationList = 396B12C50B6CCD1DB0073640 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
 				3179A80E56D4B8B84F6E0227 /* Compile Kotlin Framework */,
+				78E11FAF2F1EA54600D172AD /* ShellScript */,
 				60C4EE53CBDB312B956EB1A4 /* Sources */,
 				E3CDA022D814FE4134DBAB5D /* Frameworks */,
 				EA28D1F56C26BD0C4F15E17C /* Resources */,
@@ -85,6 +91,7 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */,
 			);
 			productName = iosApp;
 			productReference = 6DCD8797A2A4BE1A84F155B9 /* Voluntariat Casa Virupa Dev.app */;
@@ -96,7 +103,7 @@
 		0133324D2523004EFD32BCEE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = 1;
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
@@ -114,6 +121,9 @@
 			);
 			mainGroup = 28BC0977B67999C04D05063E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0C30C94F7CFC061482DAF967 /* Products */;
 			projectDirPath = "";
@@ -154,6 +164,23 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode\n";
 		};
+		78E11FAF2F1EA54600D172AD /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\necho \"Firebase config for configuration: $CONFIGURATION\"\n\nif [[ \"$CONFIGURATION\" == *\"Dev\"* ]]; then\n  echo \"Using DEV Firebase\"\n  cp \"${PROJECT_DIR}/iosApp/Firebase/Dev/GoogleService-Info.plist\" \\\n     \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist\"\nelse\n  echo \"Using PROD Firebase\"\n  cp \"${PROJECT_DIR}/iosApp/Firebase/Prod/GoogleService-Info.plist\" \\\n     \"${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/GoogleService-Info.plist\"\nfi\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -170,7 +197,7 @@
 		787A9E3F2F1E20D0001A779C /* Debug-Prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = E06EB2DA26C0235A35D3219E /* Configuration */;
-			baseConfigurationReferenceRelativePath = Prod.xcconfig;
+			baseConfigurationReferenceRelativePath = "Prod-Debug.xcconfig";
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -251,6 +278,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				KOTLIN_FRAMEWORK_BUILD_TYPE = debug;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -265,7 +293,7 @@
 		787A9E412F1E20D9001A779C /* Release-Prod */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = E06EB2DA26C0235A35D3219E /* Configuration */;
-			baseConfigurationReferenceRelativePath = Prod.xcconfig;
+			baseConfigurationReferenceRelativePath = "Prod-Release.xcconfig";
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -339,7 +367,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				KOTLIN_FRAMEWORK_BUILD_TYPE = "release ";
+				KOTLIN_FRAMEWORK_BUILD_TYPE = release;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -368,6 +396,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				KOTLIN_FRAMEWORK_BUILD_TYPE = debug;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -396,7 +425,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				KOTLIN_FRAMEWORK_BUILD_TYPE = "release ";
+				KOTLIN_FRAMEWORK_BUILD_TYPE = release;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -411,7 +440,7 @@
 		F0F9824E94420D997D539603 /* Release-Dev */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = E06EB2DA26C0235A35D3219E /* Configuration */;
-			baseConfigurationReferenceRelativePath = Dev.xcconfig;
+			baseConfigurationReferenceRelativePath = "Dev-Release.xcconfig";
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -470,7 +499,7 @@
 		FFD83815593A08EF6C5E5171 /* Debug-Dev */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = E06EB2DA26C0235A35D3219E /* Configuration */;
-			baseConfigurationReferenceRelativePath = Dev.xcconfig;
+			baseConfigurationReferenceRelativePath = "Dev-Debug.xcconfig";
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -545,7 +574,7 @@
 				787A9E422F1E20D9001A779C /* Release-Prod */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = "Release-Dev";
+			defaultConfigurationName = "Debug-Dev";
 		};
 		B018E224917A04ACEE4D681C /* Build configuration list for PBXProject "iosApp" */ = {
 			isa = XCConfigurationList;
@@ -556,9 +585,28 @@
 				787A9E412F1E20D9001A779C /* Release-Prod */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = "Release-Dev";
+			defaultConfigurationName = "Debug-Dev";
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0133324D2523004EFD32BCEE /* Project object */;
 }
