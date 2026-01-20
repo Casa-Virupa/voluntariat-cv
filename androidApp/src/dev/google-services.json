@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "457239455567",
+    "project_id": "voluntariat-casa-virupa-dev",
+    "storage_bucket": "voluntariat-casa-virupa-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:457239455567:android:9c32bf4ec0af7b37fec73a",
+        "android_client_info": {
+          "package_name": "com.casavirupa.voluntariat.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOfXzzaMlnekiHfohUiqYq7myimq-SUgU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
