@@ -30,7 +30,9 @@ dependencyResolutionManagement {
 }
 
 include(":androidApp")
+include(":features:authentication")
 include(":shared:core")
+include(":shared:data")
 include(":shared:dependencies")
 include(":shared:domain")
 include(":shared:model")
