@@ -1,5 +1,3 @@
-import com.casavirupa.VoluntariatCVBuildType
-
 plugins {
     alias(libs.plugins.voluntariatcv.android.application)
     alias(libs.plugins.voluntariatcv.android.application.compose)
@@ -33,8 +31,8 @@ dependencies {
     implementation(projects.shared.core)
     implementation(projects.shared.dependencies)
     implementation(projects.shared.ui)
-    implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.koin.android)
 }

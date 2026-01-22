@@ -10,7 +10,9 @@ class FirebaseAuthRepository(val firebaseAuth: FirebaseAuth) : AuthRepository {
             return if (result.user != null) {
                 Result.success(Unit)
             } else {
-                Result.failure(NullPointerException("User is null"))
+                Result.failure(
+                    NullPointerException("User authentication failed. Returned user is null.")
+                )
             }
         }
 }

@@ -8,6 +8,9 @@ kotlin {
     }
 
     sourceSets {
+        androidMain.dependencies {
+            implementation(project.dependencies.platform(libs.firebase.bom))
+        }
         commonMain.dependencies {
             implementation(projects.shared.domain)
             implementation(libs.gitlive.firebase.auth)
