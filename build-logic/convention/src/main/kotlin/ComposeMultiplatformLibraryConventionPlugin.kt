@@ -35,6 +35,7 @@ class ComposeMultiplatformLibraryConventionPlugin : Plugin<Project> {
 
                         implementation(libs.findLibrary("androidx.lifecycle.viewmodelCompose").get())
                         implementation(libs.findLibrary("androidx.lifecycle.runtimeCompose").get())
+                        implementation(libs.findLibrary("compose.navigation").get())
                         implementation(libs.findLibrary("koin.compose").get())
                         implementation(libs.findLibrary("koin.compose.viewmodel").get())
                     }

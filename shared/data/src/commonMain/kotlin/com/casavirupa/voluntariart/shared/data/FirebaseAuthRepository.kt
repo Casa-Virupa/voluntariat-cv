@@ -7,12 +7,18 @@ class FirebaseAuthRepository(val firebaseAuth: FirebaseAuth) : AuthRepository {
     override suspend fun signIn(email: String, password: String): Result<Unit> =
         runCatching {
             val result = firebaseAuth.signInWithEmailAndPassword(email, password)
-            return if (result.user != null) {
+            if (result.user != null) {
                 Result.success(Unit)
             } else {
                 Result.failure(
                     NullPointerException("User authentication failed. Returned user is null.")
                 )
             }
+        }
+
+    override suspend fun updateNewPassword(password: String): Result<Unit> =
+        runCatching {
+            firebaseAuth.currentUser?.updatePassword(password)
+            Result.success(Unit)
         }
 }
