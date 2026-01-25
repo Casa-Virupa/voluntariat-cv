@@ -18,7 +18,7 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
             delay(1000) // Fake delay
             _initialUserState.value =
                 if (authRepository.isLoggedIn()) {
-                    InitialUserState.LoggedIn
+                    InitialUserState.LoggedIn(onboardingCompleted = false)
                 } else {
                     InitialUserState.NotLogged
                 }
@@ -26,7 +26,7 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
     }
 }
 
-enum class InitialUserState {
-    LoggedIn,
-    NotLogged,
+sealed class InitialUserState {
+    data class LoggedIn(val onboardingCompleted: Boolean) : InitialUserState()
+    object NotLogged : InitialUserState()
 }

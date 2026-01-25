@@ -11,9 +11,9 @@ import kotlinx.serialization.Serializable
 data object LogInRoute
 
 @Serializable
-data object ConfirmPasswordRoute
+data object CreatePasswordRoute
 
-fun NavController.navigateToConfirmPassword() = navigate(ConfirmPasswordRoute)
+fun NavController.navigateToConfirmPassword() = navigate(CreatePasswordRoute)
 
 fun NavGraphBuilder.authRoutes(
     onNavToConfirmPassword: () -> Unit,
@@ -24,7 +24,7 @@ fun NavGraphBuilder.authRoutes(
             onLogIn = onNavToConfirmPassword,
         )
     }
-    composable<ConfirmPasswordRoute> {
+    composable<CreatePasswordRoute> {
         ConfirmPasswordScreen(
             onCreatePassword = onNavToSchedule,
         )
