@@ -17,6 +17,7 @@ fun NavController.navigateToConfirmPassword() = navigate(ConfirmPasswordRoute)
 
 fun NavGraphBuilder.authRoutes(
     onNavToConfirmPassword: () -> Unit,
+    onNavToSchedule: () -> Unit,
 ) {
     composable<LogInRoute> {
         LogInScreen(
@@ -24,6 +25,8 @@ fun NavGraphBuilder.authRoutes(
         )
     }
     composable<ConfirmPasswordRoute> {
-        ConfirmPasswordScreen()
+        ConfirmPasswordScreen(
+            onCreatePassword = onNavToSchedule,
+        )
     }
 }

@@ -31,6 +31,7 @@ dependencyResolutionManagement {
 
 include(":androidApp")
 include(":features:authentication")
+include(":features:schedule")
 include(":shared:common")
 include(":shared:core")
 include(":shared:data")

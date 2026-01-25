@@ -8,6 +8,8 @@ import com.casavirupa.voluntariat.features.authentication.navigation.ConfirmPass
 import com.casavirupa.voluntariat.features.authentication.navigation.LogInRoute
 import com.casavirupa.voluntariat.features.authentication.navigation.authRoutes
 import com.casavirupa.voluntariat.features.authentication.navigation.navigateToConfirmPassword
+import com.casavirupa.voluntariat.features.schedule.navigation.navigateToSchedule
+import com.casavirupa.voluntariat.features.schedule.navigation.scheduleRoutes
 import com.casavirupa.voluntariat.shared.common.InitialUserState
 
 @Composable
@@ -21,7 +23,9 @@ fun App(userState: InitialUserState) {
         ) {
             authRoutes(
                 onNavToConfirmPassword = navController::navigateToConfirmPassword,
+                onNavToSchedule = navController::navigateToSchedule,
             )
+            scheduleRoutes()
         }
     }
 }
