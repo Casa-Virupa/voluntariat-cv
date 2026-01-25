@@ -30,6 +30,7 @@ private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
 
 private fun KotlinMultiplatformExtension.iosLibraryConfiguration() {
     listOf(
+        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->

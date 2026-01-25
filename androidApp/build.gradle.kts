@@ -28,10 +28,12 @@ android {
 }
 
 dependencies {
+    implementation(projects.shared.common)
     implementation(projects.shared.core)
     implementation(projects.shared.dependencies)
     implementation(projects.shared.ui)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.splashscreen)
     implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.koin.android)

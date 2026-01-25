@@ -21,7 +21,7 @@ struct iOSApp: App {
             buildEnvironment: EnvironmentConfig.getBuildEnvironment()
         )
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()
