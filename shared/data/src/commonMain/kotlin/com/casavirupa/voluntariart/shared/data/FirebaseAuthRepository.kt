@@ -21,4 +21,6 @@ class FirebaseAuthRepository(val firebaseAuth: FirebaseAuth) : AuthRepository {
             firebaseAuth.currentUser?.updatePassword(password)
             Result.success(Unit)
         }
+
+    override suspend fun isLoggedIn(): Boolean = firebaseAuth.currentUser != null
 }
