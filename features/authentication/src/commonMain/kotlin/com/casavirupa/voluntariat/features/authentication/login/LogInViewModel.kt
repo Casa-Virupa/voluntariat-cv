@@ -34,8 +34,8 @@ internal class LogInViewModel(private val authRepository: AuthRepository) : View
                 .signIn(email.value, password.value)
                 .onSuccess {
                     _uiState.update { it.copy(isLoggedIn = true) }
-                }.onFailure {
-                    Logger.e(LOG_TAG) { "Error on log in: ${it.cause}" }
+                }.onFailure { error ->
+                    Logger.e(LOG_TAG) { "Error on log in: ${error.cause}" }
                 }
         }
     }
