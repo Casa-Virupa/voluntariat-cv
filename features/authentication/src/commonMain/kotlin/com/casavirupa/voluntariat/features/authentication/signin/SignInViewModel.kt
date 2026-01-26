@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.authentication.login
+package com.casavirupa.voluntariat.features.authentication.signin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal class LogInViewModel(private val authRepository: AuthRepository) : ViewModel() {
-    private val _uiState = MutableStateFlow(LogInUiState())
-    val uiState: StateFlow<LogInUiState> = _uiState.asStateFlow()
+internal class SignInViewModel(private val authRepository: AuthRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(SignInUiState())
+    val uiState: StateFlow<SignInUiState> = _uiState.asStateFlow()
 
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
@@ -33,7 +33,7 @@ internal class LogInViewModel(private val authRepository: AuthRepository) : View
             authRepository
                 .signIn(email.value, password.value)
                 .onSuccess {
-                    _uiState.update { it.copy(isLoggedIn = true) }
+                    _uiState.update { it.copy(isSignedIn = true) }
                 }.onFailure { error ->
                     Logger.e(LOG_TAG) { "Error on log in: ${error.cause}" }
                 }
@@ -41,8 +41,8 @@ internal class LogInViewModel(private val authRepository: AuthRepository) : View
     }
 }
 
-data class LogInUiState(
-    val isLoggedIn: Boolean = false,
+data class SignInUiState(
+    val isSignedIn: Boolean = false,
 )
 
 private const val LOG_TAG = "LogInViewModel"

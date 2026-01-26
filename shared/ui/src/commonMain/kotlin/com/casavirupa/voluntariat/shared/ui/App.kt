@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.casavirupa.voluntariat.features.authentication.navigation.CreatePasswordRoute
-import com.casavirupa.voluntariat.features.authentication.navigation.LogInRoute
+import com.casavirupa.voluntariat.features.authentication.navigation.SignInRoute
 import com.casavirupa.voluntariat.features.authentication.navigation.authRoutes
 import com.casavirupa.voluntariat.features.authentication.navigation.navigateToConfirmPassword
 import com.casavirupa.voluntariat.features.schedule.navigation.ScheduleRoute
@@ -40,5 +40,5 @@ private fun InitialUserState.toStartDestination() =
                 CreatePasswordRoute
             }
         }
-        InitialUserState.NotLogged -> LogInRoute
+        InitialUserState.NotLogged -> SignInRoute
     }

@@ -6,8 +6,8 @@ data class User(
     val id: UserId,
     val name: String,
     val email: String,
-    val phoneNumber: String,
     val role: UserRole,
+    val hasOnboardingCompleted: Boolean,
 )
 
 @JvmInline

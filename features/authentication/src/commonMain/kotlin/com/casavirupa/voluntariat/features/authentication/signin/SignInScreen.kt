@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.authentication.login
+package com.casavirupa.voluntariat.features.authentication.signin
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,8 +26,8 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun LogInScreen(
-    onLogIn: () -> Unit,
-    viewModel: LogInViewModel = koinViewModel()
+    onSignIn: () -> Unit,
+    viewModel: SignInViewModel = koinViewModel()
 ) {
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
@@ -41,10 +41,10 @@ internal fun LogInScreen(
     )
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val currentOnLogIn by rememberUpdatedState(onLogIn)
+    val currentOnLogIn by rememberUpdatedState(onSignIn)
     LaunchedEffect(viewModel, lifecycle) {
         snapshotFlow { viewModel.uiState }
-            .filter { it.value.isLoggedIn }
+            .filter { it.value.isSignedIn }
             .flowWithLifecycle(lifecycle)
             .collect {
                 currentOnLogIn()
