@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.authentication.confirmation
+package com.casavirupa.voluntariat.features.authentication.password
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

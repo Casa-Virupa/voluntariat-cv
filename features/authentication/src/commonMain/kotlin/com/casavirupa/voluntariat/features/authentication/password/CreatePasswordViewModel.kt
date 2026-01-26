@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.authentication.confirmation
+package com.casavirupa.voluntariat.features.authentication.password
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
