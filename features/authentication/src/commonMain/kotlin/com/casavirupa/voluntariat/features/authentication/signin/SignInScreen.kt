@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -21,12 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
-import kotlinx.coroutines.flow.filter
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun LogInScreen(
-    onSignIn: () -> Unit,
+    onNavigateToCreatePassword: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
     viewModel: SignInViewModel = koinViewModel()
 ) {
     val email by viewModel.email.collectAsStateWithLifecycle()
@@ -37,17 +36,21 @@ internal fun LogInScreen(
         password = password,
         onEmailChanged = viewModel::onEmailChanged,
         onPasswordChanged = viewModel::onPasswordChanged,
-        onClickLogIn = viewModel::onLogIn,
+        onClickLogIn = viewModel::onSignIn,
     )
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val currentOnLogIn by rememberUpdatedState(onSignIn)
+    val currentOnNavigateToCreatePassword by rememberUpdatedState(onNavigateToCreatePassword)
+    val currentOnNavigateToSchedule by rememberUpdatedState(onNavigateToSchedule)
+
     LaunchedEffect(viewModel, lifecycle) {
-        snapshotFlow { viewModel.uiState }
-            .filter { it.value.isSignedIn }
+        viewModel.uiState
             .flowWithLifecycle(lifecycle)
-            .collect {
-                currentOnLogIn()
+            .collect { state ->
+                when {
+                    state.navigateToCreatePassword -> currentOnNavigateToCreatePassword()
+                    state.navigateToSchedule -> currentOnNavigateToSchedule()
+                }
             }
     }
 }

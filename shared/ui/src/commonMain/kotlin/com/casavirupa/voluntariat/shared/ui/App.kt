@@ -7,7 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.casavirupa.voluntariat.features.authentication.navigation.CreatePasswordRoute
 import com.casavirupa.voluntariat.features.authentication.navigation.SignInRoute
 import com.casavirupa.voluntariat.features.authentication.navigation.authRoutes
-import com.casavirupa.voluntariat.features.authentication.navigation.navigateToConfirmPassword
+import com.casavirupa.voluntariat.features.authentication.navigation.navigateToCreatePassword
 import com.casavirupa.voluntariat.features.schedule.navigation.ScheduleRoute
 import com.casavirupa.voluntariat.features.schedule.navigation.navigateToSchedule
 import com.casavirupa.voluntariat.features.schedule.navigation.scheduleRoutes
@@ -23,8 +23,8 @@ fun App(userState: InitialUserState) {
             startDestination = userState.toStartDestination(),
         ) {
             authRoutes(
-                onNavToConfirmPassword = navController::navigateToConfirmPassword,
-                onNavToSchedule = navController::navigateToSchedule,
+                onNavigateToCreatePassword = navController::navigateToCreatePassword,
+                onNavigateToSchedule = navController::navigateToSchedule,
             )
             scheduleRoutes()
         }

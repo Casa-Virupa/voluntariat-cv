@@ -16,11 +16,12 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
     init {
         viewModelScope.launch {
             delay(1000) // Fake delay
-            _initialUserState.value =
-                if (authRepository.isLoggedIn()) {
-                    InitialUserState.LoggedIn(onboardingCompleted = false)
-                } else {
-                    InitialUserState.NotLogged
+            authRepository
+                .getCurrentUser()
+                .onSuccess {
+                    _initialUserState.value = InitialUserState.LoggedIn(it.hasOnboardingCompleted)
+                }.onFailure {
+                    _initialUserState.value = InitialUserState.NotLogged
                 }
         }
     }

@@ -28,21 +28,33 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
         _password.update { newPassword }
     }
 
-    fun onLogIn() {
+    fun onSignIn() {
         viewModelScope.launch {
             authRepository
                 .signIn(email.value, password.value)
-                .onSuccess {
-                    _uiState.update { it.copy(isSignedIn = true) }
+                .onSuccess { user ->
+                    when {
+                        !user.hasOnboardingCompleted -> navigateToCreatePassword()
+                        else -> navigateToSchedule()
+                    }
                 }.onFailure { error ->
                     Logger.e(LOG_TAG) { "Error on log in: ${error.cause}" }
                 }
         }
     }
+
+    private fun navigateToCreatePassword() {
+        _uiState.update { it.copy(navigateToCreatePassword = true, navigateToSchedule = false) }
+    }
+
+    private fun navigateToSchedule() {
+        _uiState.update { it.copy(navigateToSchedule = true, navigateToCreatePassword = false) }
+    }
 }
 
 data class SignInUiState(
-    val isSignedIn: Boolean = false,
+    val navigateToCreatePassword: Boolean = false,
+    val navigateToSchedule: Boolean = false,
 )
 
 private const val LOG_TAG = "LogInViewModel"

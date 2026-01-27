@@ -13,20 +13,21 @@ data object SignInRoute
 @Serializable
 data object CreatePasswordRoute
 
-fun NavController.navigateToConfirmPassword() = navigate(CreatePasswordRoute)
+fun NavController.navigateToCreatePassword() = navigate(CreatePasswordRoute)
 
 fun NavGraphBuilder.authRoutes(
-    onNavToConfirmPassword: () -> Unit,
-    onNavToSchedule: () -> Unit,
+    onNavigateToCreatePassword: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
 ) {
     composable<SignInRoute> {
         LogInScreen(
-            onSignIn = onNavToConfirmPassword,
+            onNavigateToCreatePassword = onNavigateToCreatePassword,
+            onNavigateToSchedule = onNavigateToSchedule,
         )
     }
     composable<CreatePasswordRoute> {
         ConfirmPasswordScreen(
-            onCreatePassword = onNavToSchedule,
+            onNavigateToSchedule = onNavigateToSchedule,
         )
     }
 }

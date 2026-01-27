@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -26,7 +25,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun ConfirmPasswordScreen(
-    onCreatePassword: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
     viewModel: CreatePasswordViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -43,13 +42,13 @@ internal fun ConfirmPasswordScreen(
     )
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val currentOnCreatePassword by rememberUpdatedState(onCreatePassword)
+    val currentOnNavigateToSchedule by rememberUpdatedState(onNavigateToSchedule)
     LaunchedEffect(viewModel, lifecycle) {
-        snapshotFlow { viewModel.uiState }
-            .filter { it.value.navigateToSchedule }
+        viewModel.uiState
+            .filter { it.navigateToSchedule }
             .flowWithLifecycle(lifecycle)
             .collect {
-                currentOnCreatePassword()
+                currentOnNavigateToSchedule()
             }
     }
 }
@@ -82,7 +81,7 @@ private fun ConfirmPasswordContent(
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
-            label = { Text("Correo electrónico") },
+            label = { Text("Nueva contraseña") },
         )
         TextField(
             value = confirmNewPassword,
@@ -90,7 +89,7 @@ private fun ConfirmPasswordContent(
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
-            label = { Text("Contraseña") },
+            label = { Text("Confirmar contraseña") },
             isError = showPasswordNotMatchError,
             supportingText = if (showPasswordNotMatchError) {
                 { Text("Las contraseñas no coinciden") }
