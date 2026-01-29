@@ -9,11 +9,14 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.shared.core)
+            implementation(projects.features.authentication)
+            implementation(projects.features.schedule)
+            implementation(projects.shared.common)
             implementation(projects.shared.dependencies)
         }
         iosMain.dependencies {
             implementation(projects.shared.dependencies)
+            implementation(projects.shared.common)
         }
     }
 }

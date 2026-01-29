@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		78E11FAE2F1EA3BE00D172AD /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */; };
+		78717A672F26A007006E16FB /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A662F26A007006E16FB /* FirebaseAnalytics */; };
+		78717A692F26A007006E16FB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A682F26A007006E16FB /* FirebaseAuth */; };
+		78717A822F292E4D006E16FB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A812F292E4D006E16FB /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,7 +47,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				78E11FAE2F1EA3BE00D172AD /* FirebaseAnalytics in Frameworks */,
+				78717A672F26A007006E16FB /* FirebaseAnalytics in Frameworks */,
+				78717A692F26A007006E16FB /* FirebaseAuth in Frameworks */,
+				78717A822F292E4D006E16FB /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,8 +69,16 @@
 			children = (
 				E06EB2DA26C0235A35D3219E /* Configuration */,
 				203C4AC3F2E0CCD04E0C788D /* iosApp */,
+				78717A802F292E4D006E16FB /* Frameworks */,
 				0C30C94F7CFC061482DAF967 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		78717A802F292E4D006E16FB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -91,7 +103,9 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
-				78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */,
+				78717A662F26A007006E16FB /* FirebaseAnalytics */,
+				78717A682F26A007006E16FB /* FirebaseAuth */,
+				78717A812F292E4D006E16FB /* FirebaseFirestore */,
 			);
 			productName = iosApp;
 			productReference = 6DCD8797A2A4BE1A84F155B9 /* Voluntariat Casa Virupa Dev.app */;
@@ -122,7 +136,7 @@
 			mainGroup = 28BC0977B67999C04D05063E;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0C30C94F7CFC061482DAF967 /* Products */;
@@ -162,7 +176,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :shared:ui:embedAndSignAppleFrameworkForXcode\n";
 		};
 		78E11FAF2F1EA54600D172AD /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -271,6 +285,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -360,6 +375,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -389,6 +405,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -418,6 +435,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				DEVELOPMENT_TEAM = "${TEAM_ID}";
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -590,9 +608,9 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 12.8.0;
@@ -601,10 +619,20 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		78E11FAD2F1EA3BE00D172AD /* FirebaseAnalytics */ = {
+		78717A662F26A007006E16FB /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 78E11FAC2F1EA3BE00D172AD /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = 78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
+		};
+		78717A682F26A007006E16FB /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		78717A812F292E4D006E16FB /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

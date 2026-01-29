@@ -12,6 +12,7 @@ class KotlinMultiplatformLibraryConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("com.android.kotlin.multiplatform.library")
                 apply("org.jetbrains.kotlin.multiplatform")
+                apply("org.jetbrains.kotlin.plugin.serialization")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
@@ -19,7 +20,9 @@ class KotlinMultiplatformLibraryConventionPlugin : Plugin<Project> {
 
                 sourceSets {
                     commonMain.dependencies {
+                        implementation(libs.findLibrary("kermit").get())
                         implementation(libs.findLibrary("koin.core").get())
+                        implementation(libs.findLibrary("kotlinx.serialization.json").get())
                     }
                     commonTest.dependencies {
                         implementation(kotlin("test"))

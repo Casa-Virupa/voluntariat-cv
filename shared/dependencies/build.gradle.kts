@@ -8,7 +8,10 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.features.authentication)
+            implementation(projects.shared.common)
             implementation(projects.shared.core)
+            implementation(projects.shared.data)
         }
     }
 }
