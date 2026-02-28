@@ -4,8 +4,10 @@ androidxComposeBom = "2026.01.00"
 androidxActivity = "1.12.2"
 androidxLifecycle = "2.9.6"
 androidxSplashscreen = "1.2.0"
+composeLifecycle = "2.10.0-alpha05"
 composeMultiplatform = "1.10.0"
 composeNavigation = "2.9.1"
+composeNavigation3 = "1.0.0-alpha05"
 firebase = "34.8.0"
 gitlive = "2.4.0"
 googleServices = "4.4.4"
@@ -26,6 +28,8 @@ androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle
 androidx-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxSplashscreen" }
 compose-gradlePlugin = { group = "org.jetbrains.compose", name = "org.jetbrains.compose.gradle.plugin", version.ref = "composeMultiplatform" }
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }
+compose-navigation3 = { group = "org.jetbrains.androidx.navigation3", name = "navigation3-ui", version.ref = "composeNavigation3" }
+compose-viewModel-navigation3 = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "composeLifecycle" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase" }
 firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 gitlive-firebase-auth = { group = "dev.gitlive", name = "firebase-auth", version.ref = "gitlive" }
