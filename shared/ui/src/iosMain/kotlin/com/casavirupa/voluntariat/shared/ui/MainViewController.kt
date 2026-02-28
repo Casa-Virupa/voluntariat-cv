@@ -1,6 +1,5 @@
 package com.casavirupa.voluntariat.shared.ui
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -19,7 +18,7 @@ fun MainViewController() = ComposeUIViewController {
 
     when (val userState = initialUserState) {
         null -> IOSSplashScreen()
-        else -> App(userState = userState)
+        else -> RootApp(userState = userState)
     }
 }
 

@@ -12,6 +12,7 @@ kotlin {
             implementation(projects.features.authentication)
             implementation(projects.features.schedule)
             implementation(projects.shared.common)
+            implementation(projects.shared.core)
             implementation(projects.shared.dependencies)
         }
         iosMain.dependencies {
