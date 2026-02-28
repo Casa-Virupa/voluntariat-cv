@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.filter
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-internal fun ConfirmPasswordScreen(
+internal fun CreatePasswordScreen(
     onNavigateToSchedule: () -> Unit,
     viewModel: CreatePasswordViewModel = koinViewModel(),
 ) {
