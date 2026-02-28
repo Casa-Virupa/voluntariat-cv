@@ -13,7 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.casavirupa.voluntariat.shared.common.AppViewModel
 import com.casavirupa.voluntariat.shared.common.InitialUserState
-import com.casavirupa.voluntariat.shared.ui.App
+import com.casavirupa.voluntariat.shared.ui.RootApp
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             userState?.let {
-                App(userState = it)
+                RootApp(userState = it)
             }
         }
     }
