@@ -45,7 +45,7 @@ import voluntariatcv.features.authentication.generated.resources.ic_visibility
 import voluntariatcv.features.authentication.generated.resources.ic_visibility_off
 
 @Composable
-internal fun LogInScreen(
+internal fun SignInScreen(
     onNavigateToCreatePassword: () -> Unit,
     onNavigateToSchedule: () -> Unit,
     viewModel: SignInViewModel = koinViewModel()
@@ -53,7 +53,7 @@ internal fun LogInScreen(
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
 
-    LogInContent(
+    SignInContent(
         email = email,
         password = password,
         onEmailChanged = viewModel::onEmailChanged,
@@ -78,7 +78,7 @@ internal fun LogInScreen(
 }
 
 @Composable
-private fun LogInContent(
+private fun SignInContent(
     email: String,
     password: String,
     onEmailChanged: (String) -> Unit,
