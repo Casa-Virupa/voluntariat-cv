@@ -50,6 +50,13 @@ val VoluntariatCVTypography: Typography
             lineHeight = 45.5.sp,
             letterSpacing = (-0.75).sp,
         ),
+        headlineLarge = TextStyle(
+            fontFamily = kalice,
+            fontWeight = FontWeight.Normal,
+            fontSize = 32.sp,
+            lineHeight = 38.sp,
+            letterSpacing = (-0.75).sp,
+        ),
         bodyMedium = TextStyle(
             fontFamily = DMSans,
             fontWeight = FontWeight.Normal,
@@ -68,5 +75,12 @@ val VoluntariatCVTypography: Typography
             fontSize = 12.sp,
             lineHeight = 16.sp,
             letterSpacing = 0.6.sp,
-        )
+        ),
+        labelSmall = TextStyle(
+            fontFamily = DMSans,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            lineHeight = 15.sp,
+            letterSpacing = 1.sp,
+        ),
     )

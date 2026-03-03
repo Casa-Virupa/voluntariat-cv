@@ -39,6 +39,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.authentication.generated.resources.Res
 import voluntariatcv.features.authentication.generated.resources.cv_logo
+import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
 import voluntariatcv.features.authentication.generated.resources.ic_lock
 import voluntariatcv.features.authentication.generated.resources.ic_mail
 import voluntariatcv.features.authentication.generated.resources.ic_visibility
@@ -111,6 +112,7 @@ private fun SignInContent(
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
+            icon = painterResource(Res.drawable.ic_arrow_right),
         )
     }
 }

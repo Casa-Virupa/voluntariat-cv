@@ -9,10 +9,10 @@ val voluntariatCVColorScheme = lightColorScheme(
     primary = Orange,
     onPrimary = Color.White,
     primaryContainer = LightOrange,
-    onPrimaryContainer = DarkGray,
+    onPrimaryContainer = DarkGrayBrown,
     surface = Color.White,
-    onSurface = Gray,
-    onSurfaceVariant = LightGray,
+    onSurface = GrayBrown,
+    onSurfaceVariant = LightGrayBrown,
 )
 
 @Composable
