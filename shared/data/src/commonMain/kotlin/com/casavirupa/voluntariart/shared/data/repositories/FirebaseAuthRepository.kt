@@ -5,6 +5,7 @@ import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
+import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.firestore.FirebaseFirestore
@@ -21,17 +22,24 @@ class FirebaseAuthRepository(
             return findUserFromFirestore(authUser)
         }
 
-    override suspend fun updateNewPassword(password: String): Result<Unit> =
-        runCatching {
-            auth.currentUser?.updatePassword(password)
-        }.mapCatching {
-            firestore
-                .collection("users")
-                .document(auth.currentUser?.uid!!)
-                .updateFields {
-                    "onboarding_completed" to true
-                }
-        }
+    override suspend fun updateNewPassword(
+        actualPassword: String,
+        newPassword: String,
+    ): Result<Unit> = runCatching {
+        val authUser = auth.currentUser
+            ?: return Result.failure(NullPointerException("User authentication failed"))
+        authUser.reauthenticate(
+            EmailAuthProvider.credential(authUser.email.orEmpty(), actualPassword)
+        )
+        authUser.updatePassword(newPassword)
+    }.mapCatching {
+        firestore
+            .collection("users")
+            .document(auth.currentUser?.uid!!)
+            .updateFields {
+                "onboarding_completed" to true
+            }
+    }
 
     override suspend fun getCurrentUser(): Result<User> {
         val authUser = auth.currentUser

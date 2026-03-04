@@ -14,6 +14,7 @@ import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
 import com.casavirupa.voluntariat.shared.core.navigation.toEntries
+import com.casavirupa.voluntariat.shared.designsystem.theme.VoluntariatCVTheme
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -28,12 +29,14 @@ fun MainApp() {
         calendarEntry(navigator)
     }
 
-    Scaffold { innerPadding ->
-        NavDisplay(
-            entries = navigationState.toEntries(entryProvider),
-            onBack = navigator::goBack,
-            modifier = Modifier.padding(innerPadding),
-        )
+    VoluntariatCVTheme {
+        Scaffold { innerPadding ->
+            NavDisplay(
+                entries = navigationState.toEntries(entryProvider),
+                onBack = navigator::goBack,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
     }
 }
 

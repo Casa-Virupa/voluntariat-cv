@@ -14,14 +14,24 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
     private val _uiState = MutableStateFlow(CreatePasswordUiState())
     val uiState: StateFlow<CreatePasswordUiState> = _uiState.asStateFlow()
 
+    private val _actualPassword = MutableStateFlow("")
+    val actualPassword: StateFlow<String> = _actualPassword.asStateFlow()
+
     private val _newPassword = MutableStateFlow("")
     val newPassword: StateFlow<String> = _newPassword.asStateFlow()
 
     private val _confirmNewPassword = MutableStateFlow("")
     val confirmNewPassword: StateFlow<String> = _confirmNewPassword.asStateFlow()
 
+    fun onActualPasswordChanged(actualPassword: String) {
+        _actualPassword.update { actualPassword }
+    }
+
     fun onNewPasswordChanged(newPassword: String) {
         _newPassword.update { newPassword }
+        if (_uiState.value.showPasswordNotValidError) {
+            showPasswordNotValidError(false)
+        }
     }
 
     fun onConfirmNewPasswordChanged(confirmNewPassword: String) {
@@ -32,8 +42,12 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
     }
 
     fun onCreatePassword() {
-        if (newPassword.value != confirmNewPassword.value) {
+        if (passwordNotMatch()) {
             showPasswordNotMatchError(true)
+            return
+        }
+        if (!isPasswordValid(newPassword.value)) {
+            showPasswordNotValidError(true)
             return
         }
         viewModelScope.launch {
@@ -45,9 +59,13 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
         _uiState.update { it.copy(showPasswordNotMatchError = visibility) }
     }
 
+    private fun showPasswordNotValidError(visibility: Boolean) {
+        _uiState.update { it.copy(showPasswordNotValidError = visibility) }
+    }
+
     private suspend fun createNewPassword() {
         authRepository
-            .updateNewPassword(newPassword.value)
+            .updateNewPassword(actualPassword.value, newPassword.value)
             .onSuccess {
                 navigateToSchedule()
             }.onFailure { error ->
@@ -58,11 +76,19 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
     private fun navigateToSchedule() {
         _uiState.update { it.copy(navigateToSchedule = true) }
     }
+
+    private fun passwordNotMatch() = newPassword.value != confirmNewPassword.value
+
+    private fun isPasswordValid(password: String): Boolean {
+        val passwordRegex = """^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z]).{8,}$""".toRegex()
+        return passwordRegex.matches(password)
+    }
 }
 
 data class CreatePasswordUiState(
     val navigateToSchedule: Boolean = false,
     val showPasswordNotMatchError: Boolean = false,
+    val showPasswordNotValidError: Boolean = false,
 )
 
 private const val LOG_TAG = "CreatePasswordViewModel"

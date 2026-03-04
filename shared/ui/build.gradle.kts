@@ -14,6 +14,7 @@ kotlin {
             implementation(projects.shared.common)
             implementation(projects.shared.core)
             implementation(projects.shared.dependencies)
+            implementation(projects.shared.designsystem)
         }
         iosMain.dependencies {
             implementation(projects.shared.dependencies)
