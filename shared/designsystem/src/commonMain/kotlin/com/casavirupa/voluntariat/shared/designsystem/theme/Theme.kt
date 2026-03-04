@@ -13,6 +13,7 @@ val voluntariatCVColorScheme = lightColorScheme(
     surface = Color.White,
     onSurface = GrayBrown,
     onSurfaceVariant = LightGrayBrown,
+    error = Red,
 )
 
 @Composable

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
@@ -37,9 +38,13 @@ fun CVTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
+    showError: Boolean = false,
+    supportingText: String? = null,
 ) {
     val unselectedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant
     val selectedBorderColor = MaterialTheme.colorScheme.onSurface
+    val errorColor = MaterialTheme.colorScheme.error
+
     var borderColor by remember { mutableStateOf(unselectedBorderColor) }
     var borderWidth by remember { mutableStateOf(1.dp) }
 
@@ -52,10 +57,9 @@ fun CVTextField(
             } else {
                 unselectedBorderColor
             }
-            borderWidth = if (it.isFocused) {
-                1.5.dp
-            } else {
-                1.dp
+            borderWidth = when {
+                it.isFocused -> 1.5.dp
+                else -> 1.dp
             }
         },
         textStyle = MaterialTheme.typography.bodyMedium.copy(
@@ -74,9 +78,14 @@ fun CVTextField(
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.labelMedium,
                 )
+                val textFieldBorderColor = if (showError) {
+                    errorColor
+                } else {
+                    borderColor
+                }
                 Row(
                     modifier = Modifier
-                        .border(width = borderWidth, color = borderColor)
+                        .border(width = borderWidth, color = textFieldBorderColor)
                         .height(56.dp)
                         .background(MaterialTheme.colorScheme.surface),
                     verticalAlignment = Alignment.CenterVertically,
@@ -104,6 +113,16 @@ fun CVTextField(
                     if (trailingIcon != null) {
                         trailingIcon()
                     }
+                }
+                if (supportingText != null) {
+                    Text(
+                        text = supportingText,
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+                        color = errorColor,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                        )
+                    )
                 }
             }
         }

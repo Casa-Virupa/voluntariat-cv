@@ -65,6 +65,7 @@ internal fun CreatePasswordScreen(
         onNewPasswordChanged = viewModel::onNewPasswordChanged,
         onConfirmNewPasswordChanged = viewModel::onConfirmNewPasswordChanged,
         showPasswordNotMatchError = uiState.showPasswordNotMatchError,
+        showPasswordNotValidError = uiState.showPasswordNotValidError,
         onClickCreatePassword = viewModel::onCreatePassword,
     )
 
@@ -89,6 +90,7 @@ private fun ConfirmPasswordContent(
     onNewPasswordChanged: (String) -> Unit,
     onConfirmNewPasswordChanged: (String) -> Unit,
     showPasswordNotMatchError: Boolean,
+    showPasswordNotValidError: Boolean,
     onClickCreatePassword: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -107,6 +109,8 @@ private fun ConfirmPasswordContent(
             onNewPasswordChanged = onNewPasswordChanged,
             confirmPassword = confirmNewPassword,
             onConfirmPasswordChanged = onConfirmNewPasswordChanged,
+            showPasswordNotMatchError = showPasswordNotMatchError,
+            showPasswordNotValidError = showPasswordNotValidError,
         )
         SecurityRequirements(
             modifier = Modifier
@@ -147,6 +151,8 @@ private fun CreatePasswordInputs(
     onNewPasswordChanged: (String) -> Unit,
     confirmPassword: String,
     onConfirmPasswordChanged: (String) -> Unit,
+    showPasswordNotMatchError: Boolean,
+    showPasswordNotValidError: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var showActualPassword by remember { mutableStateOf(false) }
@@ -177,13 +183,7 @@ private fun CreatePasswordInputs(
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_lock),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            },
+            leadingIcon = { LeadingIcon() },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
@@ -191,18 +191,10 @@ private fun CreatePasswordInputs(
             placeholder = "********",
             visualTransformation = actualPasswordVisualTransformation,
             trailingIcon = {
-                IconButton(onClick = { showActualPassword = !showActualPassword }) {
-                    val iconPainter = if (showActualPassword) {
-                        painterResource(Res.drawable.ic_visibility_off)
-                    } else {
-                        painterResource(Res.drawable.ic_visibility)
-                    }
-                    Icon(
-                        painter = iconPainter,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                PasswordVisibilityButton(
+                    showPassword = showActualPassword,
+                    onShowPasswordChanged = { showActualPassword = it },
+                )
             }
         )
         CVTextField(
@@ -212,13 +204,7 @@ private fun CreatePasswordInputs(
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_lock),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            },
+            leadingIcon = { LeadingIcon(showError = showPasswordNotValidError) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
@@ -226,19 +212,17 @@ private fun CreatePasswordInputs(
             placeholder = "********",
             visualTransformation = newPasswordVisualTransformation,
             trailingIcon = {
-                IconButton(onClick = { showNewPassword = !showNewPassword }) {
-                    val iconPainter = if (showNewPassword) {
-                        painterResource(Res.drawable.ic_visibility_off)
-                    } else {
-                        painterResource(Res.drawable.ic_visibility)
-                    }
-                    Icon(
-                        painter = iconPainter,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
+                PasswordVisibilityButton(
+                    showPassword = showNewPassword,
+                    onShowPasswordChanged = { showNewPassword = it },
+                )
+            },
+            showError = showPasswordNotValidError,
+            supportingText = if (showPasswordNotValidError) {
+                "La contrasenya no compleix els requisits de seguretat"
+            } else {
+                null
+            },
         )
         CVTextField(
             value = confirmPassword,
@@ -247,13 +231,7 @@ private fun CreatePasswordInputs(
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_lock),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            },
+            leadingIcon = { LeadingIcon(showError = showPasswordNotMatchError) },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
@@ -261,18 +239,16 @@ private fun CreatePasswordInputs(
             placeholder = "********",
             visualTransformation = confirmPasswordVisualTransformation,
             trailingIcon = {
-                IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                    val iconPainter = if (showNewPassword) {
-                        painterResource(Res.drawable.ic_visibility_off)
-                    } else {
-                        painterResource(Res.drawable.ic_visibility)
-                    }
-                    Icon(
-                        painter = iconPainter,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+                PasswordVisibilityButton(
+                    showPassword = showConfirmPassword,
+                    onShowPasswordChanged = { showConfirmPassword = it },
+                )
+            },
+            showError = showPasswordNotMatchError,
+            supportingText = if (showPasswordNotMatchError) {
+                "Les contrasenyes no coincideixen"
+            } else {
+                null
             }
         )
     }
@@ -325,6 +301,47 @@ private fun RequirementCheck(
             modifier = Modifier.padding(start = 8.dp),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelSmall,
+        )
+    }
+}
+
+@Composable
+private fun LeadingIcon(
+    modifier: Modifier = Modifier,
+    showError: Boolean = false,
+) {
+    val iconTint = if (showError) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Icon(
+        painter = painterResource(Res.drawable.ic_lock),
+        contentDescription = null,
+        modifier = modifier,
+        tint = iconTint,
+    )
+}
+
+@Composable
+private fun PasswordVisibilityButton(
+    showPassword: Boolean,
+    onShowPasswordChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = { onShowPasswordChanged(!showPassword) },
+        modifier = modifier,
+    ) {
+        val iconPainter = if (showPassword) {
+            painterResource(Res.drawable.ic_visibility_off)
+        } else {
+            painterResource(Res.drawable.ic_visibility)
+        }
+        Icon(
+            painter = iconPainter,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
