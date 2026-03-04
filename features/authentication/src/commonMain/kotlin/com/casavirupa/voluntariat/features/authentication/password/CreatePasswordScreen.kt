@@ -9,14 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,13 +26,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -55,12 +53,15 @@ internal fun CreatePasswordScreen(
     viewModel: CreatePasswordViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val actualPassword by viewModel.actualPassword.collectAsStateWithLifecycle()
     val newPassword by viewModel.newPassword.collectAsStateWithLifecycle()
     val confirmNewPassword by viewModel.confirmNewPassword.collectAsStateWithLifecycle()
 
     ConfirmPasswordContent(
+        actualPassword = actualPassword,
         newPassword = newPassword,
         confirmNewPassword = confirmNewPassword,
+        onActualPasswordChanged = viewModel::onActualPasswordChanged,
         onNewPasswordChanged = viewModel::onNewPasswordChanged,
         onConfirmNewPasswordChanged = viewModel::onConfirmNewPasswordChanged,
         showPasswordNotMatchError = uiState.showPasswordNotMatchError,
@@ -81,8 +82,10 @@ internal fun CreatePasswordScreen(
 
 @Composable
 private fun ConfirmPasswordContent(
+    actualPassword: String,
     newPassword: String,
     confirmNewPassword: String,
+    onActualPasswordChanged: (String) -> Unit,
     onNewPasswordChanged: (String) -> Unit,
     onConfirmNewPasswordChanged: (String) -> Unit,
     showPasswordNotMatchError: Boolean,
@@ -92,13 +95,16 @@ private fun ConfirmPasswordContent(
     Column(
         modifier = modifier
             .padding(16.dp)
-            .fillMaxSize(),
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
     ) {
         Header(modifier = Modifier.padding(bottom = 24.dp))
         CreatePasswordInputs(
-            password = newPassword,
-            onPasswordChanged = onNewPasswordChanged,
+            actualPassword = actualPassword,
+            onActualPasswordChanged = onActualPasswordChanged,
+            newPassword = newPassword,
+            onNewPasswordChanged = onNewPasswordChanged,
             confirmPassword = confirmNewPassword,
             onConfirmPasswordChanged = onConfirmNewPasswordChanged,
         )
@@ -108,7 +114,7 @@ private fun ConfirmPasswordContent(
                 .padding(start = 4.dp),
         )
         CVButton(
-            text = "Crear contraseña",
+            text = "Crear contrasenya",
             onClick = onClickCreatePassword,
             modifier = Modifier
                 .padding(top = 8.dp)
@@ -122,7 +128,7 @@ private fun ConfirmPasswordContent(
 private fun Header(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(
-            text = "Crear nova contraseña",
+            text = "Crear nova contrasenya",
             style = MaterialTheme.typography.headlineLarge,
         )
         Text(
@@ -135,16 +141,24 @@ private fun Header(modifier: Modifier = Modifier) {
 
 @Composable
 private fun CreatePasswordInputs(
-    password: String,
-    onPasswordChanged: (String) -> Unit,
+    actualPassword: String,
+    onActualPasswordChanged: (String) -> Unit,
+    newPassword: String,
+    onNewPasswordChanged: (String) -> Unit,
     confirmPassword: String,
     onConfirmPasswordChanged: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showPassword by remember { mutableStateOf(false) }
+    var showActualPassword by remember { mutableStateOf(false) }
+    var showNewPassword by remember { mutableStateOf(false) }
     var showConfirmPassword by remember { mutableStateOf(false) }
 
-    val passwordVisualTransformation = if (showPassword) {
+    val actualPasswordVisualTransformation = if (showActualPassword) {
+        VisualTransformation.None
+    } else {
+        PasswordVisualTransformation()
+    }
+    val newPasswordVisualTransformation = if (showNewPassword) {
         VisualTransformation.None
     } else {
         PasswordVisualTransformation()
@@ -157,9 +171,9 @@ private fun CreatePasswordInputs(
 
     Column(modifier = modifier) {
         CVTextField(
-            value = password,
-            onValueChanged = onPasswordChanged,
-            label = "Contrasenya",
+            value = actualPassword,
+            onValueChanged = onActualPasswordChanged,
+            label = "Contrasenya actual",
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
@@ -175,10 +189,45 @@ private fun CreatePasswordInputs(
                 imeAction = ImeAction.Done,
             ),
             placeholder = "********",
-            visualTransformation = passwordVisualTransformation,
+            visualTransformation = actualPasswordVisualTransformation,
             trailingIcon = {
-                IconButton(onClick = { showPassword = !showPassword }) {
-                    val iconPainter = if (showPassword) {
+                IconButton(onClick = { showActualPassword = !showActualPassword }) {
+                    val iconPainter = if (showActualPassword) {
+                        painterResource(Res.drawable.ic_visibility_off)
+                    } else {
+                        painterResource(Res.drawable.ic_visibility)
+                    }
+                    Icon(
+                        painter = iconPainter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        )
+        CVTextField(
+            value = newPassword,
+            onValueChanged = onNewPasswordChanged,
+            label = "Nova contrasenya",
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_lock),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+            ),
+            placeholder = "********",
+            visualTransformation = newPasswordVisualTransformation,
+            trailingIcon = {
+                IconButton(onClick = { showNewPassword = !showNewPassword }) {
+                    val iconPainter = if (showNewPassword) {
                         painterResource(Res.drawable.ic_visibility_off)
                     } else {
                         painterResource(Res.drawable.ic_visibility)
@@ -213,7 +262,7 @@ private fun CreatePasswordInputs(
             visualTransformation = confirmPasswordVisualTransformation,
             trailingIcon = {
                 IconButton(onClick = { showConfirmPassword = !showConfirmPassword }) {
-                    val iconPainter = if (showPassword) {
+                    val iconPainter = if (showNewPassword) {
                         painterResource(Res.drawable.ic_visibility_off)
                     } else {
                         painterResource(Res.drawable.ic_visibility)
@@ -269,7 +318,7 @@ private fun RequirementCheck(
         Box(
             modifier = Modifier
                 .size(4.dp)
-                .background(color = MaterialTheme.colorScheme.onSurfaceVariant, shape = CircleShape)
+                .background(color = MaterialTheme.colorScheme.onSurface, shape = CircleShape)
         )
         Text(
             text = text,

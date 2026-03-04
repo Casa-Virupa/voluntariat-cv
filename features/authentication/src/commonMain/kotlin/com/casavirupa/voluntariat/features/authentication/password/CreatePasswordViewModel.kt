@@ -14,11 +14,18 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
     private val _uiState = MutableStateFlow(CreatePasswordUiState())
     val uiState: StateFlow<CreatePasswordUiState> = _uiState.asStateFlow()
 
+    private val _actualPassword = MutableStateFlow("")
+    val actualPassword: StateFlow<String> = _actualPassword.asStateFlow()
+
     private val _newPassword = MutableStateFlow("")
     val newPassword: StateFlow<String> = _newPassword.asStateFlow()
 
     private val _confirmNewPassword = MutableStateFlow("")
     val confirmNewPassword: StateFlow<String> = _confirmNewPassword.asStateFlow()
+
+    fun onActualPasswordChanged(actualPassword: String) {
+        _actualPassword.update { actualPassword }
+    }
 
     fun onNewPasswordChanged(newPassword: String) {
         _newPassword.update { newPassword }
@@ -47,7 +54,7 @@ internal class CreatePasswordViewModel(private val authRepository: AuthRepositor
 
     private suspend fun createNewPassword() {
         authRepository
-            .updateNewPassword(newPassword.value)
+            .updateNewPassword(actualPassword.value, newPassword.value)
             .onSuccess {
                 navigateToSchedule()
             }.onFailure { error ->
