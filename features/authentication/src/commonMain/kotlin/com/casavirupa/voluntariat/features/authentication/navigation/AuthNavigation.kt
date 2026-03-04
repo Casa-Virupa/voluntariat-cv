@@ -24,25 +24,6 @@ data object CreatePasswordNavKey : AuthNavKey()
 @Serializable
 data object MainAppContentNavKey : AuthNavKey(isLastNavKey = true)
 
-fun NavController.navigateToCreatePassword() = navigate(CreatePasswordNavKey)
-
-fun NavGraphBuilder.authRoutes(
-    onNavigateToCreatePassword: () -> Unit,
-    onNavigateToSchedule: () -> Unit,
-) {
-    composable<SignInNavKey> {
-        LogInScreen(
-            onNavigateToCreatePassword = onNavigateToCreatePassword,
-            onNavigateToSchedule = onNavigateToSchedule,
-        )
-    }
-    composable<CreatePasswordNavKey> {
-        CreatePasswordScreen(
-            onNavigateToSchedule = onNavigateToSchedule,
-        )
-    }
-}
-
 fun authNavigationConfig() = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
@@ -66,5 +47,3 @@ fun EntryProviderScope<NavKey>.authEntry(navigator: AuthNavigator) {
         )
     }
 }
-
-// Kalice, DMSans

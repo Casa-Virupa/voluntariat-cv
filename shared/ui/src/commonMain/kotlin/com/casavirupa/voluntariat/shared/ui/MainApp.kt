@@ -9,8 +9,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.casavirupa.voluntariat.features.schedule.navigation.ScheduleNavKey
-import com.casavirupa.voluntariat.features.schedule.navigation.scheduleEntry
+import com.casavirupa.voluntariat.features.calendar.navigation.CalendarNavKey
+import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
 import com.casavirupa.voluntariat.shared.core.navigation.toEntries
@@ -20,12 +20,12 @@ import kotlinx.serialization.modules.polymorphic
 @Composable
 fun MainApp() {
     val navigationState = rememberMainNavigationState(
-        startKey = ScheduleNavKey,
+        startKey = CalendarNavKey,
         config = mainContentNavigationConfig(),
     )
     val navigator = remember { MainNavigator(navigationState) }
     val entryProvider = entryProvider {
-        scheduleEntry(navigator)
+        calendarEntry(navigator)
     }
 
     Scaffold { innerPadding ->
@@ -40,7 +40,7 @@ fun MainApp() {
 private fun mainContentNavigationConfig() = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
-            subclass(ScheduleNavKey::class, ScheduleNavKey.serializer())
+            subclass(CalendarNavKey::class, CalendarNavKey.serializer())
         }
     }
 }

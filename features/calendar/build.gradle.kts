@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     androidLibrary {
-        namespace = "com.casavirupa.voluntariat.features.schedule"
+        namespace = "com.casavirupa.voluntariat.features.calendar"
     }
     sourceSets {
         commonMain.dependencies {
