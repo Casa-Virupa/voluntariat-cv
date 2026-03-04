@@ -1,6 +1,7 @@
 package com.casavirupa.voluntariat.shared.ui
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import com.casavirupa.voluntariat.shared.common.InitialUserState
 import com.casavirupa.voluntariat.shared.core.navigation.AuthNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberAuthNavigationState
 import com.casavirupa.voluntariat.shared.core.navigation.toEntries
+import com.casavirupa.voluntariat.shared.designsystem.theme.VoluntariatCVTheme
 import com.casavirupa.voluntariat.shared.ui.navigation.mainContentEntry
 
 @Composable
@@ -30,12 +32,16 @@ fun RootApp(userState: InitialUserState) {
         mainContentEntry()
     }
 
-    Scaffold { innerPadding ->
-        NavDisplay(
-            entries = navigationState.toEntries(entryProvider),
-            onBack = navigator::goBack,
-            modifier = Modifier.padding(innerPadding),
-        )
+    VoluntariatCVTheme {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+        ) { innerPadding ->
+            NavDisplay(
+                entries = navigationState.toEntries(entryProvider),
+                onBack = navigator::goBack,
+                modifier = Modifier.padding(innerPadding),
+            )
+        }
     }
 }
 
