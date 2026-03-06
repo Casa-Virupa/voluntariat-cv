@@ -63,6 +63,12 @@ val VoluntariatCVTypography: Typography
             lineHeight = 38.sp,
             letterSpacing = (-0.75).sp,
         ),
+        titleSmall = TextStyle(
+            fontFamily = kalice,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            lineHeight = 18.sp
+        ),
         bodyMedium = TextStyle(
             fontFamily = DMSans,
             fontWeight = FontWeight.Normal,

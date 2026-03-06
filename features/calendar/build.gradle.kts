@@ -12,6 +12,8 @@ kotlin {
             implementation(projects.shared.core)
             implementation(projects.shared.designsystem)
             implementation(projects.shared.domain)
+
+            implementation(libs.kotlinx.datetime)
         }
     }
 }
