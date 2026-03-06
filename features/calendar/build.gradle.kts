@@ -10,6 +10,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.shared.core)
+            implementation(projects.shared.designsystem)
             implementation(projects.shared.domain)
         }
     }

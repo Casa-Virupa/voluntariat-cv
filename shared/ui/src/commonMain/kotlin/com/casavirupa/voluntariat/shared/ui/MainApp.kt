@@ -1,6 +1,12 @@
 package com.casavirupa.voluntariat.shared.ui
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,13 +36,19 @@ fun MainApp() {
     }
 
     VoluntariatCVTheme {
-        Scaffold { innerPadding ->
-            NavDisplay(
-                entries = navigationState.toEntries(entryProvider),
-                onBack = navigator::goBack,
-                modifier = Modifier.padding(innerPadding),
-            )
-        }
+        Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+    ) { innerPadding ->
+        NavDisplay(
+            entries = navigationState.toEntries(entryProvider),
+            onBack = navigator::goBack,
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                ),
+        )}
     }
 }
 
