@@ -6,6 +6,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.casavirupa.voluntariat.features.authentication.navigation.CreatePasswordNavKey
@@ -45,7 +46,7 @@ fun RootApp(userState: InitialUserState) {
     }
 }
 
-private fun InitialUserState.toStartDestination() =
+private fun InitialUserState.toStartDestination(): NavKey =
     when (this) {
         is InitialUserState.LoggedIn -> {
             if (onboardingCompleted) {

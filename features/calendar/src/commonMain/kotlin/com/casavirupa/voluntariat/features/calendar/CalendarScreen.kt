@@ -2,6 +2,7 @@ package com.casavirupa.voluntariat.features.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -179,7 +180,7 @@ private fun MonthGrid(
     } else {
         yearMonth.firstDayOfWeek + yearMonth.daysInMonth
     }
-    val remainingCells = 42 - totalDaysDisplayed
+    val remainingCells = TOTAL_DAYS_SHOWED_IN_CALENDAR - totalDaysDisplayed
 
     val monthCalculations = remember(yearMonth) {
         MonthCalculations(yearMonth.month, yearMonth.year)
@@ -215,6 +216,7 @@ private fun MonthGrid(
                             date = date,
                             isCurrentMonth = false,
                             cellSize = dayCellSize,
+                            onClick = onClickDay,
                         )
                     }
                 }
@@ -229,6 +231,7 @@ private fun MonthGrid(
                         date = date,
                         isCurrentMonth = true,
                         cellSize = dayCellSize,
+                        onClick = onClickDay,
                     )
                 }
                 items(
@@ -240,6 +243,7 @@ private fun MonthGrid(
                         date = date,
                         isCurrentMonth = false,
                         cellSize = dayCellSize,
+                        onClick = onClickDay,
                     )
                 }
             }
@@ -252,6 +256,7 @@ private fun DayCell(
     date: LocalDate,
     isCurrentMonth: Boolean,
     cellSize: DpSize,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = Clock.System.now()
@@ -264,7 +269,9 @@ private fun DayCell(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 shape = CutCornerShape(0.dp),
-            ).size(cellSize),
+            )
+            .size(cellSize)
+            .clickable { onClick() },
         contentAlignment = Alignment.TopCenter,
     ) {
         val selectionBackgroundColor = if (isToday) {
@@ -289,3 +296,5 @@ private fun DayCell(
         )
     }
 }
+
+private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
