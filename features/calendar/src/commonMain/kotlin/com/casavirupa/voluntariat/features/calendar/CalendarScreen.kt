@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,31 +33,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.MonthCalculations
+import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
+import com.casavirupa.voluntariat.shared.model.calendar.Event
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
+import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
 import kotlin.time.Clock
 
 @Composable
-internal fun CalendarScreen() {
-    CalendarContent()
+internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
+    val events by viewModel.events.collectAsStateWithLifecycle()
+    val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
+
+    CalendarContent(
+        events = events,
+        yearMonth = currentMonth,
+        onPreviousMonth = viewModel::onPreviousMonth,
+        onNextMonth = viewModel::onNextMonth,
+    )
 }
 
 @Composable
-private fun CalendarContent() {
+private fun CalendarContent(
+    events: List<Event>,
+    yearMonth: YearMonth,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
+        modifier = modifier,
         topBar = {
-            CalendarTopBar()
+            CalendarTopBar(
+                currentMonth = yearMonth.month,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth,
+            )
         },
         floatingActionButton = {
             CVFabButton(
@@ -70,7 +96,7 @@ private fun CalendarContent() {
         Column(modifier = Modifier.padding(innerPadding)) {
             WeekHeader()
             MonthGrid(
-                yearMonth = YearMonth(2026, Month.MARCH),
+                yearMonth = yearMonth,
                 onClickDay = {},
             )
         }
@@ -78,15 +104,23 @@ private fun CalendarContent() {
 }
 
 @Composable
-private fun CalendarTopBar(modifier: Modifier = Modifier) {
+private fun CalendarTopBar(
+    currentMonth: Month,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.padding(top = 32.dp, bottom = 16.dp, start = 24.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TopBarTitles(modifier = Modifier.weight(2f))
+        TopBarTitles(
+            title = currentMonth.getName(),
+            modifier = Modifier.weight(2f)
+        )
         CalendarNavigationArrows(
-            onClickPrevious = {},
-            onClickNext = {},
+            onClickPrevious = onPreviousMonth,
+            onClickNext = onNextMonth,
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 8.dp)
@@ -95,16 +129,19 @@ private fun CalendarTopBar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TopBarTitles(modifier: Modifier = Modifier) {
+private fun TopBarTitles(
+    title: String,
+    modifier: Modifier = Modifier
+) {
     Column(modifier = modifier) {
         Text(
-            text = "Octubre",
+            text = title,
             modifier = Modifier.padding(bottom = 4.dp),
             color = MaterialTheme.colorScheme.inverseOnSurface,
             style = MaterialTheme.typography.displaySmall,
         )
         Text(
-            text = "Selecciona el dia de voluntariat".uppercase(),
+            text = stringResource(Res.string.select_volunteering_title).uppercase(),
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             style = MaterialTheme.typography.labelSmall,
         )

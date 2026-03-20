@@ -3,9 +3,10 @@ package com.casavirupa.voluntariat.features.calendar.models
 import androidx.compose.runtime.Immutable
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
+import kotlinx.datetime.number
 
 @Immutable
-class YearMonth(
+data class YearMonth(
     val year: Int,
     val month: Month
 ) {
@@ -14,6 +15,14 @@ class YearMonth(
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
 
     val daysInMonth = month.lengthOfMonth(year.isLeap())
+
+    val nextMonth = Month(month.number + 1)
+
+    val nextYear = if (nextMonth.number == 1) year + 1 else year
+
+    val prevMonth = Month(month.number - 1)
+
+    val prevYear = if (prevMonth.number == 12) year - 1 else year
 }
 
 internal fun Month.lengthOfMonth(isLeap: Boolean): Int =

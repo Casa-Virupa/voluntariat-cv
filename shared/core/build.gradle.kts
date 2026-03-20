@@ -12,6 +12,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.compose.navigation3)
             implementation(libs.compose.viewModel.navigation3)
+            implementation(libs.kotlinx.datetime)
         }
     }
 }
