@@ -8,11 +8,13 @@ import androidx.compose.ui.graphics.Color
 val voluntariatCVColorScheme = lightColorScheme(
     primary = Orange,
     onPrimary = Color.White,
-    primaryContainer = LightOrange,
+    primaryContainer = LightOrange100,
     onPrimaryContainer = DarkGrayBrown,
+    surfaceContainerLowest = LightOrange50,
     surface = Color.White,
     onSurface = GrayBrown,
     onSurfaceVariant = LightGrayBrown,
+    inverseOnSurface = DarkGray,
     error = Red,
 )
 

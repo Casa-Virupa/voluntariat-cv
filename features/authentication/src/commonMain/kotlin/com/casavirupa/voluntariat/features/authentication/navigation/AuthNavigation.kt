@@ -43,5 +43,3 @@ fun EntryProviderScope<NavKey>.authEntry(navigator: AuthNavigator) {
         )
     }
 }
-
-// Kalice, DMSans
