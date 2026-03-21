@@ -7,6 +7,6 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 class RemoteCalendarRepository(
     val firestore: FirebaseFirestore,
 ) : CalendarRepository {
-    override suspend fun getCalendarEvents(monthNumber: Int): Result<List<Event>> =
+    override suspend fun getCalendarEvents(year: Int, monthNumber: Int): Result<List<Event>> =
         Result.success(emptyList())
 }

@@ -1,5 +1,10 @@
 package com.casavirupa.voluntariat.features.calendar
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,12 +14,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -34,16 +37,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
-import com.casavirupa.voluntariat.features.calendar.utils.MonthCalculations
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.Event
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,7 +53,6 @@ import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
 import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
-import kotlin.time.Clock
 
 @Composable
 internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
@@ -62,8 +62,10 @@ internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
     CalendarContent(
         events = events,
         yearMonth = currentMonth,
+        today = viewModel.todayDate,
         onPreviousMonth = viewModel::onPreviousMonth,
         onNextMonth = viewModel::onNextMonth,
+        onYearMonthChanged = viewModel::onYearMonthChanged
     )
 }
 
@@ -71,8 +73,10 @@ internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
 private fun CalendarContent(
     events: List<Event>,
     yearMonth: YearMonth,
+    today: LocalDate,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
+    onYearMonthChanged: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -93,12 +97,40 @@ private fun CalendarContent(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
             WeekHeader()
-            MonthGrid(
-                yearMonth = yearMonth,
-                onClickDay = {},
-            )
+            CalendarPager(
+                currentReference = yearMonth,
+                pageToReference = { base, initialPage, page ->
+                    val offsetInMonths = page - initialPage
+                    val totalMonths = base.month.number + offsetInMonths - 1
+
+                    val addedYears = totalMonths.floorDiv(TOTAL_MONTHS)
+                    val newMonthIndex = totalMonths.mod(TOTAL_MONTHS)
+
+                    YearMonth(
+                        year = base.year + addedYears,
+                        month = Month(newMonthIndex + 1)
+                    )
+                },
+                calculateOffset = { current, base ->
+                    val yearDiff = current.year - base.year
+                    val monthDiff = current.month.number - base.month.number
+                    (yearDiff * 12) + monthDiff
+                },
+                modifier = Modifier.weight(1f),
+                onReferenceChange = onYearMonthChanged,
+            ) { yearMonth ->
+                MonthGrid(
+                    yearMonth = yearMonth,
+                    today = today,
+                    onClickDay = {},
+                )
+            }
         }
     }
 }
@@ -134,12 +166,21 @@ private fun TopBarTitles(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Text(
-            text = title,
-            modifier = Modifier.padding(bottom = 4.dp),
-            color = MaterialTheme.colorScheme.inverseOnSurface,
-            style = MaterialTheme.typography.displaySmall,
-        )
+        AnimatedContent(
+            targetState = title,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(durationMillis = 600)) togetherWith
+                        fadeOut(animationSpec = tween(durationMillis = 600))
+            },
+            label = "MonthTitleAnimation"
+        ) { animatedTitle ->
+            Text(
+                text = animatedTitle,
+                modifier = Modifier.padding(bottom = 4.dp),
+                color = MaterialTheme.colorScheme.inverseOnSurface,
+                style = MaterialTheme.typography.displaySmall,
+            )
+        }
         Text(
             text = stringResource(Res.string.select_volunteering_title).uppercase(),
             color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -202,86 +243,50 @@ private fun WeekHeader(modifier: Modifier = Modifier) {
         HorizontalDivider(color = borderColor)
     }
 }
-
 @Composable
 private fun MonthGrid(
     yearMonth: YearMonth,
     onClickDay: () -> Unit,
+    today: LocalDate,
     modifier: Modifier = Modifier,
 ) {
-    val gridState = rememberLazyGridState()
+    val calendarDays = remember(yearMonth) {
+        buildList {
+            for (i in 0 until yearMonth.firstDayOfWeek) {
+                val ordinal = yearMonth.daysInPrevMonth - (yearMonth.firstDayOfWeek - i - 1)
+                add(Pair(LocalDate(yearMonth.prevYear, yearMonth.prevMonth, ordinal), false))
+            }
+            for (day in 1..yearMonth.daysInMonth) {
+                add(Pair(LocalDate(yearMonth.year, yearMonth.month, day), true))
+            }
 
-    val skipPreviousPadding = yearMonth.firstDayOfWeek >= 7
-    val totalDaysDisplayed = if (skipPreviousPadding) {
-        yearMonth.daysInMonth
-    } else {
-        yearMonth.firstDayOfWeek + yearMonth.daysInMonth
+            val remaining = TOTAL_DAYS_SHOWED_IN_CALENDAR - size
+            for (day in 1..remaining) {
+                add(Pair(LocalDate(yearMonth.nextYear, yearMonth.nextMonth, day), false))
+            }
+        }
     }
-    val remainingCells = TOTAL_DAYS_SHOWED_IN_CALENDAR - totalDaysDisplayed
 
-    val monthCalculations = remember(yearMonth) {
-        MonthCalculations(yearMonth.month, yearMonth.year)
-    }
-
-    BoxWithConstraints(propagateMinConstraints = true) {
-        // Cache day cell size to avoid recalculation
+    BoxWithConstraints(propagateMinConstraints = true, modifier = modifier) {
         val dayCellSize = remember(maxWidth, maxHeight) {
-            DpSize(
-                width = maxWidth.div(7),
-                height = (maxHeight - 50.dp).div(6),
-            )
+            DpSize(width = maxWidth / 7, height = maxHeight/ 6)
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = modifier,
-            state = gridState,
-            userScrollEnabled = false,
-        ) {
-            with(monthCalculations) {
-                if (yearMonth.firstDayOfWeek > 0 && !skipPreviousPadding) {
-                    items(
-                        count = yearMonth.firstDayOfWeek,
-                        key = { index ->
-                            val ordinal = daysInPrevMonth - (yearMonth.firstDayOfWeek - index - 1)
-                            "prev_${prevYear}_${prevMonth.number}_$ordinal"
-                        },
-                    ) { index ->
-                        val ordinal = daysInPrevMonth - (yearMonth.firstDayOfWeek - index - 1)
-                        val date = LocalDate(prevYear, prevMonth, ordinal)
+        Column {
+            for (row in 0 until 6) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    for (col in 0 until 7) {
+                        val index = row * 7 + col
+                        val (date, isCurrentMonth) = calendarDays[index]
+
                         DayCell(
                             date = date,
-                            isCurrentMonth = false,
+                            isCurrentMonth = isCurrentMonth,
+                            today = today,
                             cellSize = dayCellSize,
-                            onClick = onClickDay,
+                            onClick = onClickDay
                         )
                     }
-                }
-                items(
-                    count = yearMonth.daysInMonth,
-                    key = { day ->
-                        "current_${yearMonth.year}_${yearMonth.month.number}_${day + 1}"
-                    },
-                ) { day ->
-                    val date = LocalDate(yearMonth.year, yearMonth.month, day + 1)
-                    DayCell(
-                        date = date,
-                        isCurrentMonth = true,
-                        cellSize = dayCellSize,
-                        onClick = onClickDay,
-                    )
-                }
-                items(
-                    count = remainingCells,
-                    key = { day -> "next_${nextYear}_${nextMonth.number}_${day + 1}" },
-                ) { day ->
-                    val date = LocalDate(nextYear, nextMonth, day + 1)
-                    DayCell(
-                        date = date,
-                        isCurrentMonth = false,
-                        cellSize = dayCellSize,
-                        onClick = onClickDay,
-                    )
                 }
             }
         }
@@ -292,13 +297,11 @@ private fun MonthGrid(
 private fun DayCell(
     date: LocalDate,
     isCurrentMonth: Boolean,
+    today: LocalDate,
     cellSize: DpSize,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val today = Clock.System.now()
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
     val isToday = date == today
     Box(
         modifier = modifier
@@ -335,3 +338,4 @@ private fun DayCell(
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
+private const val TOTAL_MONTHS = 12

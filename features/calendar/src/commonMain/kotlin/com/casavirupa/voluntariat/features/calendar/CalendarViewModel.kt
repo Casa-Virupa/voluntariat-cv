@@ -13,8 +13,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Month
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 class CalendarViewModel(
     private val calendarRepository: CalendarRepository,
@@ -25,44 +27,45 @@ class CalendarViewModel(
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events.asStateFlow()
 
+    val todayDate
+        get() = Clock.System.now()
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+
     init {
         viewModelScope.launch {
             yearMonth.collectLatest { yearMonth ->
-                loadEvents(yearMonth.month.number)
+                loadEvents(yearMonth)
             }
         }
     }
 
     fun onNextMonth() {
-        _yearMonth.update { yearMonth ->
-            if (isLastMonth(yearMonth.month)) {
-                yearMonth.copy(
-                    year = yearMonth.nextYear,
-                    month = Month(FIRST_MONTH_NUMBER)
-                )
-            } else {
-                yearMonth.copy(month = yearMonth.nextMonth)
-            }
+        _yearMonth.update { current ->
+            current.copy(
+                year = current.nextYear,
+                month = current.nextMonth,
+            )
         }
     }
 
     fun onPreviousMonth() {
-        _yearMonth.update { yearMonth ->
-            if (isFirstMonth(yearMonth.month)) {
-                yearMonth.copy(
-                    year = yearMonth.prevYear,
-                    month = Month(LAST_MONTH_NUMBER)
-                )
-            } else {
-                yearMonth.copy(month = yearMonth.prevMonth)
-            }
+        _yearMonth.update { current ->
+            current.copy(
+                year = current.prevYear,
+                month = current.prevMonth,
+            )
         }
     }
 
-    private fun loadEvents(monthNumber: Int) {
+    fun onYearMonthChanged(newYearMonth: YearMonth) {
+        _yearMonth.update { newYearMonth }
+    }
+
+    private fun loadEvents(yearMonth: YearMonth) {
         viewModelScope.launch {
             calendarRepository
-                .getCalendarEvents(monthNumber = monthNumber)
+                .getCalendarEvents(year = yearMonth.year, monthNumber = yearMonth.month.number)
                 .onSuccess { events ->
                     _events.update { events }
                 }.onFailure {
@@ -70,11 +73,4 @@ class CalendarViewModel(
                 }
         }
     }
-
-    private fun isLastMonth(month: Month) = month.number == Month.entries.last().number
-
-    private fun isFirstMonth(month: Month) = month.number == Month.entries.first().number
 }
-
-private const val FIRST_MONTH_NUMBER = 1
-private const val LAST_MONTH_NUMBER = 12

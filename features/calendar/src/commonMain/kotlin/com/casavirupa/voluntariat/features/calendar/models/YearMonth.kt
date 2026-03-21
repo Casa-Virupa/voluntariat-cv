@@ -16,13 +16,16 @@ data class YearMonth(
 
     val daysInMonth = month.lengthOfMonth(year.isLeap())
 
-    val nextMonth = Month(month.number + 1)
 
-    val nextYear = if (nextMonth.number == 1) year + 1 else year
+    val nextMonth = if (month.number == 12) Month(1) else Month(month.number + 1)
 
-    val prevMonth = Month(month.number - 1)
+    val nextYear = if (month.number == 12) year + 1 else year
 
-    val prevYear = if (prevMonth.number == 12) year - 1 else year
+    val prevMonth = if (month.number == 1) Month(12) else Month(month.number - 1)
+
+    val prevYear = if (month.number == 1) year - 1 else year
+
+    val daysInPrevMonth = prevMonth.lengthOfMonth(prevYear.isLeap())
 }
 
 internal fun Month.lengthOfMonth(isLeap: Boolean): Int =
