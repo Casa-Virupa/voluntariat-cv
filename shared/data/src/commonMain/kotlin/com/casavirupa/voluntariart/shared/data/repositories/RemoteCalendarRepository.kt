@@ -4,7 +4,7 @@ import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Event
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 
-class FirebaseCalendarRepository(
+class RemoteCalendarRepository(
     val firestore: FirebaseFirestore,
 ) : CalendarRepository {
     override suspend fun getCalendarEvents(monthNumber: Int): Result<List<Event>> =
