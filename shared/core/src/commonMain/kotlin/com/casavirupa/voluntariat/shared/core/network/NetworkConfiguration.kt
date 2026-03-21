@@ -1,6 +1,5 @@
 package com.casavirupa.voluntariat.shared.core.network
 
-import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -23,7 +22,6 @@ object NetworkConfiguration {
         }
         install(DefaultRequest) {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
-            url(CalendarConstants.SCRIPT_URL)
         }
     }
 }

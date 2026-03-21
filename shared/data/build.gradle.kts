@@ -13,10 +13,12 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
         }
         commonMain.dependencies {
+            implementation(projects.shared.core)
             implementation(projects.shared.domain)
             implementation(libs.gitlive.firebase.auth)
             implementation(libs.gitlive.firebase.firestore)
 
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
 
             implementation(project.dependencies.platform(libs.ktor.bom))
