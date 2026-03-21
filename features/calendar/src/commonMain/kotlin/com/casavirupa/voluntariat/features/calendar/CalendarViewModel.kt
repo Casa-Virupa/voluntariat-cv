@@ -2,6 +2,7 @@ package com.casavirupa.voluntariat.features.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
@@ -36,6 +37,7 @@ class CalendarViewModel(
         viewModelScope.launch {
             yearMonth.collectLatest { yearMonth ->
                 loadEvents(yearMonth)
+                calendarRepository.getGoogleCalendarEvents(yearMonth.year, yearMonth.month.number)
             }
         }
     }
