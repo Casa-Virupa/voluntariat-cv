@@ -2,11 +2,13 @@ package com.casavirupa.voluntariat.features.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Event
+import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +28,11 @@ class CalendarViewModel(
 
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events.asStateFlow()
+
+    private val _googleCalendarEvents = MutableStateFlow<List<GoogleCalendarEvent>>(emptyList())
+    val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
+        _googleCalendarEvents.asStateFlow()
+
 
     val todayDate
         get() = Clock.System.now()
@@ -69,6 +76,19 @@ class CalendarViewModel(
                 .onSuccess { events ->
                     _events.update { events }
                 }.onFailure {
+                    // TODO: Handle error
+                }
+        }
+        viewModelScope.launch {
+            calendarRepository
+                .getGoogleCalendarEvents(
+                    year = yearMonth.year,
+                    monthNumber = yearMonth.month.number,
+                ).onSuccess { events ->
+                    Logger.d("CasaVirupaGoogleCalendarEvents") { events.map { it.id }.toString() }
+                    _googleCalendarEvents.update { events }
+                }.onFailure {
+                    Logger.d("GoogleCalendarEvents") { it.message.toString() }
                     // TODO: Handle error
                 }
         }
