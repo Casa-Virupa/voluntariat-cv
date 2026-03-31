@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +43,7 @@ import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.Event
+import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -57,10 +59,12 @@ import voluntariatcv.features.calendar.generated.resources.select_volunteering_t
 @Composable
 internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
     val events by viewModel.events.collectAsStateWithLifecycle()
+    val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
 
     CalendarContent(
         events = events,
+        googleCalendarEvents = googleCalendarEvents,
         yearMonth = currentMonth,
         today = viewModel.todayDate,
         onPreviousMonth = viewModel::onPreviousMonth,
@@ -72,6 +76,7 @@ internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
 @Composable
 private fun CalendarContent(
     events: List<Event>,
+    googleCalendarEvents: List<GoogleCalendarEvent>,
     yearMonth: YearMonth,
     today: LocalDate,
     onPreviousMonth: () -> Unit,
@@ -128,6 +133,7 @@ private fun CalendarContent(
                 MonthGrid(
                     yearMonth = yearMonth,
                     today = today,
+                    googleCalendarEvents = googleCalendarEvents,
                     onClickDay = {},
                 )
             }
@@ -248,6 +254,7 @@ private fun MonthGrid(
     yearMonth: YearMonth,
     onClickDay: () -> Unit,
     today: LocalDate,
+    googleCalendarEvents: List<GoogleCalendarEvent>,
     modifier: Modifier = Modifier,
 ) {
     val calendarDays = remember(yearMonth) {
@@ -278,11 +285,14 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-
+                        val googleCalendarEvent = googleCalendarEvents.firstOrNull {
+                            it.start.day == date.day && it.start.month == date.month
+                        }
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
                             today = today,
+                            googleCalendarEvent = googleCalendarEvent,
                             cellSize = dayCellSize,
                             onClick = onClickDay
                         )
@@ -299,6 +309,7 @@ private fun DayCell(
     isCurrentMonth: Boolean,
     today: LocalDate,
     cellSize: DpSize,
+    googleCalendarEvent: GoogleCalendarEvent?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -314,26 +325,37 @@ private fun DayCell(
             .clickable { onClick() },
         contentAlignment = Alignment.TopCenter,
     ) {
-        val selectionBackgroundColor = if (isToday) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            Color.Transparent
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val selectionBackgroundColor = if (isToday) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.Transparent
+            }
+            Text(
+                text = date.day.toString(),
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(color = selectionBackgroundColor, shape = CircleShape)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.titleSmall,
+                color =
+                    when {
+                        isToday -> MaterialTheme.colorScheme.onPrimary
+                        isCurrentMonth -> MaterialTheme.colorScheme.onSurface
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                textAlign = TextAlign.Center,
+            )
+            if (googleCalendarEvent != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp)
+                        .height(6.dp)
+                        .background(Color.Blue)
+                )
+            }
         }
-        Text(
-            text = date.day.toString(),
-            modifier = Modifier
-                .padding(8.dp)
-                .background(color = selectionBackgroundColor, shape = CircleShape)
-                .padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.titleSmall,
-            color =
-                when {
-                    isToday -> MaterialTheme.colorScheme.onPrimary
-                    isCurrentMonth -> MaterialTheme.colorScheme.onSurface
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
