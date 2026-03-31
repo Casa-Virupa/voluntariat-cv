@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.calendar
+package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
@@ -57,7 +58,10 @@ import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
 import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
 
 @Composable
-internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
+internal fun CalendarScreen(
+    onNavToReservationForm: () -> Unit,
+    viewModel: CalendarViewModel = koinViewModel()
+) {
     val events by viewModel.events.collectAsStateWithLifecycle()
     val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
@@ -69,7 +73,8 @@ internal fun CalendarScreen(viewModel: CalendarViewModel = koinViewModel()) {
         today = viewModel.todayDate,
         onPreviousMonth = viewModel::onPreviousMonth,
         onNextMonth = viewModel::onNextMonth,
-        onYearMonthChanged = viewModel::onYearMonthChanged
+        onYearMonthChanged = viewModel::onYearMonthChanged,
+        onNavToReservationForm = onNavToReservationForm,
     )
 }
 
@@ -82,6 +87,7 @@ private fun CalendarContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onYearMonthChanged: (YearMonth) -> Unit,
+    onNavToReservationForm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -96,7 +102,7 @@ private fun CalendarContent(
         floatingActionButton = {
             CVFabButton(
                 icon = painterResource(Res.drawable.ic_add),
-                onClick = {},
+                onClick = onNavToReservationForm,
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,

@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.calendar
+package com.casavirupa.voluntariat.features.calendar.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -85,7 +85,6 @@ class CalendarViewModel(
                     year = yearMonth.year,
                     monthNumber = yearMonth.month.number,
                 ).onSuccess { events ->
-                    Logger.d("CasaVirupaGoogleCalendarEvents") { events.map { it.id }.toString() }
                     _googleCalendarEvents.update { events }
                 }.onFailure {
                     Logger.d("GoogleCalendarEvents") { it.message.toString() }
