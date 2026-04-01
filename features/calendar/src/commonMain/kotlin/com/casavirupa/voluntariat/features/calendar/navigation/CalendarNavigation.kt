@@ -20,6 +20,8 @@ fun EntryProviderScope<NavKey>.calendarEntry(navigator: MainNavigator) {
         )
     }
     entry<ReservationFormNavKey> {
-        ReservationFormScreen()
+        ReservationFormScreen(
+            onNavBack = { navigator.goBack() }
+        )
     }
 }

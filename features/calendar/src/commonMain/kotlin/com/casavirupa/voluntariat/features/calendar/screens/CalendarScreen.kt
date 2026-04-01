@@ -106,7 +106,6 @@ private fun CalendarContent(
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
         Column(
             modifier = Modifier

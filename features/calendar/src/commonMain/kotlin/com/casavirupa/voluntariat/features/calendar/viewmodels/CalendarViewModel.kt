@@ -43,6 +43,7 @@ class CalendarViewModel(
         viewModelScope.launch {
             yearMonth.collectLatest { yearMonth ->
                 loadEvents(yearMonth)
+                loadGoogleCalendarEvents(yearMonth)
             }
         }
     }
@@ -79,6 +80,9 @@ class CalendarViewModel(
                     // TODO: Handle error
                 }
         }
+    }
+
+    private fun loadGoogleCalendarEvents(yearMonth: YearMonth) {
         viewModelScope.launch {
             calendarRepository
                 .getGoogleCalendarEvents(
