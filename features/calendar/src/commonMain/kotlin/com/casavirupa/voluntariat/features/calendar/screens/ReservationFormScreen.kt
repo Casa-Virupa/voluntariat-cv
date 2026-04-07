@@ -1,37 +1,91 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
+import com.casavirupa.voluntariat.features.calendar.viewmodels.MealType
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
+import com.casavirupa.voluntariat.features.calendar.viewmodels.ScheduleRange
+import com.casavirupa.voluntariat.features.calendar.viewmodels.TechnicalAreaTurn
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
+import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
+import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_close
 
 @Composable
-fun ReservationFormScreen(
+internal fun ReservationFormScreen(
     onNavBack: () -> Unit,
     viewModel: ReservationFormViewModel = koinViewModel()
 ) {
+    val date by viewModel.date.collectAsStateWithLifecycle()
+    val sleep by viewModel.sleep.collectAsStateWithLifecycle()
+    val schedule by viewModel.schedule.collectAsStateWithLifecycle()
+    val technicalArea by viewModel.technicalArea.collectAsStateWithLifecycle()
+    val meal by viewModel.meal.collectAsStateWithLifecycle()
+
     ReservationFormContent(
         onNavBack = onNavBack,
+        date = date,
+        sleep = sleep,
+        schedule = schedule,
+        technicalArea = technicalArea,
+        meal = meal,
+        onDateChanged = viewModel::onDateChanged,
+        onSleepChanged = viewModel::onSleepChanged,
+        onScheduleChanged = viewModel::onScheduleChanged,
+        onTechnicalAreaChanged = viewModel::onTechnicalAreaChanged,
+        onMealChanged = viewModel::onMealChanged,
+        onConfirm = viewModel::onConfirm,
     )
 }
 
 @Composable
 private fun ReservationFormContent(
     onNavBack: () -> Unit,
+    date: LocalDate?,
+    sleep: Boolean,
+    schedule: ScheduleRange?,
+    technicalArea: TechnicalAreaTurn?,
+    meal: MealType?,
+    onDateChanged: (LocalDate) -> Unit,
+    onSleepChanged: (Boolean) -> Unit,
+    onScheduleChanged: (ScheduleRange) -> Unit,
+    onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
+    onMealChanged: (MealType) -> Unit,
+    onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -51,18 +105,29 @@ private fun ReservationFormContent(
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize(),
+                .fillMaxSize()
         ) {
             ReservationForm(
-                modifier = Modifier.weight(1f),
+                date = date,
+                sleep = sleep,
+                schedule = schedule,
+                technicalArea = technicalArea,
+                meal = meal,
+                onDateChanged = onDateChanged,
+                onSleepChanged = onSleepChanged,
+                onScheduleChanged = onScheduleChanged,
+                onTechnicalAreaChanged = onTechnicalAreaChanged,
+                onMealChanged = onMealChanged,
+                modifier = Modifier.fillMaxSize(),
             )
             CVButton(
                 text = "Confirmar",
-                onClick = {},
+                onClick = onConfirm,
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 24.dp),
             )
@@ -72,9 +137,170 @@ private fun ReservationFormContent(
 
 @Composable
 private fun ReservationForm(
+    date: LocalDate?,
+    sleep: Boolean,
+    schedule: ScheduleRange?,
+    technicalArea: TechnicalAreaTurn?,
+    meal: MealType?,
+    onDateChanged: (LocalDate) -> Unit,
+    onSleepChanged: (Boolean) -> Unit,
+    onScheduleChanged: (ScheduleRange) -> Unit,
+    onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
+    onMealChanged: (MealType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
-
+    Column(
+        modifier = modifier
+            .padding(top = 12.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        FormSection(
+            title = "Triar la data",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+        ) {
+            DateTextField(
+                date = date,
+                onDateChanged = onDateChanged,
+                placeholder = "dd/mm/aaaa",
+                pattern = DATE_PATTERN,
+            )
+        }
+        HorizontalDivider()
+        FormSection(
+            title = "Pernoctació",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+        ) {
+            SleepSwitch(
+                sleep = sleep,
+                onSleepChanged = onSleepChanged,
+            )
+        }
+        HorizontalDivider()
+        FormSection(
+            title = "Horari",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+        ) {
+            ChipOptionsSelector(
+                options = ScheduleRange.entries.toList(),
+                selected = schedule,
+                onOptionSelected = onScheduleChanged,
+                displayMode = { Text(it.name) },
+            )
+        }
+        HorizontalDivider()
+        FormSection(
+            title = "Àrea tècnica",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+        ) {
+            ChipOptionsSelector(
+                options = TechnicalAreaTurn.entries.toList(),
+                selected = technicalArea,
+                onOptionSelected = onTechnicalAreaChanged,
+                displayMode = { Text(it.name) },
+            )
+        }
+        HorizontalDivider()
+        FormSection(
+            title = "Àpats inclosos",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+        ) {
+            ChipOptionsSelector(
+                options = MealType.entries.toList(),
+                selected = meal,
+                onOptionSelected = onMealChanged,
+                displayMode = { Text(it.name) },
+            )
+        }
+        Spacer(Modifier.height(80.dp))
     }
 }
+
+
+@Composable
+private fun FormSection(
+    title: String,
+    icon: Painter,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = modifier.padding(vertical = 20.dp, horizontal = 16.dp)) {
+        Row(
+            modifier = Modifier.padding(bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(20.dp)
+                    .padding(end = 8.dp),
+            )
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        content()
+    }
+}
+
+@Composable
+private fun SleepSwitch(
+    sleep: Boolean,
+    onSleepChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .border(width = 1.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Em quedo a dormir",
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Switch(
+            checked = sleep,
+            onCheckedChange = onSleepChanged,
+        )
+    }
+}
+
+@Composable
+private fun <T> ChipOptionsSelector(
+    options: List<T>,
+    selected: T?,
+    onOptionSelected: (T) -> Unit,
+    displayMode: @Composable (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        options.forEach { option ->
+            FilterChip(
+                selected = option == selected,
+                onClick = { onOptionSelected(option) },
+                label = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        displayMode(option)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                shape = CutCornerShape(0.dp),
+            )
+        }
+    }
+}
+
+private const val DATE_PATTERN = "d MMMM yyyy"

@@ -7,4 +7,10 @@ kotlin {
     androidLibrary {
         namespace = "com.casavirupa.voluntariat.shared.designsystem"
     }
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.shared.core)
+            implementation(libs.kotlinx.datetime)
+        }
+    }
 }
