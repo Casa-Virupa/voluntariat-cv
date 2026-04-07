@@ -1,0 +1,14 @@
+package com.casavirupa.voluntariart.shared.data.repositories.requests
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class FirebaseReservation(
+    val id: String,
+    val userId: String,
+    val date: String,
+    val scheduleRange: String,
+    val technicalAreaTurn: String,
+    val mealType: String,
+    val sleep: Boolean,
+)
