@@ -60,6 +60,7 @@ import voluntariatcv.features.calendar.generated.resources.select_volunteering_t
 @Composable
 internal fun CalendarScreen(
     onNavToReservationForm: () -> Unit,
+    onDayClick: (LocalDate) -> Unit,
     viewModel: CalendarViewModel = koinViewModel()
 ) {
     val events by viewModel.events.collectAsStateWithLifecycle()
@@ -75,6 +76,7 @@ internal fun CalendarScreen(
         onNextMonth = viewModel::onNextMonth,
         onYearMonthChanged = viewModel::onYearMonthChanged,
         onNavToReservationForm = onNavToReservationForm,
+        onDayClick = onDayClick,
     )
 }
 
@@ -88,6 +90,7 @@ private fun CalendarContent(
     onNextMonth: () -> Unit,
     onYearMonthChanged: (YearMonth) -> Unit,
     onNavToReservationForm: () -> Unit,
+    onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -139,7 +142,7 @@ private fun CalendarContent(
                     yearMonth = yearMonth,
                     today = today,
                     googleCalendarEvents = googleCalendarEvents,
-                    onClickDay = {},
+                    onDayClick = onDayClick,
                 )
             }
         }
@@ -257,7 +260,7 @@ private fun WeekHeader(modifier: Modifier = Modifier) {
 @Composable
 private fun MonthGrid(
     yearMonth: YearMonth,
-    onClickDay: () -> Unit,
+    onDayClick: (LocalDate) -> Unit,
     today: LocalDate,
     googleCalendarEvents: List<GoogleCalendarEvent>,
     modifier: Modifier = Modifier,
@@ -299,7 +302,7 @@ private fun MonthGrid(
                             today = today,
                             googleCalendarEvent = googleCalendarEvent,
                             cellSize = dayCellSize,
-                            onClick = onClickDay
+                            onClick = { onDayClick(date) }
                         )
                     }
                 }
