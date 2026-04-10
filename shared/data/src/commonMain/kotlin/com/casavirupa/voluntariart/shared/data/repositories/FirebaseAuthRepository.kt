@@ -55,13 +55,13 @@ class FirebaseAuthRepository(
             .document(user.uid)
             .get()
             .data<FirestoreUser>()
-            .let { Result.success(it.toDomainModel(email)) }
+            .let { Result.success(it.toDomainModel(UserId(user.uid), email)) }
     }
 }
 
-private fun FirestoreUser.toDomainModel(email: String): User =
+private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
     User(
-        id = UserId(id),
+        id = id,
         name = name,
         email = email,
         role = role.toUserRole(),

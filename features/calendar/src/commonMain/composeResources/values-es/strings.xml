@@ -12,4 +12,19 @@
     <string name="november">Noviembre</string>
     <string name="december">Diciembre</string>
     <string name="select_volunteering_title">Selecciona el dia de voluntariado</string>
+    <string name="reservation_form_title">Reserva de Voluntariado</string>
+    <string name="confirm">Confirmar</string>
+    <string name="select_date">Elegir la fecha</string>
+    <string name="date_placeholder">dd/mm/aaaa</string>
+    <string name="overnight_stay">Pernoctación</string>
+    <string name="stay_to_sleep">Me quedo a dormir</string>
+    <string name="schedule">Horario</string>
+    <string name="technical_area">Área técnica</string>
+    <string name="meals_included">Comidas incluidas</string>
+    <string name="morning">Mañana</string>
+    <string name="afternoon">Tarde</string>
+    <string name="all_day">Todo el día</string>
+    <string name="breakfast">Desayuno</string>
+    <string name="lunch">Almuerzo</string>
+    <string name="dinner">Cena</string>
 </resources>
