@@ -24,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +33,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
-import com.casavirupa.voluntariat.features.calendar.viewmodels.MealType
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
-import com.casavirupa.voluntariat.features.calendar.viewmodels.ScheduleRange
-import com.casavirupa.voluntariat.features.calendar.viewmodels.TechnicalAreaTurn
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
+import com.casavirupa.voluntariat.shared.model.calendar.MealType
+import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
+import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
+import kotlinx.coroutines.flow.filter
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,6 +72,14 @@ internal fun ReservationFormScreen(
         onMealChanged = viewModel::onMealChanged,
         onConfirm = viewModel::onConfirm,
     )
+
+    LaunchedEffect(viewModel) {
+        viewModel.uiState
+            .filter { it.navigateBack }
+            .collect {
+                onNavBack()
+            }
+    }
 }
 
 @Composable

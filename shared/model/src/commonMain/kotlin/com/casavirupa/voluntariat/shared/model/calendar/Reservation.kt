@@ -22,6 +22,7 @@ enum class ScheduleRange {
 enum class TechnicalAreaTurn {
     Morning,
     Afternoon,
+    AllDay,
 }
 
 enum class MealType {

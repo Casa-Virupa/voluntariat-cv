@@ -21,6 +21,9 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(ReservationFormUiState())
+    val uiState: StateFlow<ReservationFormUiState> = _uiState.asStateFlow()
+
     private val _date = MutableStateFlow<LocalDate?>(null)
     val date: StateFlow<LocalDate?> = _date.asStateFlow()
 
@@ -68,7 +71,7 @@ class ReservationFormViewModel(
                     calendarRepository
                         .reserveDay(user.id, buildReservation())
                         .onSuccess {
-
+                            navigateBack()
                         }.onFailure {
                             // TODO: Show error
                             Logger.d(LOG_TAG) { "Error reserving a day" }
@@ -95,6 +98,14 @@ class ReservationFormViewModel(
             mealType = meal.value!!,
             sleep = sleep.value,
         )
+
+    private fun navigateBack() {
+        _uiState.update { it.copy(navigateBack = true) }
+    }
 }
+
+data class ReservationFormUiState(
+    val navigateBack: Boolean = false,
+)
 
 private const val LOG_TAG = "ReservationFormViewModel"
