@@ -2,7 +2,6 @@ package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,9 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +30,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.casavirupa.voluntariat.features.calendar.components.ChipOptionsSelector
 import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
@@ -40,7 +38,6 @@ import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.model.calendar.MealType
 import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
 import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
-import kotlinx.coroutines.flow.filter
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -296,38 +293,6 @@ private fun SleepSwitch(
             checked = sleep,
             onCheckedChange = onSleepChanged,
         )
-    }
-}
-
-@Composable
-private fun <T> ChipOptionsSelector(
-    options: List<T>,
-    selected: T?,
-    onOptionSelected: (T) -> Unit,
-    displayMode: @Composable (T) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        options.forEach { option ->
-            FilterChip(
-                selected = option == selected,
-                onClick = { onOptionSelected(option) },
-                label = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        displayMode(option)
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                shape = CutCornerShape(0.dp),
-            )
-        }
     }
 }
 
