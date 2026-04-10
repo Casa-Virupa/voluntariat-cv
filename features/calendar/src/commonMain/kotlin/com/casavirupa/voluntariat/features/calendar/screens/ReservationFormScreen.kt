@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
@@ -42,16 +43,33 @@ import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
 import kotlinx.coroutines.flow.filter
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.afternoon
+import voluntariatcv.features.calendar.generated.resources.all_day
+import voluntariatcv.features.calendar.generated.resources.breakfast
+import voluntariatcv.features.calendar.generated.resources.confirm
+import voluntariatcv.features.calendar.generated.resources.date_placeholder
+import voluntariatcv.features.calendar.generated.resources.dinner
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_close
+import voluntariatcv.features.calendar.generated.resources.lunch
+import voluntariatcv.features.calendar.generated.resources.meals_included
+import voluntariatcv.features.calendar.generated.resources.morning
+import voluntariatcv.features.calendar.generated.resources.overnight_stay
+import voluntariatcv.features.calendar.generated.resources.reservation_form_title
+import voluntariatcv.features.calendar.generated.resources.schedule
+import voluntariatcv.features.calendar.generated.resources.select_date
+import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
+import voluntariatcv.features.calendar.generated.resources.technical_area
 
 @Composable
 internal fun ReservationFormScreen(
     onNavBack: () -> Unit,
     viewModel: ReservationFormViewModel = koinViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
     val sleep by viewModel.sleep.collectAsStateWithLifecycle()
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
@@ -73,12 +91,12 @@ internal fun ReservationFormScreen(
         onConfirm = viewModel::onConfirm,
     )
 
-    LaunchedEffect(viewModel) {
-        viewModel.uiState
-            .filter { it.navigateBack }
-            .collect {
-                onNavBack()
-            }
+    val currentOnNavBack by rememberUpdatedState(onNavBack)
+    LaunchedEffect(uiState.isFormSavedSuccessfully) {
+        if (uiState.isFormSavedSuccessfully) {
+            currentOnNavBack()
+            viewModel.onNavigationHandled()
+        }
     }
 }
 
@@ -102,7 +120,7 @@ private fun ReservationFormContent(
         modifier = modifier,
         topBar = {
             MediumTopBar(
-                title = "Reserva de Voluntariat",
+                title = stringResource(Res.string.reservation_form_title),
                 navigationIcon = {
                     IconButton(onClick = onNavBack) {
                         Icon(
@@ -134,7 +152,7 @@ private fun ReservationFormContent(
                 modifier = Modifier.fillMaxSize(),
             )
             CVButton(
-                text = "Confirmar",
+                text = stringResource(Res.string.confirm),
                 onClick = onConfirm,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -165,19 +183,19 @@ private fun ReservationForm(
             .verticalScroll(rememberScrollState()),
     ) {
         FormSection(
-            title = "Triar la data",
+            title = stringResource(Res.string.select_date),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             DateTextField(
                 date = date,
                 onDateChanged = onDateChanged,
-                placeholder = "dd/mm/aaaa",
+                placeholder = stringResource(Res.string.date_placeholder),
                 pattern = DATE_PATTERN,
             )
         }
         HorizontalDivider()
         FormSection(
-            title = "Pernoctació",
+            title = stringResource(Res.string.overnight_stay),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             SleepSwitch(
@@ -187,38 +205,38 @@ private fun ReservationForm(
         }
         HorizontalDivider()
         FormSection(
-            title = "Horari",
+            title = stringResource(Res.string.schedule),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
                 options = ScheduleRange.entries.toList(),
                 selected = schedule,
                 onOptionSelected = onScheduleChanged,
-                displayMode = { Text(it.name) },
+                displayMode = { Text(it.displayName()) },
             )
         }
         HorizontalDivider()
         FormSection(
-            title = "Àrea tècnica",
+            title = stringResource(Res.string.technical_area),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
                 options = TechnicalAreaTurn.entries.toList(),
                 selected = technicalArea,
                 onOptionSelected = onTechnicalAreaChanged,
-                displayMode = { Text(it.name) },
+                displayMode = { Text(it.displayName()) },
             )
         }
         HorizontalDivider()
         FormSection(
-            title = "Àpats inclosos",
+            title = stringResource(Res.string.meals_included),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
                 options = MealType.entries.toList(),
                 selected = meal,
                 onOptionSelected = onMealChanged,
-                displayMode = { Text(it.name) },
+                displayMode = { Text(it.displayName()) },
             )
         }
         Spacer(Modifier.height(80.dp))
@@ -269,7 +287,7 @@ private fun SleepSwitch(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Em quedo a dormir",
+            text = stringResource(Res.string.stay_to_sleep),
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
@@ -311,6 +329,27 @@ private fun <T> ChipOptionsSelector(
             )
         }
     }
+}
+
+@Composable
+private fun ScheduleRange.displayName(): String = when (this) {
+    ScheduleRange.Morning -> stringResource(Res.string.morning)
+    ScheduleRange.Afternoon -> stringResource(Res.string.afternoon)
+    ScheduleRange.AllDay -> stringResource(Res.string.all_day)
+}
+
+@Composable
+private fun TechnicalAreaTurn.displayName(): String = when (this) {
+    TechnicalAreaTurn.Morning -> stringResource(Res.string.morning)
+    TechnicalAreaTurn.Afternoon -> stringResource(Res.string.afternoon)
+    TechnicalAreaTurn.AllDay -> stringResource(Res.string.all_day)
+}
+
+@Composable
+private fun MealType.displayName(): String = when (this) {
+    MealType.Breakfast -> stringResource(Res.string.breakfast)
+    MealType.Lunch -> stringResource(Res.string.lunch)
+    MealType.Dinner -> stringResource(Res.string.dinner)
 }
 
 private const val DATE_PATTERN = "d MMMM yyyy"

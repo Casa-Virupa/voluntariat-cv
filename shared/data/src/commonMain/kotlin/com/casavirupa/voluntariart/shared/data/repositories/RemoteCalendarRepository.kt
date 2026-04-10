@@ -61,7 +61,6 @@ private fun GoogleCalendarEventResponse.toDomainModel() =
 
 private fun Reservation.toFirebaseModel(userId: UserId) =
     FirebaseReservation(
-        id = id.value,
         userId = userId.value,
         date = date.toString(),
         scheduleRange = scheduleRange.name,

@@ -68,6 +68,7 @@ class ReservationFormViewModel(
             authRepository
                 .getCurrentUser()
                 .onSuccess { user ->
+                    Logger.d("asdd") { user.id.toString() }
                     calendarRepository
                         .reserveDay(user.id, buildReservation())
                         .onSuccess {
@@ -81,6 +82,10 @@ class ReservationFormViewModel(
                     Logger.d(LOG_TAG) { "Error getting current user when reserving a day" }
                 }
         }
+    }
+
+    fun onNavigationHandled() {
+        _uiState.update { it.copy(isFormSavedSuccessfully = false) }
     }
 
     private fun formInputsAreValid() =
@@ -100,12 +105,12 @@ class ReservationFormViewModel(
         )
 
     private fun navigateBack() {
-        _uiState.update { it.copy(navigateBack = true) }
+        _uiState.update { it.copy(isFormSavedSuccessfully = true) }
     }
 }
 
 data class ReservationFormUiState(
-    val navigateBack: Boolean = false,
+    val isFormSavedSuccessfully: Boolean = false,
 )
 
 private const val LOG_TAG = "ReservationFormViewModel"

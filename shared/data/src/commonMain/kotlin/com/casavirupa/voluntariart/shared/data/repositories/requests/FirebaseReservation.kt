@@ -4,7 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class FirebaseReservation(
-    val id: String,
     val userId: String,
     val date: String,
     val scheduleRange: String,
