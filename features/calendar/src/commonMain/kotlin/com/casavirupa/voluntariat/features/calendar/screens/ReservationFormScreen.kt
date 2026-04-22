@@ -312,7 +312,6 @@ private fun TechnicalAreaTurn.displayName(): String = when (this) {
 
 @Composable
 private fun Meal.displayName(): String = when (this) {
-    Meal.Breakfast -> stringResource(Res.string.breakfast)
     Meal.Lunch -> stringResource(Res.string.lunch)
     Meal.Dinner -> stringResource(Res.string.dinner)
 }

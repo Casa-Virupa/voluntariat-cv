@@ -26,7 +26,6 @@ enum class TechnicalAreaTurn {
 }
 
 enum class Meal {
-    Breakfast,
     Lunch,
     Dinner,
 }

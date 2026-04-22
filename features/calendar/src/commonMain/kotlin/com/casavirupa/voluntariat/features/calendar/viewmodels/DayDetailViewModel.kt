@@ -31,26 +31,29 @@ class DayDetailViewModel(
                     dayShifts = DayShifts(
                         allDayVolunteers = listOf(
                             VolunteerItemUi(
-                                name = "Nom Cognom",
-                                type = VolunteerType.General,
-                                meals = listOf(Meal.Breakfast, Meal.Lunch, Meal.Dinner),
+                                name = "Laura Vidal",
+                                type = VolunteerTypeUi.AllDay(
+                                    morning = VolunteerType.General,
+                                    afternoon = VolunteerType.Specific,
+                                ),
+                                meals = listOf(Meal.Lunch, Meal.Dinner),
                                 sleep = false,
                             )
                         ),
                         morningVolunteers = listOf(
                             VolunteerItemUi(
                                 name = "Nom Cognom",
-                                type = VolunteerType.General,
-                                meals = listOf(Meal.Breakfast, Meal.Lunch, Meal.Dinner),
-                                sleep = true,
+                                type = VolunteerTypeUi.Single(VolunteerType.General),
+                                meals = listOf(Meal.Lunch),
+                                sleep = false,
                             )
                         ),
                         afternoonVolunteers = listOf(
                             VolunteerItemUi(
                                 name = "Nom Cognom",
-                                type = VolunteerType.General,
-                                meals = listOf(Meal.Breakfast, Meal.Lunch, Meal.Dinner),
-                                sleep = false,
+                                type = VolunteerTypeUi.Single(VolunteerType.Specific),
+                                meals = listOf(Meal.Dinner),
+                                sleep = true,
                             )
                         ),
                     )
@@ -78,7 +81,16 @@ data class DayShifts(
 
 data class VolunteerItemUi(
     val name: String,
-    val type: VolunteerType,
+    val type: VolunteerTypeUi,
     val meals: List<Meal>,
     val sleep: Boolean,
 )
+
+sealed class VolunteerTypeUi {
+    data class Single(val type: VolunteerType) : VolunteerTypeUi()
+
+    data class AllDay(
+        val morning: VolunteerType,
+        val afternoon: VolunteerType,
+    ) : VolunteerTypeUi()
+}

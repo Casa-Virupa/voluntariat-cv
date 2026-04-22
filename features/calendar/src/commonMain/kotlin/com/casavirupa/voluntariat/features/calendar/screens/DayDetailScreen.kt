@@ -1,15 +1,18 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,12 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.casavirupa.voluntariat.features.calendar.components.CVTag
 import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailUiState
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayShifts
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DetailHeaderUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerItemUi
+import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -36,6 +41,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.ic_close
+import voluntariatcv.features.calendar.generated.resources.ic_lunch
+import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.num_of_volunteers
 
 @Composable
@@ -146,17 +153,37 @@ private fun VolunteerShiftItem(
         ) {
             Text(
                 text = volunteer.name,
+                modifier = Modifier.padding(bottom = 8.dp),
                 style = MaterialTheme.typography.titleLarge,
             )
-            Text(
-                text = volunteer.type.toString(),
-                style = MaterialTheme.typography.bodyMedium,
+            when (val volunteerType = volunteer.type) {
+                is VolunteerTypeUi.Single -> {
+                    CVTag(
+                        text = volunteerType.type.toString(),
+                        icon = painterResource(Res.drawable.ic_sun),
+                    )
+                }
+                is VolunteerTypeUi.AllDay -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CVTag(
+                            text = volunteerType.morning.toString(),
+                            icon = painterResource(Res.drawable.ic_sun),
+                        )
+                        CVTag(
+                            text = volunteerType.afternoon.toString(),
+                            icon = painterResource(Res.drawable.ic_sun),
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
             )
-            FlowRow {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 volunteer.meals.forEach { meal ->
-                    Text(
+                    CVTag(
                         text = meal.toString(),
-                        style = MaterialTheme.typography.bodyMedium,
+                        icon = painterResource(Res.drawable.ic_lunch),
                     )
                 }
                 if (volunteer.sleep) {
