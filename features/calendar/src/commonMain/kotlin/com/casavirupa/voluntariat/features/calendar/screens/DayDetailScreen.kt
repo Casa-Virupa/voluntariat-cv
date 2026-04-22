@@ -81,7 +81,7 @@ private fun DayDetailContent(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) { innerPadding ->
         DayShifts(
-            dayShifts = uiState.dayShifts ,
+            dayShifts = uiState.dayShifts,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
