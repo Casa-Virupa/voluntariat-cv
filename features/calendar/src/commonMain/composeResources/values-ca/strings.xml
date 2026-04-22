@@ -27,4 +27,8 @@
     <string name="breakfast">Esmorzar</string>
     <string name="lunch">Dinar</string>
     <string name="dinner">Sopar</string>
+    <string name="shift_morning">Torn de matí (10:00 - 14:00)</string>
+    <string name="shift_afternoon">Torn de tarda (16:30 - 20:30)</string>
+    <string name="general">General</string>
+    <string name="specific">Específic</string>
 </resources>
