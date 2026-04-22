@@ -19,3 +19,8 @@ enum class UserRole {
     CoordinationTeam,
     Unknown,
 }
+
+enum class VolunteerType {
+    General,
+    Specific
+}

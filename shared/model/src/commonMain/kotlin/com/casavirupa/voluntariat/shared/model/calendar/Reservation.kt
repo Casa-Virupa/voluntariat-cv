@@ -5,15 +5,15 @@ import kotlinx.datetime.LocalDate
 data class Reservation(
     val id: ReservationId,
     val date: LocalDate,
-    val scheduleRange: ScheduleRange,
+    val volunteerShift: VolunteerShift,
     val technicalAreaTurn: TechnicalAreaTurn,
-    val mealType: MealType,
+    val meal: Meal,
     val sleep: Boolean,
 )
 
 data class ReservationId(val value: String)
 
-enum class ScheduleRange {
+enum class VolunteerShift {
     Morning,
     Afternoon,
     AllDay,
@@ -25,7 +25,7 @@ enum class TechnicalAreaTurn {
     AllDay,
 }
 
-enum class MealType {
+enum class Meal {
     Breakfast,
     Lunch,
     Dinner,

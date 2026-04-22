@@ -35,8 +35,8 @@ import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
-import com.casavirupa.voluntariat.shared.model.calendar.MealType
-import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
+import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerShift
 import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
@@ -102,14 +102,14 @@ private fun ReservationFormContent(
     onNavBack: () -> Unit,
     date: LocalDate?,
     sleep: Boolean,
-    schedule: ScheduleRange?,
+    schedule: VolunteerShift?,
     technicalArea: TechnicalAreaTurn?,
-    meal: MealType?,
+    meal: Meal?,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
-    onScheduleChanged: (ScheduleRange) -> Unit,
+    onScheduleChanged: (VolunteerShift) -> Unit,
     onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
-    onMealChanged: (MealType) -> Unit,
+    onMealChanged: (Meal) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -164,14 +164,14 @@ private fun ReservationFormContent(
 private fun ReservationForm(
     date: LocalDate?,
     sleep: Boolean,
-    schedule: ScheduleRange?,
+    schedule: VolunteerShift?,
     technicalArea: TechnicalAreaTurn?,
-    meal: MealType?,
+    meal: Meal?,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
-    onScheduleChanged: (ScheduleRange) -> Unit,
+    onScheduleChanged: (VolunteerShift) -> Unit,
     onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
-    onMealChanged: (MealType) -> Unit,
+    onMealChanged: (Meal) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -206,7 +206,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = ScheduleRange.entries.toList(),
+                options = VolunteerShift.entries.toList(),
                 selected = schedule,
                 onOptionSelected = onScheduleChanged,
                 displayMode = { Text(it.displayName()) },
@@ -230,7 +230,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = MealType.entries.toList(),
+                options = Meal.entries.toList(),
                 selected = meal,
                 onOptionSelected = onMealChanged,
                 displayMode = { Text(it.displayName()) },
@@ -297,10 +297,10 @@ private fun SleepSwitch(
 }
 
 @Composable
-private fun ScheduleRange.displayName(): String = when (this) {
-    ScheduleRange.Morning -> stringResource(Res.string.morning)
-    ScheduleRange.Afternoon -> stringResource(Res.string.afternoon)
-    ScheduleRange.AllDay -> stringResource(Res.string.all_day)
+private fun VolunteerShift.displayName(): String = when (this) {
+    VolunteerShift.Morning -> stringResource(Res.string.morning)
+    VolunteerShift.Afternoon -> stringResource(Res.string.afternoon)
+    VolunteerShift.AllDay -> stringResource(Res.string.all_day)
 }
 
 @Composable
@@ -311,10 +311,10 @@ private fun TechnicalAreaTurn.displayName(): String = when (this) {
 }
 
 @Composable
-private fun MealType.displayName(): String = when (this) {
-    MealType.Breakfast -> stringResource(Res.string.breakfast)
-    MealType.Lunch -> stringResource(Res.string.lunch)
-    MealType.Dinner -> stringResource(Res.string.dinner)
+private fun Meal.displayName(): String = when (this) {
+    Meal.Breakfast -> stringResource(Res.string.breakfast)
+    Meal.Lunch -> stringResource(Res.string.lunch)
+    Meal.Dinner -> stringResource(Res.string.dinner)
 }
 
 private const val DATE_PATTERN = "d MMMM yyyy"

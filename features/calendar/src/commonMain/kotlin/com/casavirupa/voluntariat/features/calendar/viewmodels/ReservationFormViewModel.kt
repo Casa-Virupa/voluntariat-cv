@@ -5,10 +5,10 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.model.calendar.MealType
+import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Reservation
 import com.casavirupa.voluntariat.shared.model.calendar.ReservationId
-import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerShift
 import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,14 +30,14 @@ class ReservationFormViewModel(
     private val _sleep = MutableStateFlow(false)
     val sleep: StateFlow<Boolean> = _sleep.asStateFlow()
 
-    private val _schedule = MutableStateFlow<ScheduleRange?>(null)
-    val schedule: StateFlow<ScheduleRange?> = _schedule.asStateFlow()
+    private val _schedule = MutableStateFlow<VolunteerShift?>(null)
+    val schedule: StateFlow<VolunteerShift?> = _schedule.asStateFlow()
 
     private val _technicalArea = MutableStateFlow<TechnicalAreaTurn?>(null)
     val technicalArea: StateFlow<TechnicalAreaTurn?> = _technicalArea.asStateFlow()
 
-    private val _meal = MutableStateFlow<MealType?>(null)
-    val meal: StateFlow<MealType?> = _meal.asStateFlow()
+    private val _meal = MutableStateFlow<Meal?>(null)
+    val meal: StateFlow<Meal?> = _meal.asStateFlow()
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -47,7 +47,7 @@ class ReservationFormViewModel(
         _sleep.update { sleep }
     }
 
-    fun onScheduleChanged(schedules: ScheduleRange) {
+    fun onScheduleChanged(schedules: VolunteerShift) {
         _schedule.update { schedules }
     }
 
@@ -55,7 +55,7 @@ class ReservationFormViewModel(
         _technicalArea.update { technicalArea }
     }
 
-    fun onMealChanged(meal: MealType) {
+    fun onMealChanged(meal: Meal) {
         _meal.update { meal }
     }
 
@@ -98,9 +98,9 @@ class ReservationFormViewModel(
         Reservation(
             id = ReservationId(""),
             date = date.value!!,
-            scheduleRange = schedule.value!!,
+            volunteerShift = schedule.value!!,
             technicalAreaTurn = technicalArea.value!!,
-            mealType = meal.value!!,
+            meal = meal.value!!,
             sleep = sleep.value,
         )
 

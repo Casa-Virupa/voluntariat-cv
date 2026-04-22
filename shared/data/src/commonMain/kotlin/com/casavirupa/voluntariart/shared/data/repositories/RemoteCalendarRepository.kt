@@ -1,6 +1,5 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
-import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseReservation
 import com.casavirupa.voluntariart.shared.data.repositories.responses.GoogleCalendarEventResponse
 import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
@@ -9,13 +8,10 @@ import com.casavirupa.voluntariat.shared.model.calendar.Event
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.Reservation
 import com.casavirupa.voluntariat.shared.model.user.UserId
-import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.http.parameters
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
@@ -63,8 +59,8 @@ private fun Reservation.toFirebaseModel(userId: UserId) =
     FirebaseReservation(
         userId = userId.value,
         date = date.toString(),
-        scheduleRange = scheduleRange.name,
+        scheduleRange = volunteerShift.name,
         technicalAreaTurn = technicalAreaTurn.name,
-        mealType = mealType.name,
+        mealType = meal.name,
         sleep = sleep,
     )

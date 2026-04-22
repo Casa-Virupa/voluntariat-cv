@@ -3,8 +3,6 @@ package com.casavirupa.voluntariat.features.calendar.di
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
-import kotlinx.datetime.LocalDate
-import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 

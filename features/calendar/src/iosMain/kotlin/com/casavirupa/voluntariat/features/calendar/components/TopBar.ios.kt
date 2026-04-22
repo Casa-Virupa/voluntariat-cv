@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 actual fun MediumTopBar(
     title: String,
     navigationIcon: @Composable (() -> Unit),
-    modifier: Modifier
+    modifier: Modifier,
+    subtitle: String?,
 ) {
 }
