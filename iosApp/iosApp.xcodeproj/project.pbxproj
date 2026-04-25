@@ -163,23 +163,18 @@
 /* Begin PBXShellScriptBuildPhase section */
 		3179A80E56D4B8B84F6E0227 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputFileListPaths = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/../gradle/libs.versions.toml",
-				"$(SRCROOT)/../gradle.properties",
-				"$(SRCROOT)/../settings.gradle.kts",
-				"$(SRCROOT)/../build.gradle.kts",
-				"$(SRCROOT)/../shared/ui/build.gradle.kts",
 			);
 			name = "Compile Kotlin Framework";
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(SRCROOT)/../shared/ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)/Shared.framework/Shared",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
