@@ -9,6 +9,7 @@ expect fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
     onDismiss: () -> Unit,
+    minDate: LocalDate? = null,
 )
 
 @Composable

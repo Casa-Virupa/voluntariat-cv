@@ -152,6 +152,7 @@ fun DateTextField(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     pattern: String = "",
+    minDate: LocalDate? = null,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -173,7 +174,8 @@ fun DateTextField(
                     it?.let(onDateChanged)
                     showDatePicker = false
                 },
-                onDismiss = { showDatePicker = false }
+                onDismiss = { showDatePicker = false },
+                minDate = minDate,
             )
         }
     }
