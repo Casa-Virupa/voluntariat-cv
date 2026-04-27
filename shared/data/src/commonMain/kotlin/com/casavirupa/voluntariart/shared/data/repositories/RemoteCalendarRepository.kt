@@ -64,7 +64,7 @@ private fun Reservation.toFirebaseModel(userId: UserId) =
         userId = userId.value,
         date = date.toString(),
         scheduleRange = scheduleRange.name,
-        technicalAreaTurn = technicalAreaTurn.name,
-        mealType = mealType.name,
+        technicalAreaTurn = technicalAreaTurn?.name,
+        mealTypes = mealTypes.map { it.name },
         sleep = sleep,
     )

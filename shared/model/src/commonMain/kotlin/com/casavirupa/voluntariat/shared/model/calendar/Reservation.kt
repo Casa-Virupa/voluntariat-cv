@@ -6,8 +6,8 @@ data class Reservation(
     val id: ReservationId,
     val date: LocalDate,
     val scheduleRange: ScheduleRange,
-    val technicalAreaTurn: TechnicalAreaTurn,
-    val mealType: MealType,
+    val technicalAreaTurn: TechnicalAreaTurn?,
+    val mealTypes: Set<MealType>,
     val sleep: Boolean,
 )
 
