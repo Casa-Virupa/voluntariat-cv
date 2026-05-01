@@ -42,12 +42,13 @@ import platform.darwin.NSObject
 actual fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    minDate: LocalDate?,
 ) {
-    val coordinator = remember {
-        CalendarCoordinator(onDateChange = onDateSelected)
+    val coordinator = remember(minDate) {
+        CalendarCoordinator(onDateChange = onDateSelected, minDate = minDate)
     }
-    val selectionBehavior = remember {
+    val selectionBehavior = remember(coordinator) {
         UICalendarSelectionSingleDate(delegate = coordinator)
     }
 
@@ -87,8 +88,10 @@ actual fun NativeDatePicker(
     }
 }
 
-class CalendarCoordinator(private val onDateChange: (LocalDate?) -> Unit) :
-    NSObject(),
+class CalendarCoordinator(
+    private val onDateChange: (LocalDate?) -> Unit,
+    private val minDate: LocalDate? = null,
+) : NSObject(),
     UICalendarViewDelegateProtocol,
     UICalendarSelectionSingleDateDelegateProtocol {
     @ObjCSignatureOverride
@@ -103,7 +106,10 @@ class CalendarCoordinator(private val onDateChange: (LocalDate?) -> Unit) :
     override fun dateSelection(
         selection: UICalendarSelectionSingleDate,
         canSelectDate: NSDateComponents?,
-    ): Boolean = canSelectDate?.toLocalDate() != null
+    ): Boolean {
+        val date = canSelectDate?.toLocalDate() ?: return false
+        return minDate == null || date >= minDate
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)
