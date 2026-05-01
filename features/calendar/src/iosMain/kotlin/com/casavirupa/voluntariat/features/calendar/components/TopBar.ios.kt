@@ -1,6 +1,7 @@
 package com.casavirupa.voluntariat.features.calendar.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,21 +20,18 @@ actual fun MediumTopBar(
     navigationIcon: @Composable (() -> Unit),
     modifier: Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .statusBarsPadding()
             .padding(end = 4.dp, top = 12.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
         navigationIcon()
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineLarge.copy(
-                fontSize = 22.sp,
-                lineHeight = 28.sp,
-            ),
+            modifier = Modifier.padding(top = 12.dp, start = 16.dp),
+            style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.inverseOnSurface,
         )
     }
