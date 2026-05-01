@@ -11,16 +11,15 @@ data class User(
 )
 
 @JvmInline
-value class UserId(val value: String)
+value class UserId(val value: String) {
+    companion object {
+        val Empty = UserId("")
+    }
+}
 
 enum class UserRole {
     Volunteer,
     AreaResponsible,
     CoordinationTeam,
     Unknown,
-}
-
-enum class VolunteerType {
-    General,
-    Specific
 }

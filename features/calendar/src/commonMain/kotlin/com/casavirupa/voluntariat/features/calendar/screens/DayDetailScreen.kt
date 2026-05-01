@@ -31,7 +31,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.DayShifts
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerItemUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
-import com.casavirupa.voluntariat.shared.model.user.VolunteerType
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -109,9 +109,15 @@ private fun DayShifts(
     dayShifts: DayShifts,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = modifier) {
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         item {
-            ShiftTitle(text = stringResource(Res.string.all_day))
+            ShiftTitle(
+                text = stringResource(Res.string.all_day),
+                modifier = Modifier.padding(top = 16.dp),
+            )
         }
         items(dayShifts.allDayVolunteers) { volunteer ->
             VolunteerShiftItem(volunteer)
@@ -138,7 +144,7 @@ private fun ShiftTitle(
 ) {
     Text(
         text = text.uppercase(),
-        modifier = modifier.padding(top = 24.dp, bottom = 12.dp),
+        modifier = modifier.padding(top = 12.dp),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurface,
     )

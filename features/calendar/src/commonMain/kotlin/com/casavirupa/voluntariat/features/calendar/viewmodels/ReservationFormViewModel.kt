@@ -6,10 +6,11 @@ import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
-import com.casavirupa.voluntariat.shared.model.calendar.Reservation
-import com.casavirupa.voluntariat.shared.model.calendar.ReservationId
-import com.casavirupa.voluntariat.shared.model.calendar.VolunteerShift
-import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
+import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,11 +31,11 @@ class ReservationFormViewModel(
     private val _sleep = MutableStateFlow(false)
     val sleep: StateFlow<Boolean> = _sleep.asStateFlow()
 
-    private val _schedule = MutableStateFlow<VolunteerShift?>(null)
-    val schedule: StateFlow<VolunteerShift?> = _schedule.asStateFlow()
+    private val _schedule = MutableStateFlow<Shift?>(null)
+    val schedule: StateFlow<Shift?> = _schedule.asStateFlow()
 
-    private val _technicalArea = MutableStateFlow<TechnicalAreaTurn?>(null)
-    val technicalArea: StateFlow<TechnicalAreaTurn?> = _technicalArea.asStateFlow()
+    private val _technicalArea = MutableStateFlow<SpecificArea?>(null)
+    val technicalArea: StateFlow<SpecificArea?> = _technicalArea.asStateFlow()
 
     private val _meal = MutableStateFlow<Meal?>(null)
     val meal: StateFlow<Meal?> = _meal.asStateFlow()
@@ -47,11 +48,11 @@ class ReservationFormViewModel(
         _sleep.update { sleep }
     }
 
-    fun onScheduleChanged(schedules: VolunteerShift) {
+    fun onScheduleChanged(schedules: Shift) {
         _schedule.update { schedules }
     }
 
-    fun onTechnicalAreaChanged(technicalArea: TechnicalAreaTurn) {
+    fun onTechnicalAreaChanged(technicalArea: SpecificArea) {
         _technicalArea.update { technicalArea }
     }
 
@@ -95,11 +96,12 @@ class ReservationFormViewModel(
             meal.value != null
 
     private fun buildReservation() =
-        Reservation(
-            id = ReservationId(""),
+        Volunteer(
+            id = VolunteerId.Empty,
+            userId = UserId.Empty,
             date = date.value!!,
             volunteerShift = schedule.value!!,
-            technicalAreaTurn = technicalArea.value!!,
+            specificArea = technicalArea.value!!,
             meal = meal.value!!,
             sleep = sleep.value,
         )
