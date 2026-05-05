@@ -21,16 +21,50 @@ fun <T> ChipOptionsSelector(
     displayMode: @Composable (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    ChipOptionsRow(
+        options = options,
+        isSelected = { it == selected },
+        onOptionClick = onOptionSelected,
+        displayMode = displayMode,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun <T> ChipMultiOptionsSelector(
+    options: List<T>,
+    selected: Set<T>,
+    onOptionToggled: (T) -> Unit,
+    displayMode: @Composable (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ChipOptionsRow(
+        options = options,
+        isSelected = { it in selected },
+        onOptionClick = onOptionToggled,
+        displayMode = displayMode,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun <T> ChipOptionsRow(
+    options: List<T>,
+    isSelected: (T) -> Boolean,
+    onOptionClick: (T) -> Unit,
+    displayMode: @Composable (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         options.forEach { option ->
-            val isSelected = option == selected
+            val selectedState = isSelected(option)
             FilterChip(
-                selected = isSelected,
-                onClick = { onOptionSelected(option) },
+                selected = selectedState,
+                onClick = { onOptionClick(option) },
                 label = {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -49,7 +83,7 @@ fun <T> ChipOptionsSelector(
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
-                    selected = isSelected,
+                    selected = selectedState,
                     borderColor = MaterialTheme.colorScheme.outline,
                     selectedBorderColor = MaterialTheme.colorScheme.primary,
                     borderWidth = 1.dp,
