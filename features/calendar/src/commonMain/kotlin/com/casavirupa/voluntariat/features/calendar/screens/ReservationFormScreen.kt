@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.casavirupa.voluntariat.features.calendar.components.ChipMultiOptionsSelector
 import com.casavirupa.voluntariat.features.calendar.components.ChipOptionsSelector
 import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
@@ -73,7 +74,7 @@ internal fun ReservationFormScreen(
     val sleep by viewModel.sleep.collectAsStateWithLifecycle()
     val schedule by viewModel.schedule.collectAsStateWithLifecycle()
     val technicalArea by viewModel.technicalArea.collectAsStateWithLifecycle()
-    val meal by viewModel.meal.collectAsStateWithLifecycle()
+    val meals by viewModel.meals.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -81,7 +82,7 @@ internal fun ReservationFormScreen(
         sleep = sleep,
         schedule = schedule,
         technicalArea = technicalArea,
-        meal = meal,
+        meals = meals,
         onDateChanged = viewModel::onDateChanged,
         onSleepChanged = viewModel::onSleepChanged,
         onScheduleChanged = viewModel::onScheduleChanged,
@@ -106,7 +107,7 @@ private fun ReservationFormContent(
     sleep: Boolean,
     schedule: Shift?,
     technicalArea: SpecificArea?,
-    meal: Meal?,
+    meals: Set<Meal>,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
     onScheduleChanged: (Shift) -> Unit,
@@ -142,7 +143,7 @@ private fun ReservationFormContent(
                 sleep = sleep,
                 schedule = schedule,
                 technicalArea = technicalArea,
-                meal = meal,
+                meals = meals,
                 onDateChanged = onDateChanged,
                 onSleepChanged = onSleepChanged,
                 onScheduleChanged = onScheduleChanged,
@@ -168,7 +169,7 @@ private fun ReservationForm(
     sleep: Boolean,
     schedule: Shift?,
     technicalArea: SpecificArea?,
-    meal: Meal?,
+    meals: Set<Meal>,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
     onScheduleChanged: (Shift) -> Unit,
@@ -234,10 +235,10 @@ private fun ReservationForm(
             title = stringResource(Res.string.meals_included),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
-            ChipOptionsSelector(
+            ChipMultiOptionsSelector(
                 options = Meal.entries.filter { it != Meal.Unknown }.toList(),
-                selected = meal,
-                onOptionSelected = onMealChanged,
+                selected = meals,
+                onOptionToggled = onMealChanged,
                 displayMode = { Text(it.displayName()) },
             )
         }
