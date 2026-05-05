@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 data class FirebaseVolunteer(
     val userId: String,
     val date: String,
-    val scheduleRange: String,
-    val technicalAreaTurn: String?,
+    val shift: String,
+    val specificArea: String?,
     val mealTypes: List<String>,
     val sleep: Boolean,
 )

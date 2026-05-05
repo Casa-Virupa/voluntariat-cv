@@ -8,8 +8,8 @@ data class Volunteer(
     val userId: UserId,
     val date: LocalDate,
     val volunteerShift: Shift,
-    val specificArea: SpecificArea,
-    val meal: Meal,
+    val specificArea: SpecificArea?,
+    val meals: List<Meal>,
     val sleep: Boolean,
 )
 
@@ -23,6 +23,7 @@ enum class Shift {
     Morning,
     Afternoon,
     AllDay,
+    Unknown,
 }
 
 enum class SpecificArea {
@@ -34,6 +35,7 @@ enum class SpecificArea {
 enum class Meal {
     Lunch,
     Dinner,
+    Unknown,
 }
 
 enum class VolunteerType {

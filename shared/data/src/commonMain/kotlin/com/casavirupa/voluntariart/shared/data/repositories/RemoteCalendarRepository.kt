@@ -3,7 +3,6 @@ package com.casavirupa.voluntariart.shared.data.repositories
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
 import com.casavirupa.voluntariart.shared.data.repositories.responses.GoogleCalendarEventResponse
-import com.casavirupa.voluntariart.shared.data.repositories.toDomainModel
 import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Event
@@ -80,9 +79,9 @@ private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
         userId = userId.value,
         date = date.toString(),
-        scheduleRange = volunteerShift.name,
-        technicalAreaTurn = specificArea.name,
-        mealType = meal.name,
+        shift = volunteerShift.toFirebaseValue(),
+        specificArea = specificArea?.toFirebaseValue(),
+        mealTypes = meals.map(Meal::toFirebaseValue),
         sleep = sleep,
     )
 
@@ -91,8 +90,56 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = LocalDate.parse(date),
-        volunteerShift = Shift.valueOf(scheduleRange),
-        specificArea = SpecificArea.valueOf(technicalAreaTurn),
-        meal = Meal.valueOf(mealType),
+        volunteerShift = shift.toVolunteerShiftModel(),
+        specificArea = specificArea.toSpecificAreaModel(),
+        meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
+
+private fun Shift.toFirebaseValue() =
+    when (this) {
+        Shift.Morning -> "morning"
+        Shift.Afternoon -> "afternoon"
+        Shift.AllDay -> "all_day"
+        else -> EMPTY_VALUE
+    }
+
+private fun SpecificArea?.toFirebaseValue() =
+    when (this) {
+        SpecificArea.Morning -> "morning"
+        SpecificArea.Afternoon -> "afternoon"
+        SpecificArea.AllDay -> "all_day"
+        else -> EMPTY_VALUE
+    }
+
+private fun Meal.toFirebaseValue() =
+    when (this) {
+        Meal.Lunch -> "lunch"
+        Meal.Dinner -> "dinner"
+        else -> EMPTY_VALUE
+    }
+
+private fun String.toVolunteerShiftModel() =
+    when (this) {
+        "morning" -> Shift.Morning
+        "afternoon" -> Shift.Afternoon
+        "all_day" -> Shift.AllDay
+        else -> Shift.Unknown
+    }
+
+private fun String?.toSpecificAreaModel() =
+    when (this) {
+        "morning" -> SpecificArea.Morning
+        "afternoon" -> SpecificArea.Afternoon
+        "all_day" -> SpecificArea.AllDay
+        else -> null
+    }
+
+private fun String.toMealTypeModel() =
+    when (this) {
+        "lunch" -> Meal.Lunch
+        "dinner" -> Meal.Dinner
+        else -> Meal.Unknown
+    }
+
+private const val EMPTY_VALUE = ""
