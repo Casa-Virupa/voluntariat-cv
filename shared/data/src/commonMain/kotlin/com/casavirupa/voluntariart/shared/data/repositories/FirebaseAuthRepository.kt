@@ -50,12 +50,14 @@ class FirebaseAuthRepository(
     private suspend fun findUserFromFirestore(user: FirebaseUser): Result<User> {
         val email = user.email
             ?: return Result.failure(NullPointerException("User email not found"))
-        return firestore
-            .collection("users")
-            .document(user.uid)
-            .get()
-            .data<FirestoreUser>()
-            .let { Result.success(it.toDomainModel(UserId(user.uid), email)) }
+        return runCatching {
+            firestore
+                .collection("users")
+                .document(user.uid)
+                .get()
+                .data<FirestoreUser>()
+                .toDomainModel(UserId(user.uid), email)
+        }
     }
 }
 

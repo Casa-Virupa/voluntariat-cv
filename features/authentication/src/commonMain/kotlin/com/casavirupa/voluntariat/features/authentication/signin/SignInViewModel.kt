@@ -38,7 +38,7 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
                         else -> navigateToSchedule()
                     }
                 }.onFailure { error ->
-                    Logger.e(LOG_TAG) { "Error on log in: ${error.cause}" }
+                    Logger.e(error, LOG_TAG) { "Error on log in: ${error.message}" }
                 }
         }
     }

@@ -15,6 +15,7 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -22,6 +23,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -42,10 +44,22 @@ import kotlinx.datetime.atStartOfDayIn
 actual fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    minDate: LocalDate?,
 ) {
+    val minDateMillis = minDate?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds()
+    val selectableDates = remember(minDateMillis) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                minDateMillis == null || utcTimeMillis >= minDateMillis
+
+            override fun isSelectableYear(year: Int): Boolean =
+                minDate == null || year >= minDate.year
+        }
+    }
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = date?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds(),
+        selectableDates = selectableDates,
     )
 
     DatePickerDialog(

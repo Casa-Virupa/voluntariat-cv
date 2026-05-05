@@ -40,6 +40,9 @@ import com.casavirupa.voluntariat.shared.model.calendar.MealType
 import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
 import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -189,6 +192,9 @@ private fun ReservationForm(
                 onDateChanged = onDateChanged,
                 placeholder = stringResource(Res.string.date_placeholder),
                 pattern = DATE_PATTERN,
+                minDate = Clock.System.now()
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date,
             )
         }
         HorizontalDivider()

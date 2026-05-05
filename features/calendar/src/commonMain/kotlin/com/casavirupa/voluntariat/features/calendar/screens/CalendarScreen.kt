@@ -296,6 +296,7 @@ private fun MonthGrid(
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
+                            isPast = date < today,
                             today = today,
                             googleCalendarEvent = googleCalendarEvent,
                             cellSize = dayCellSize,
@@ -312,6 +313,7 @@ private fun MonthGrid(
 private fun DayCell(
     date: LocalDate,
     isCurrentMonth: Boolean,
+    isPast: Boolean,
     today: LocalDate,
     cellSize: DpSize,
     googleCalendarEvent: GoogleCalendarEvent?,
@@ -327,7 +329,7 @@ private fun DayCell(
                 shape = CutCornerShape(0.dp),
             )
             .size(cellSize)
-            .clickable { onClick() },
+            .then(if (isPast) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -346,6 +348,7 @@ private fun DayCell(
                 color =
                     when {
                         isToday -> MaterialTheme.colorScheme.onPrimary
+                        isPast -> MaterialTheme.colorScheme.onSurfaceVariant
                         isCurrentMonth -> MaterialTheme.colorScheme.onSurface
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     },
