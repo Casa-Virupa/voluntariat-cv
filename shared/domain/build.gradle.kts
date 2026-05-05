@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.shared.model)
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
         }
     }

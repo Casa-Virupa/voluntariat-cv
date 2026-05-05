@@ -8,13 +8,17 @@ import com.casavirupa.voluntariat.shared.core.utils.getCurrentMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
-import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
@@ -26,8 +30,24 @@ class CalendarViewModel(
     private val _yearMonth = MutableStateFlow(YearMonth(getCurrentYear(), getCurrentMonth()))
     val yearMonth: StateFlow<YearMonth> = _yearMonth.asStateFlow()
 
-    private val _volunteers = MutableStateFlow<List<Volunteer>>(emptyList())
-    val volunteers: StateFlow<List<Volunteer>> = _volunteers.asStateFlow()
+    val volunteers: StateFlow<Map<LocalDate, Int>> =
+        yearMonth
+            .flatMapLatest {
+                calendarRepository
+                    .getVolunteersByDateRange(
+                        year = it.year,
+                        monthNumber = it.month.number,
+                        currentDate = todayDate,
+                    )
+            }.map { volunteers ->
+                volunteers
+                    .groupBy { it.date }
+                    .mapValues { (_, volunteers) -> volunteers.size }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyMap(),
+            )
 
     private val _googleCalendarEvents = MutableStateFlow<List<GoogleCalendarEvent>>(emptyList())
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
@@ -42,7 +62,6 @@ class CalendarViewModel(
     init {
         viewModelScope.launch {
             yearMonth.collectLatest { yearMonth ->
-                loadEvents(yearMonth)
                 loadGoogleCalendarEvents(yearMonth)
             }
         }
@@ -68,19 +87,6 @@ class CalendarViewModel(
 
     fun onYearMonthChanged(newYearMonth: YearMonth) {
         _yearMonth.update { newYearMonth }
-    }
-
-    private fun loadEvents(yearMonth: YearMonth) {
-        viewModelScope.launch {
-            calendarRepository
-                .getCalendarEvents(year = yearMonth.year, monthNumber = yearMonth.month.number)
-                .onSuccess { events ->
-                    _volunteers.update { events }
-                    Logger.d("asdd") { events.toString() }
-                }.onFailure {
-                    // TODO: Handle error
-                }
-        }
     }
 
     private fun loadGoogleCalendarEvents(yearMonth: YearMonth) {

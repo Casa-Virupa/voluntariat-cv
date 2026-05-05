@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
@@ -50,6 +52,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -57,6 +60,7 @@ import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
 import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
+import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
 @Composable
 internal fun CalendarScreen(
@@ -83,7 +87,7 @@ internal fun CalendarScreen(
 
 @Composable
 private fun CalendarContent(
-    volunteers: List<Volunteer>,
+    volunteers: Map<LocalDate, Int>,
     googleCalendarEvents: List<GoogleCalendarEvent>,
     yearMonth: YearMonth,
     today: LocalDate,
@@ -144,6 +148,7 @@ private fun CalendarContent(
                     today = today,
                     googleCalendarEvents = googleCalendarEvents,
                     onDayClick = onDayClick,
+                    volunteers = volunteers,
                 )
             }
         }
@@ -264,6 +269,7 @@ private fun MonthGrid(
     onDayClick: (LocalDate) -> Unit,
     today: LocalDate,
     googleCalendarEvents: List<GoogleCalendarEvent>,
+    volunteers: Map<LocalDate, Int>,
     modifier: Modifier = Modifier,
 ) {
     val calendarDays = remember(yearMonth) {
@@ -304,6 +310,7 @@ private fun MonthGrid(
                             today = today,
                             googleCalendarEvent = googleCalendarEvent,
                             cellSize = dayCellSize,
+                            numOfVolunteers = volunteers[date],
                             onClick = { onDayClick(date) }
                         )
                     }
@@ -322,6 +329,7 @@ private fun DayCell(
     cellSize: DpSize,
     googleCalendarEvent: GoogleCalendarEvent?,
     onClick: () -> Unit,
+    numOfVolunteers: Int?,
     modifier: Modifier = Modifier,
 ) {
     val isToday = date == today
@@ -336,7 +344,10 @@ private fun DayCell(
             .then(if (isPast) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
             val selectionBackgroundColor = if (isToday) {
                 MaterialTheme.colorScheme.primary
             } else {
@@ -347,7 +358,7 @@ private fun DayCell(
                 modifier = Modifier
                     .padding(8.dp)
                     .background(color = selectionBackgroundColor, shape = CircleShape)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                    .padding(horizontal = 8.dp),
                 style = MaterialTheme.typography.titleSmall,
                 color =
                     when {
@@ -365,6 +376,25 @@ private fun DayCell(
                         .padding(horizontal = 4.dp)
                         .height(6.dp)
                         .background(Color.Blue)
+                )
+            }
+            if (numOfVolunteers != null) {
+                Text(
+                    text = pluralStringResource(
+                        Res.plurals.volunteers_count,
+                        numOfVolunteers,
+                        numOfVolunteers,
+                    ),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(2.dp)
+                        ).padding(horizontal = 2.dp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
         }

@@ -33,6 +33,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.all_day
@@ -47,11 +48,11 @@ import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.ic_target
 import voluntariatcv.features.calendar.generated.resources.lunch
-import voluntariatcv.features.calendar.generated.resources.num_of_volunteers
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_morning
 import voluntariatcv.features.calendar.generated.resources.specific
+import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
 @Composable
 fun DayDetailScreen(
@@ -87,8 +88,9 @@ private fun DayDetailContent(
                         )
                     }
                 },
-                subtitle = stringResource(
-                    Res.string.num_of_volunteers,
+                subtitle = pluralStringResource(
+                    Res.plurals.volunteers_count,
+                    uiState.headerUi.numOfVolunteers,
                     uiState.headerUi.numOfVolunteers,
                 ).uppercase(),
             )
