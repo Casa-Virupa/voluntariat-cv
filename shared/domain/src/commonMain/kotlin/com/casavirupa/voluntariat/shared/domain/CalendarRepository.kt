@@ -7,7 +7,7 @@ import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 
 interface CalendarRepository {
-    suspend fun getCalendarEvents(year: Int, monthNumber: Int): Result<List<Event>>
+    suspend fun getCalendarEvents(year: Int, monthNumber: Int): Result<List<Volunteer>>
 
     suspend fun getGoogleCalendarEvents(
         year: Int,

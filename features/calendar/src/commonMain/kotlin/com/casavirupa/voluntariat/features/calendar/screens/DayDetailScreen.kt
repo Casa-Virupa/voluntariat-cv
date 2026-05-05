@@ -199,11 +199,13 @@ private fun VolunteerShiftItem(
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 volunteer.meals.forEach { meal ->
-                    CVTag(
-                        text = meal.getText(),
-                        icon = meal.getIcon(),
-                        backgroundColor = meal.getBackgroundColor(),
-                    )
+                    meal.getIcon()?.let { icon ->
+                        CVTag(
+                            text = meal.getText(),
+                            icon = icon,
+                            backgroundColor = meal.getBackgroundColor(),
+                        )
+                    }
                 }
                 if (volunteer.sleep) {
                     CVTag(
@@ -222,6 +224,7 @@ fun Meal.getText() =
     when (this) {
         Meal.Lunch -> stringResource(Res.string.lunch)
         Meal.Dinner -> stringResource(Res.string.dinner)
+        else -> ""
     }
 
 @Composable
@@ -229,6 +232,7 @@ fun Meal.getBackgroundColor() =
     when (this) {
         Meal.Lunch -> MaterialTheme.colorScheme.primary
         Meal.Dinner -> Color(0xFF8FA399)
+        else -> Color.Transparent
     }
 
 @Composable
@@ -236,6 +240,7 @@ fun Meal.getIcon() =
     when (this) {
         Meal.Lunch -> painterResource(Res.drawable.ic_lunch)
         Meal.Dinner -> painterResource(Res.drawable.ic_moon)
+        else -> null
     }
 
 @Composable

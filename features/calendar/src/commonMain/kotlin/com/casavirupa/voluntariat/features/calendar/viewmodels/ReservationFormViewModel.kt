@@ -102,7 +102,7 @@ class ReservationFormViewModel(
             date = date.value!!,
             volunteerShift = schedule.value!!,
             specificArea = technicalArea.value!!,
-            meal = meal.value!!,
+            meals = listOf(meal.value!!),
             sleep = sleep.value,
         )
 

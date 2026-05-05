@@ -7,8 +7,8 @@ import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.model.calendar.Event
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,8 +26,8 @@ class CalendarViewModel(
     private val _yearMonth = MutableStateFlow(YearMonth(getCurrentYear(), getCurrentMonth()))
     val yearMonth: StateFlow<YearMonth> = _yearMonth.asStateFlow()
 
-    private val _events = MutableStateFlow<List<Event>>(emptyList())
-    val events: StateFlow<List<Event>> = _events.asStateFlow()
+    private val _volunteers = MutableStateFlow<List<Volunteer>>(emptyList())
+    val volunteers: StateFlow<List<Volunteer>> = _volunteers.asStateFlow()
 
     private val _googleCalendarEvents = MutableStateFlow<List<GoogleCalendarEvent>>(emptyList())
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
@@ -75,7 +75,8 @@ class CalendarViewModel(
             calendarRepository
                 .getCalendarEvents(year = yearMonth.year, monthNumber = yearMonth.month.number)
                 .onSuccess { events ->
-                    _events.update { events }
+                    _volunteers.update { events }
+                    Logger.d("asdd") { events.toString() }
                 }.onFailure {
                     // TODO: Handle error
                 }

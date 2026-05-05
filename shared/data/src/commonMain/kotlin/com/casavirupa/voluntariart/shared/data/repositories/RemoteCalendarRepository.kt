@@ -5,7 +5,6 @@ import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVol
 import com.casavirupa.voluntariart.shared.data.repositories.responses.GoogleCalendarEventResponse
 import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.model.calendar.Event
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -26,8 +25,21 @@ class RemoteCalendarRepository(
     private val firestore: FirebaseFirestore,
     private val httpClient: HttpClient,
 ) : CalendarRepository {
-    override suspend fun getCalendarEvents(year: Int, monthNumber: Int): Result<List<Event>> =
-        Result.success(emptyList())
+    override suspend fun getCalendarEvents(year: Int, monthNumber: Int): Result<List<Volunteer>> =
+        runCatching {
+            val monthStr = monthNumber.formatMonth()
+            firestore
+                .collection("reservations")
+                .where {
+                    "date" greaterThanOrEqualTo "$year-$monthStr-01"
+                    "date" lessThanOrEqualTo "$year-$monthStr-31"
+                }
+                .get()
+                .documents
+                .map { document ->
+                    document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                }
+        }
 
     override suspend fun getGoogleCalendarEvents(
         year: Int,
@@ -143,3 +155,5 @@ private fun String.toMealTypeModel() =
     }
 
 private const val EMPTY_VALUE = ""
+
+private fun Int.formatMonth(): String = this.toString().padStart(2, '0')

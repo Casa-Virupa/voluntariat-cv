@@ -113,26 +113,26 @@ private fun Volunteer.toUiModel(name: String) =
         VolunteerItemUi(
             name = name,
             type = buildAllDayVolunteerType(specificArea),
-            meals = listOf(meal),
+            meals = meals,
             sleep = sleep,
         )
     } else {
         VolunteerItemUi(
             name = name,
             type = buildSingleVolunteerType(specificArea, volunteerShift),
-            meals = listOf(meal),
+            meals = meals,
             sleep = sleep,
         )
     }
 
-private fun buildAllDayVolunteerType(specificArea: SpecificArea) =
+private fun buildAllDayVolunteerType(specificArea: SpecificArea?) =
     VolunteerTypeUi.AllDay(
         morning = setMorningVolunteerType(specificArea),
         afternoon = setAfternoonVolunteerType(specificArea),
     )
 
 private fun buildSingleVolunteerType(
-    specificArea: SpecificArea,
+    specificArea: SpecificArea?,
     volunteerShift: Shift,
 ) =
     VolunteerTypeUi.Single(
@@ -143,14 +143,14 @@ private fun buildSingleVolunteerType(
         }
     )
 
-private fun setMorningVolunteerType(specificArea: SpecificArea): VolunteerType =
+private fun setMorningVolunteerType(specificArea: SpecificArea?): VolunteerType =
     if (specificArea == SpecificArea.Morning) {
         VolunteerType.Specific
     } else {
         VolunteerType.General
     }
 
-private fun setAfternoonVolunteerType(specificArea: SpecificArea): VolunteerType =
+private fun setAfternoonVolunteerType(specificArea: SpecificArea?): VolunteerType =
     if (specificArea == SpecificArea.Afternoon) {
         VolunteerType.Specific
     } else {

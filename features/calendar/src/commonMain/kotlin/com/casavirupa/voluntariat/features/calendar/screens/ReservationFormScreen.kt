@@ -60,8 +60,8 @@ import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.schedule
 import voluntariatcv.features.calendar.generated.resources.select_date
+import voluntariatcv.features.calendar.generated.resources.specific_volunteering
 import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
-import voluntariatcv.features.calendar.generated.resources.technical_area
 
 @Composable
 internal fun ReservationFormScreen(
@@ -211,7 +211,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = Shift.entries.toList(),
+                options = Shift.entries.filter { it != Shift.Unknown }.toList(),
                 selected = schedule,
                 onOptionSelected = onScheduleChanged,
                 displayMode = { Text(it.displayName()) },
@@ -219,7 +219,7 @@ private fun ReservationForm(
         }
         HorizontalDivider()
         FormSection(
-            title = stringResource(Res.string.technical_area),
+            title = stringResource(Res.string.specific_volunteering),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
@@ -235,7 +235,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = Meal.entries.toList(),
+                options = Meal.entries.filter { it != Meal.Unknown }.toList(),
                 selected = meal,
                 onOptionSelected = onMealChanged,
                 displayMode = { Text(it.displayName()) },
@@ -306,6 +306,7 @@ private fun Shift.displayName(): String = when (this) {
     Shift.Morning -> stringResource(Res.string.morning)
     Shift.Afternoon -> stringResource(Res.string.afternoon)
     Shift.AllDay -> stringResource(Res.string.all_day)
+    else -> ""
 }
 
 @Composable
@@ -319,6 +320,7 @@ private fun SpecificArea.displayName(): String = when (this) {
 private fun Meal.displayName(): String = when (this) {
     Meal.Lunch -> stringResource(Res.string.lunch)
     Meal.Dinner -> stringResource(Res.string.dinner)
+    else -> ""
 }
 
 private const val DATE_PATTERN = "d MMMM yyyy"

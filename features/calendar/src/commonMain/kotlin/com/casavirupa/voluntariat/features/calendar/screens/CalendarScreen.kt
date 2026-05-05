@@ -45,6 +45,7 @@ import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.Event
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -63,12 +64,12 @@ internal fun CalendarScreen(
     onDayClick: (LocalDate) -> Unit,
     viewModel: CalendarViewModel = koinViewModel()
 ) {
-    val events by viewModel.events.collectAsStateWithLifecycle()
+    val volunteers by viewModel.volunteers.collectAsStateWithLifecycle()
     val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
 
     CalendarContent(
-        events = events,
+        volunteers = volunteers,
         googleCalendarEvents = googleCalendarEvents,
         yearMonth = currentMonth,
         today = viewModel.todayDate,
@@ -82,7 +83,7 @@ internal fun CalendarScreen(
 
 @Composable
 private fun CalendarContent(
-    events: List<Event>,
+    volunteers: List<Volunteer>,
     googleCalendarEvents: List<GoogleCalendarEvent>,
     yearMonth: YearMonth,
     today: LocalDate,
