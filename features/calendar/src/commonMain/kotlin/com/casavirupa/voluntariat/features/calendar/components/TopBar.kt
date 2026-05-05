@@ -8,4 +8,5 @@ expect fun MediumTopBar(
     title: String,
     navigationIcon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
 )
