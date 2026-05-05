@@ -35,9 +35,9 @@ import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
-import com.casavirupa.voluntariat.shared.model.calendar.MealType
-import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
-import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
+import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -48,7 +48,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.afternoon
 import voluntariatcv.features.calendar.generated.resources.all_day
-import voluntariatcv.features.calendar.generated.resources.breakfast
 import voluntariatcv.features.calendar.generated.resources.confirm
 import voluntariatcv.features.calendar.generated.resources.date_placeholder
 import voluntariatcv.features.calendar.generated.resources.dinner
@@ -105,14 +104,14 @@ private fun ReservationFormContent(
     onNavBack: () -> Unit,
     date: LocalDate?,
     sleep: Boolean,
-    schedule: ScheduleRange?,
-    technicalArea: TechnicalAreaTurn?,
-    meal: MealType?,
+    schedule: Shift?,
+    technicalArea: SpecificArea?,
+    meal: Meal?,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
-    onScheduleChanged: (ScheduleRange) -> Unit,
-    onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
-    onMealChanged: (MealType) -> Unit,
+    onScheduleChanged: (Shift) -> Unit,
+    onTechnicalAreaChanged: (SpecificArea) -> Unit,
+    onMealChanged: (Meal) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -167,14 +166,14 @@ private fun ReservationFormContent(
 private fun ReservationForm(
     date: LocalDate?,
     sleep: Boolean,
-    schedule: ScheduleRange?,
-    technicalArea: TechnicalAreaTurn?,
-    meal: MealType?,
+    schedule: Shift?,
+    technicalArea: SpecificArea?,
+    meal: Meal?,
     onDateChanged: (LocalDate) -> Unit,
     onSleepChanged: (Boolean) -> Unit,
-    onScheduleChanged: (ScheduleRange) -> Unit,
-    onTechnicalAreaChanged: (TechnicalAreaTurn) -> Unit,
-    onMealChanged: (MealType) -> Unit,
+    onScheduleChanged: (Shift) -> Unit,
+    onTechnicalAreaChanged: (SpecificArea) -> Unit,
+    onMealChanged: (Meal) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -212,7 +211,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = ScheduleRange.entries.toList(),
+                options = Shift.entries.toList(),
                 selected = schedule,
                 onOptionSelected = onScheduleChanged,
                 displayMode = { Text(it.displayName()) },
@@ -224,7 +223,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = TechnicalAreaTurn.entries.toList(),
+                options = SpecificArea.entries.toList(),
                 selected = technicalArea,
                 onOptionSelected = onTechnicalAreaChanged,
                 displayMode = { Text(it.displayName()) },
@@ -236,7 +235,7 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ChipOptionsSelector(
-                options = MealType.entries.toList(),
+                options = Meal.entries.toList(),
                 selected = meal,
                 onOptionSelected = onMealChanged,
                 displayMode = { Text(it.displayName()) },
@@ -303,24 +302,23 @@ private fun SleepSwitch(
 }
 
 @Composable
-private fun ScheduleRange.displayName(): String = when (this) {
-    ScheduleRange.Morning -> stringResource(Res.string.morning)
-    ScheduleRange.Afternoon -> stringResource(Res.string.afternoon)
-    ScheduleRange.AllDay -> stringResource(Res.string.all_day)
+private fun Shift.displayName(): String = when (this) {
+    Shift.Morning -> stringResource(Res.string.morning)
+    Shift.Afternoon -> stringResource(Res.string.afternoon)
+    Shift.AllDay -> stringResource(Res.string.all_day)
 }
 
 @Composable
-private fun TechnicalAreaTurn.displayName(): String = when (this) {
-    TechnicalAreaTurn.Morning -> stringResource(Res.string.morning)
-    TechnicalAreaTurn.Afternoon -> stringResource(Res.string.afternoon)
-    TechnicalAreaTurn.AllDay -> stringResource(Res.string.all_day)
+private fun SpecificArea.displayName(): String = when (this) {
+    SpecificArea.Morning -> stringResource(Res.string.morning)
+    SpecificArea.Afternoon -> stringResource(Res.string.afternoon)
+    SpecificArea.AllDay -> stringResource(Res.string.all_day)
 }
 
 @Composable
-private fun MealType.displayName(): String = when (this) {
-    MealType.Breakfast -> stringResource(Res.string.breakfast)
-    MealType.Lunch -> stringResource(Res.string.lunch)
-    MealType.Dinner -> stringResource(Res.string.dinner)
+private fun Meal.displayName(): String = when (this) {
+    Meal.Lunch -> stringResource(Res.string.lunch)
+    Meal.Dinner -> stringResource(Res.string.dinner)
 }
 
 private const val DATE_PATTERN = "d MMMM yyyy"

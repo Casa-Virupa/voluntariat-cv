@@ -16,6 +16,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.casavirupa.voluntariat.features.calendar.navigation.CalendarNavKey
+import com.casavirupa.voluntariat.features.calendar.navigation.DayDetailNavKey
+import com.casavirupa.voluntariat.features.calendar.navigation.ReservationFormNavKey
 import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
@@ -56,6 +58,8 @@ private fun mainContentNavigationConfig() = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
             subclass(CalendarNavKey::class, CalendarNavKey.serializer())
+            subclass(ReservationFormNavKey::class, ReservationFormNavKey.serializer())
+            subclass(DayDetailNavKey::class, DayDetailNavKey.serializer())
         }
     }
 }

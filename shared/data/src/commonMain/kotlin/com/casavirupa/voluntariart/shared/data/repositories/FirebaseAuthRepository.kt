@@ -70,7 +70,7 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         hasOnboardingCompleted = hasOnboardingCompleted,
     )
 
-private fun String.toUserRole() =
+fun String.toUserRole() =
     when (this) {
         "volunteer" -> UserRole.Volunteer
         "area_responsible" -> UserRole.AreaResponsible

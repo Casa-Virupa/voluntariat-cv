@@ -5,11 +5,12 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.model.calendar.MealType
-import com.casavirupa.voluntariat.shared.model.calendar.Reservation
-import com.casavirupa.voluntariat.shared.model.calendar.ReservationId
-import com.casavirupa.voluntariat.shared.model.calendar.ScheduleRange
-import com.casavirupa.voluntariat.shared.model.calendar.TechnicalAreaTurn
+import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
+import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,14 +31,14 @@ class ReservationFormViewModel(
     private val _sleep = MutableStateFlow(false)
     val sleep: StateFlow<Boolean> = _sleep.asStateFlow()
 
-    private val _schedule = MutableStateFlow<ScheduleRange?>(null)
-    val schedule: StateFlow<ScheduleRange?> = _schedule.asStateFlow()
+    private val _schedule = MutableStateFlow<Shift?>(null)
+    val schedule: StateFlow<Shift?> = _schedule.asStateFlow()
 
-    private val _technicalArea = MutableStateFlow<TechnicalAreaTurn?>(null)
-    val technicalArea: StateFlow<TechnicalAreaTurn?> = _technicalArea.asStateFlow()
+    private val _technicalArea = MutableStateFlow<SpecificArea?>(null)
+    val technicalArea: StateFlow<SpecificArea?> = _technicalArea.asStateFlow()
 
-    private val _meal = MutableStateFlow<MealType?>(null)
-    val meal: StateFlow<MealType?> = _meal.asStateFlow()
+    private val _meal = MutableStateFlow<Meal?>(null)
+    val meal: StateFlow<Meal?> = _meal.asStateFlow()
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -47,15 +48,15 @@ class ReservationFormViewModel(
         _sleep.update { sleep }
     }
 
-    fun onScheduleChanged(schedules: ScheduleRange) {
+    fun onScheduleChanged(schedules: Shift) {
         _schedule.update { schedules }
     }
 
-    fun onTechnicalAreaChanged(technicalArea: TechnicalAreaTurn) {
+    fun onTechnicalAreaChanged(technicalArea: SpecificArea) {
         _technicalArea.update { technicalArea }
     }
 
-    fun onMealChanged(meal: MealType) {
+    fun onMealChanged(meal: Meal) {
         _meal.update { meal }
     }
 
@@ -95,12 +96,13 @@ class ReservationFormViewModel(
             meal.value != null
 
     private fun buildReservation() =
-        Reservation(
-            id = ReservationId(""),
+        Volunteer(
+            id = VolunteerId.Empty,
+            userId = UserId.Empty,
             date = date.value!!,
-            scheduleRange = schedule.value!!,
-            technicalAreaTurn = technicalArea.value!!,
-            mealType = meal.value!!,
+            volunteerShift = schedule.value!!,
+            specificArea = technicalArea.value!!,
+            meal = meal.value!!,
             sleep = sleep.value,
         )
 

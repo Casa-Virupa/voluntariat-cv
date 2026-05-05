@@ -19,6 +19,7 @@ actual fun MediumTopBar(
     title: String,
     navigationIcon: @Composable (() -> Unit),
     modifier: Modifier,
+    subtitle: String?,
 ) {
     Column(
         modifier = modifier
