@@ -40,14 +40,12 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
+import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
-import com.casavirupa.voluntariat.shared.model.calendar.Event
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
-import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -369,7 +367,7 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (googleCalendarEvent != null) {
+            if (googleCalendarEvent != null && !isPast) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -39,7 +39,12 @@ class DayDetailViewModel(
                    val users = userRepository.getAllUsers().getOrElse { emptyList() }
                    volunteers to users
                }.onSuccess { (volunteers, users) ->
-                   _uiState.update { it.copy(dayShifts = buildDayShifts(volunteers, users)) }
+                   _uiState.update {
+                       it.copy(
+                           dayShifts = buildDayShifts(volunteers, users),
+                           headerUi = it.headerUi.copy(numOfVolunteers = volunteers.size),
+                       )
+                   }
                }
         }
     }
