@@ -8,6 +8,7 @@ import com.casavirupa.voluntariat.shared.core.utils.getCurrentMonth
 import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,7 @@ class CalendarViewModel(
     private val _yearMonth = MutableStateFlow(YearMonth(getCurrentYear(), getCurrentMonth()))
     val yearMonth: StateFlow<YearMonth> = _yearMonth.asStateFlow()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val volunteers: StateFlow<Map<LocalDate, Int>> =
         yearMonth
             .flatMapLatest {
