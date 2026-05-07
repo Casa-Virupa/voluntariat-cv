@@ -22,6 +22,8 @@ import com.casavirupa.voluntariat.features.calendar.navigation.CalendarNavKey
 import com.casavirupa.voluntariat.features.calendar.navigation.DayDetailNavKey
 import com.casavirupa.voluntariat.features.calendar.navigation.ReservationFormNavKey
 import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
+import com.casavirupa.voluntariat.features.history.navigation.HistoryNavKey
+import com.casavirupa.voluntariat.features.history.navigation.historyEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
 import com.casavirupa.voluntariat.shared.core.navigation.toEntries
@@ -38,6 +40,7 @@ fun MainApp() {
     val navigator = remember { MainNavigator(navigationState) }
     val entryProvider = entryProvider {
         calendarEntry(navigator)
+        historyEntry(navigator)
     }
 
     VoluntariatCVTheme {
@@ -71,6 +74,7 @@ private fun mainContentNavigationConfig() = SavedStateConfiguration {
             subclass(CalendarNavKey::class, CalendarNavKey.serializer())
             subclass(ReservationFormNavKey::class, ReservationFormNavKey.serializer())
             subclass(DayDetailNavKey::class, DayDetailNavKey.serializer())
+            subclass(HistoryNavKey::class, HistoryNavKey.serializer())
         }
     }
 }
