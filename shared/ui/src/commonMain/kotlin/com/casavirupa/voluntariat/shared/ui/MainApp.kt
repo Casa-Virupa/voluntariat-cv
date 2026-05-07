@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults.contentWindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -39,18 +42,26 @@ fun MainApp() {
 
     VoluntariatCVTheme {
         Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-    ) { innerPadding ->
-        NavDisplay(
-            entries = navigationState.toEntries(entryProvider),
-            onBack = navigator::goBack,
-            modifier = Modifier
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
-                ),
-        )}
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = navigationState.currentKey.showNavigationBar,
+                ) {
+                    BottomNavigationBar()
+                }
+            },
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        ) { innerPadding ->
+            NavDisplay(
+                entries = navigationState.toEntries(entryProvider),
+                onBack = navigator::goBack,
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                    ),
+            )
+        }
     }
 }
 
@@ -61,5 +72,14 @@ private fun mainContentNavigationConfig() = SavedStateConfiguration {
             subclass(ReservationFormNavKey::class, ReservationFormNavKey.serializer())
             subclass(DayDetailNavKey::class, DayDetailNavKey.serializer())
         }
+    }
+}
+
+@Composable
+private fun BottomNavigationBar(
+    modifier: Modifier = Modifier,
+) {
+    NavigationBar(modifier = modifier) {
+
     }
 }
