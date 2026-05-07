@@ -31,4 +31,8 @@
     <string name="shift_afternoon">Torn de tarda (16:30 - 20:30)</string>
     <string name="general">General</string>
     <string name="specific">Específic</string>
+    <plurals name="volunteers_count">
+        <item quantity="one">1 voluntari</item>
+        <item quantity="other">%1$d voluntaris</item>
+    </plurals>
 </resources>

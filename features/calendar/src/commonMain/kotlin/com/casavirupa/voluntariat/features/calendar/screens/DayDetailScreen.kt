@@ -33,6 +33,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.all_day
@@ -47,11 +48,11 @@ import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.ic_target
 import voluntariatcv.features.calendar.generated.resources.lunch
-import voluntariatcv.features.calendar.generated.resources.num_of_volunteers
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_morning
 import voluntariatcv.features.calendar.generated.resources.specific
+import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
 @Composable
 fun DayDetailScreen(
@@ -87,8 +88,9 @@ private fun DayDetailContent(
                         )
                     }
                 },
-                subtitle = stringResource(
-                    Res.string.num_of_volunteers,
+                subtitle = pluralStringResource(
+                    Res.plurals.volunteers_count,
+                    uiState.headerUi.numOfVolunteers,
                     uiState.headerUi.numOfVolunteers,
                 ).uppercase(),
             )
@@ -199,11 +201,13 @@ private fun VolunteerShiftItem(
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 volunteer.meals.forEach { meal ->
-                    CVTag(
-                        text = meal.getText(),
-                        icon = meal.getIcon(),
-                        backgroundColor = meal.getBackgroundColor(),
-                    )
+                    meal.getIcon()?.let { icon ->
+                        CVTag(
+                            text = meal.getText(),
+                            icon = icon,
+                            backgroundColor = meal.getBackgroundColor(),
+                        )
+                    }
                 }
                 if (volunteer.sleep) {
                     CVTag(
@@ -222,6 +226,7 @@ fun Meal.getText() =
     when (this) {
         Meal.Lunch -> stringResource(Res.string.lunch)
         Meal.Dinner -> stringResource(Res.string.dinner)
+        else -> ""
     }
 
 @Composable
@@ -229,6 +234,7 @@ fun Meal.getBackgroundColor() =
     when (this) {
         Meal.Lunch -> MaterialTheme.colorScheme.primary
         Meal.Dinner -> Color(0xFF8FA399)
+        else -> Color.Transparent
     }
 
 @Composable
@@ -236,6 +242,7 @@ fun Meal.getIcon() =
     when (this) {
         Meal.Lunch -> painterResource(Res.drawable.ic_lunch)
         Meal.Dinner -> painterResource(Res.drawable.ic_moon)
+        else -> null
     }
 
 @Composable

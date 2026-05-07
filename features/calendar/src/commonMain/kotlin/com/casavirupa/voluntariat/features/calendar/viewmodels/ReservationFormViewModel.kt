@@ -37,8 +37,8 @@ class ReservationFormViewModel(
     private val _technicalArea = MutableStateFlow<SpecificArea?>(null)
     val technicalArea: StateFlow<SpecificArea?> = _technicalArea.asStateFlow()
 
-    private val _meal = MutableStateFlow<Meal?>(null)
-    val meal: StateFlow<Meal?> = _meal.asStateFlow()
+    private val _meals = MutableStateFlow<Set<Meal>>(emptySet())
+    val meals: StateFlow<Set<Meal>> = _meals.asStateFlow()
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -57,7 +57,15 @@ class ReservationFormViewModel(
     }
 
     fun onMealChanged(meal: Meal) {
-        _meal.update { meal }
+        _meals.update {
+            val mutableMeals = it.toMutableList()
+            if (mutableMeals.contains(meal)) {
+                mutableMeals.remove(meal)
+            } else {
+                mutableMeals.add(meal)
+            }
+            mutableMeals.toSet()
+        }
     }
 
     fun onConfirm() {
@@ -92,9 +100,7 @@ class ReservationFormViewModel(
     private fun formInputsAreValid() =
         date.value != null &&
             schedule.value != null &&
-            technicalArea.value != null &&
-            meal.value != null
-
+            technicalArea.value != null
     private fun buildReservation() =
         Volunteer(
             id = VolunteerId.Empty,
@@ -102,7 +108,7 @@ class ReservationFormViewModel(
             date = date.value!!,
             volunteerShift = schedule.value!!,
             specificArea = technicalArea.value!!,
-            meal = meal.value!!,
+            meals = meals.value.toList(),
             sleep = sleep.value,
         )
 

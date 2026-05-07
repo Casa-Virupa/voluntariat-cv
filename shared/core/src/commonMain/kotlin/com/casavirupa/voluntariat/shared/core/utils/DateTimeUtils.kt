@@ -3,6 +3,7 @@ package com.casavirupa.voluntariat.shared.core.utils
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toLocalDateTime
@@ -26,6 +27,11 @@ fun Long.toDate(timeZone: TimeZone = TimeZone.UTC) =
 
 fun Instant.toDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate =
     toLocalDateTime(timeZone).date
+
+fun LocalDate.toMilliseconds() =
+    this
+        .atStartOfDayIn(TimeZone.currentSystemDefault())
+        .toEpochMilliseconds()
 
 expect fun LocalDate.format(pattern: String): String
 
