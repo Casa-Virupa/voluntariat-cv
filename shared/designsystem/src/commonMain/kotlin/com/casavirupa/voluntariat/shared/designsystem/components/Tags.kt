@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.calendar.components
+package com.casavirupa.voluntariat.shared.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

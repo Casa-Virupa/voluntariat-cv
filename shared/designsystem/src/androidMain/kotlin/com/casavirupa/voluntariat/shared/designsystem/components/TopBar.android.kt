@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.calendar.components
+package com.casavirupa.voluntariat.shared.designsystem.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 @Composable
 actual fun MediumTopBar(
     title: String,
-    navigationIcon: @Composable (() -> Unit),
     modifier: Modifier,
+    navigationIcon: (@Composable (() -> Unit))?,
     subtitle: String?,
 ) {
     MediumTopAppBar(
@@ -35,7 +35,7 @@ actual fun MediumTopBar(
             }
         },
         modifier = modifier,
-        navigationIcon = navigationIcon,
+        navigationIcon = if (navigationIcon != null) navigationIcon else { {} },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         )

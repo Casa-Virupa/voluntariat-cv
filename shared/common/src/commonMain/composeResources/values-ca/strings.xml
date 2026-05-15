@@ -1,0 +1,9 @@
+<resources>
+    <string name="lunch">Dinar</string>
+    <string name="dinner">Sopar</string>
+    <string name="general">General</string>
+    <string name="specific">Específic</string>
+    <string name="morning">Matí</string>
+    <string name="afternoon">Tarda</string>
+    <string name="all_day">Tot el dia</string>
+</resources>

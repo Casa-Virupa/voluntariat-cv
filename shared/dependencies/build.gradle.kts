@@ -10,6 +10,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.features.authentication)
             implementation(projects.features.calendar)
+            implementation(projects.features.history)
             implementation(projects.shared.common)
             implementation(projects.shared.core)
             implementation(projects.shared.data)

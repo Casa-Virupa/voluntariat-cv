@@ -1,4 +1,4 @@
-package com.casavirupa.voluntariat.features.calendar.components
+package com.casavirupa.voluntariat.shared.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 actual fun MediumTopBar(
     title: String,
-    navigationIcon: @Composable (() -> Unit),
     modifier: Modifier,
+    navigationIcon: (@Composable (() -> Unit))?,
     subtitle: String?,
 ) {
     Column(
@@ -28,7 +28,9 @@ actual fun MediumTopBar(
             .statusBarsPadding()
             .padding(end = 4.dp, top = 12.dp, bottom = 4.dp),
     ) {
-        navigationIcon()
+        if (navigationIcon != null) {
+            navigationIcon()
+        }
         Text(
             text = title,
             modifier = Modifier.padding(top = 12.dp, start = 16.dp),

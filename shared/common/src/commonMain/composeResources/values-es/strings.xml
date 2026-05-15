@@ -1,0 +1,9 @@
+<resources>
+    <string name="lunch">Comida</string>
+    <string name="dinner">Cena</string>
+    <string name="general">General</string>
+    <string name="specific">Específico</string>
+    <string name="morning">Mañana</string>
+    <string name="afternoon">Tarde</string>
+    <string name="all_day">Todo el día</string>
+</resources>
