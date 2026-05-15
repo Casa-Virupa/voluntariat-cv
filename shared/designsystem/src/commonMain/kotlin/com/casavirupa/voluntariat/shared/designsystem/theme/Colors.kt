@@ -11,5 +11,6 @@ internal val GrayBrown = Color(0xFF7C756B)
 internal val DarkGrayBrown = Color(0xFF4A453E)
 
 internal val DarkGray = Color(0xFF1C1917)
+internal val LightGray = Color(0xFFE7E5E4)
 
 internal val Red = Color(0xFFB42222)

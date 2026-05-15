@@ -237,7 +237,7 @@ private fun CalendarNavigationArrows(
 @Composable
 private fun WeekHeader(modifier: Modifier = Modifier) {
     val weekDayNames = listOf("Dl", "Dt", "Dc", "Dj", "Dv", "Ds", "Dm")
-    val borderColor = Color(0xFFE7E5E4)
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
 
     Column(modifier = modifier) {
         HorizontalDivider(color = borderColor)
