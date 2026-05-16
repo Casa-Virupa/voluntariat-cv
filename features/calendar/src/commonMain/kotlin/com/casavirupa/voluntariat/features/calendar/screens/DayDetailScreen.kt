@@ -1,6 +1,7 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -10,6 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +37,8 @@ import com.casavirupa.voluntariat.shared.common.ui.getIcon
 import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -40,6 +46,7 @@ import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.all_day
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
+import voluntariatcv.features.calendar.generated.resources.ic_delete
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
@@ -47,6 +54,7 @@ import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_morning
 import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DayDetailScreen(
     onNavBack: () -> Unit,
@@ -54,18 +62,32 @@ fun DayDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
 
     DayDetailContent(
         uiState = uiState,
         onClickBack = onNavBack,
+        onDeleteVolunteer = viewModel::onDeleteVolunteer,
         modifier = modifier,
     )
+
+    if (showDeleteDialog) {
+        WarningDialog(
+            onDismiss = viewModel::onCloseDeleteDialog,
+            title = "Eliminar voluntariat",
+            description = "Estàs segur que vols eliminar el teu voluntariat del dia 5? Aquesta acció no es pot desfer.",
+            onCancel = viewModel::onCloseDeleteDialog,
+            confirmText = "Eliminar",
+            onConfirm = viewModel::deleteVolunteer,
+        )
+    }
 }
 
 @Composable
 private fun DayDetailContent(
     uiState: DayDetailUiState,
     onClickBack: () -> Unit,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -92,6 +114,7 @@ private fun DayDetailContent(
     ) { innerPadding ->
         DayShifts(
             dayShifts = uiState.dayShifts,
+            onDeleteVolunteer = onDeleteVolunteer,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
@@ -102,6 +125,7 @@ private fun DayDetailContent(
 @Composable
 private fun DayShifts(
     dayShifts: DayShifts,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -115,19 +139,28 @@ private fun DayShifts(
             )
         }
         items(dayShifts.allDayVolunteers) { volunteer ->
-            VolunteerShiftItem(volunteer)
+            VolunteerShiftItem(
+                volunteer = volunteer,
+                onClickDelete = { onDeleteVolunteer(volunteer.id) },
+            )
         }
         item {
             ShiftTitle(text = stringResource(Res.string.shift_morning))
         }
         items(dayShifts.morningVolunteers) { volunteer ->
-            VolunteerShiftItem(volunteer)
+            VolunteerShiftItem(
+                volunteer = volunteer,
+                onClickDelete = { onDeleteVolunteer(volunteer.id) },
+            )
         }
         item {
             ShiftTitle(text = stringResource(Res.string.shift_afternoon))
         }
         items(dayShifts.afternoonVolunteers) { volunteer ->
-            VolunteerShiftItem(volunteer)
+            VolunteerShiftItem(
+                volunteer = volunteer,
+                onClickDelete = { onDeleteVolunteer(volunteer.id) },
+            )
         }
     }
 }
@@ -149,6 +182,7 @@ private fun ShiftTitle(
 private fun VolunteerShiftItem(
     volunteer: VolunteerItemUi,
     modifier: Modifier = Modifier,
+    onClickDelete: () -> Unit,
 ) {
     Surface(
         modifier = modifier,
@@ -160,11 +194,21 @@ private fun VolunteerShiftItem(
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Text(
-                text = volunteer.name,
-                modifier = Modifier.padding(bottom = 12.dp),
-                style = MaterialTheme.typography.titleLarge,
-            )
+            Row {
+                Text(
+                    text = volunteer.name,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = 12.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                IconButton(onClick = onClickDelete) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_delete),
+                        contentDescription = null,
+                    )
+                }
+            }
             when (val volunteerType = volunteer.type) {
                 is VolunteerTypeUi.Single -> {
                     CVTag(
