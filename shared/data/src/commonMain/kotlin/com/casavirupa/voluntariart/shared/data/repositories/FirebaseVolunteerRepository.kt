@@ -14,10 +14,10 @@ import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.fromMilliseconds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 class FirebaseVolunteerRepository(
     private val firestore: FirebaseFirestore,
@@ -39,9 +39,10 @@ class FirebaseVolunteerRepository(
         return firestore
             .collection("volunteers")
             .where {
-                "userId" equalTo id.value
-                "timestamp" greaterThanOrEqualTo startTimestamp
-                "timestamp" lessThan endTimestamp
+                ("userId" equalTo id.value) and (
+                    ("timestamp" greaterThanOrEqualTo startTimestamp) and
+                    ("timestamp" lessThan endTimestamp)
+                )
             }
             .snapshots
             .map { snapshot ->
@@ -85,8 +86,6 @@ private fun String.toMealTypeModel() =
         "dinner" -> Meal.Dinner
         else -> Meal.Unknown
     }
-
-private const val EMPTY_VALUE = ""
 
 private fun Timestamp.toDate() =
     Instant

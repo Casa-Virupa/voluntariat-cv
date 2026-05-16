@@ -79,13 +79,19 @@ private fun HistoryContent(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            InformationSummary(info = uiState.summary)
+            InformationSummary(
+                info = uiState.summary,
+                modifier = Modifier.padding(top = 16.dp),
+            )
             PaymentWarning()
-            HistoryList(history = uiState.volunteers)
+            HistoryList(
+                history = uiState.volunteers,
+                modifier = Modifier.padding(bottom = 24.dp),
+            )
         }
     }
 }
