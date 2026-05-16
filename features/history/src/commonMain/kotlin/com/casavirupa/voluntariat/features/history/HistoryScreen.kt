@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
@@ -54,21 +53,25 @@ internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
 
     HistoryContent(
         currentDate = currentDate,
-        history = history
+        onPreviousMonth = viewModel::previousMonth,
+        onNextMonth = viewModel::nextMonth,
+        history = history,
     )
 }
 
 @Composable
 private fun HistoryContent(
     currentDate: LocalDate,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
     history: List<VolunteerHistoryItem>,
 ) {
     Scaffold(
         topBar = {
             Header(
                 currentDate = currentDate,
-                onClickPreviousMonth = {},
-                onClickNextMonth = {},
+                onClickPreviousMonth = onPreviousMonth,
+                onClickNextMonth = onNextMonth,
             )
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,

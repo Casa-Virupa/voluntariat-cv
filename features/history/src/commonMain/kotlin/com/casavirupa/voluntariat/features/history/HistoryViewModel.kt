@@ -7,8 +7,12 @@ import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlin.time.Clock
 
 class HistoryViewModel : ViewModel() {
@@ -37,6 +41,14 @@ class HistoryViewModel : ViewModel() {
             ),
         )
     ).asStateFlow()
+
+    fun nextMonth() {
+        _currentDate.update { it.plus(DatePeriod(months = 1)) }
+    }
+
+    fun previousMonth() {
+        _currentDate.update { it.minus(DatePeriod(months = 1)) }
+    }
 }
 
 data class MonthSummary(
