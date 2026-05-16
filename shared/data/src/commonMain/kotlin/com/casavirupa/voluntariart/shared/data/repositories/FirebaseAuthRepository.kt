@@ -9,6 +9,8 @@ import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class FirebaseAuthRepository(
     val auth: FirebaseAuth,
@@ -46,6 +48,19 @@ class FirebaseAuthRepository(
             ?: return Result.failure(NullPointerException("User authentication failed"))
         return findUserFromFirestore(authUser)
     }
+
+    override fun getCurrentUserFlow(): Flow<User> =
+        firestore
+            .collection("users")
+            .snapshots
+            .map { snapshot ->
+                val userId = auth.currentUser?.uid!!
+                snapshot
+                    .documents
+                    .first { it.id == userId }
+                    .data<FirestoreUser>()
+                    .toDomainModel(UserId(userId), auth.currentUser?.email!!)
+            }
 
     private suspend fun findUserFromFirestore(user: FirebaseUser): Result<User> {
         val email = user.email

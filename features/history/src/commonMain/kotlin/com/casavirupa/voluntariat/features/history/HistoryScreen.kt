@@ -49,13 +49,13 @@ import voluntariatcv.features.history.generated.resources.morning
 @Composable
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
-    val history by viewModel.volunteers.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
         onPreviousMonth = viewModel::previousMonth,
         onNextMonth = viewModel::nextMonth,
-        history = history,
+        uiState = uiState,
     )
 }
 
@@ -64,7 +64,7 @@ private fun HistoryContent(
     currentDate: LocalDate,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    history: List<VolunteerHistoryItem>,
+    uiState: HistoryUiState,
 ) {
     Scaffold(
         topBar = {
@@ -83,11 +83,9 @@ private fun HistoryContent(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            InformationSummary()
+            InformationSummary(info = uiState.summary)
             PaymentWarning()
-            HistoryList(
-                history = history,
-            )
+            HistoryList(history = uiState.volunteers)
         }
     }
 }
@@ -145,6 +143,7 @@ private fun MonthSelector(
 
 @Composable
 private fun InformationSummary(
+    info: MonthSummary,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -154,13 +153,13 @@ private fun InformationSummary(
         SummaryContainer(
             title = "Hores",
             icon = painterResource(Res.drawable.ic_clock),
-            value = 42,
+            value = info.hours,
             modifier = Modifier.weight(1f),
         )
         SummaryContainer(
             title = "Dies",
             icon = painterResource(Res.drawable.ic_calendar_today),
-            value = 5,
+            value = info.days,
             modifier = Modifier.weight(1f),
         )
     }
