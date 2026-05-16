@@ -13,5 +13,7 @@ interface VolunteerRepository {
         year: Int,
     ): Flow<List<Volunteer>>
 
+    suspend fun reserveDay(id: UserId, volunteer: Volunteer): Result<Unit>
+
     suspend fun deleteVolunteer(id: VolunteerId): Result<Unit>
 }

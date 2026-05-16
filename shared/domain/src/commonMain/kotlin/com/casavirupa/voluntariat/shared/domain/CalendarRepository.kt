@@ -18,7 +18,5 @@ interface CalendarRepository {
         monthNumber: Int,
     ): Result<List<GoogleCalendarEvent>>
 
-    suspend fun reserveDay(id: UserId, volunteer: Volunteer): Result<Unit>
-
     suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>>
 }

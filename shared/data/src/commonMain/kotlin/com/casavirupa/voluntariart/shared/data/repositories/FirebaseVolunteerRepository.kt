@@ -1,12 +1,15 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
 import com.casavirupa.voluntariat.shared.core.utils.toMilliseconds
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
@@ -51,6 +54,15 @@ class FirebaseVolunteerRepository(
             }
     }
 
+    override suspend fun reserveDay(
+        id: UserId,
+        volunteer: Volunteer,
+    ): Result<Unit> = runCatching {
+        firestore
+            .collection("volunteers")
+            .add(volunteer.toFirebaseModel(id))
+    }
+
     override suspend fun deleteVolunteer(id: VolunteerId): Result<Unit> =
         runCatching {
             firestore
@@ -70,15 +82,63 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         sleep = sleep,
     )
 
-/*
-private fun String.toVolunteerShiftModel() =
+private fun Volunteer.toFirebaseModel(userId: UserId) =
+    FirebaseVolunteer(
+        userId = userId.value,
+        timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble()),
+        shift = shift.toFirebaseValue(),
+        types = shift.getTypes(),
+        timeRanges = shift.getTimeRanges(),
+        mealTypes = meals.map(Meal::toFirebaseValue),
+        sleep = sleep,
+    )
+
+private fun Shift.toFirebaseValue() =
     when (this) {
-        "morning" -> Shift.Morning
-        "afternoon" -> Shift.Afternoon
-        "all_day" -> Shift.AllDay
-        else -> Shift.Unknown
+        is Shift.Morning -> "morning"
+        is Shift.Afternoon -> "afternoon"
+        is Shift.AllDay -> "all_day"
+        else -> EMPTY_VALUE
     }
- */
+
+private fun Shift.getTypes() =
+    when (this) {
+        is Shift.Morning -> listOf(type.toFirebaseValue())
+        is Shift.Afternoon -> listOf(type.toFirebaseValue())
+        is Shift.AllDay -> listOf(morningType.toFirebaseValue(), afternoonType.toFirebaseValue())
+        else -> emptyList()
+    }
+
+private fun VolunteerType.toFirebaseValue() =
+    when (this) {
+        VolunteerType.General -> "general"
+        VolunteerType.Specific -> "specific"
+        else -> EMPTY_VALUE
+    }
+
+private fun Shift.getTimeRanges() =
+    when (this) {
+        is Shift.Morning -> listOf(timeRange.toFirebaseTimeRange())
+        is Shift.Afternoon -> listOf(timeRange.toFirebaseTimeRange())
+        is Shift.AllDay -> listOf(
+            morningTimeRange.toFirebaseTimeRange(),
+            afternoonTimeRange.toFirebaseTimeRange()
+        )
+        else -> listOf()
+    }
+
+private fun TimeRange.toFirebaseTimeRange() =
+    FirebaseTimeRange(
+        start = start,
+        end = end,
+    )
+
+private fun Meal.toFirebaseValue() =
+    when (this) {
+        Meal.Lunch -> "lunch"
+        Meal.Dinner -> "dinner"
+        else -> EMPTY_VALUE
+    }
 
 private fun String.toMealTypeModel() =
     when (this) {
@@ -92,3 +152,5 @@ private fun Timestamp.toDate() =
         .fromEpochSeconds(seconds, nanoseconds)
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
+
+private const val EMPTY_VALUE = ""

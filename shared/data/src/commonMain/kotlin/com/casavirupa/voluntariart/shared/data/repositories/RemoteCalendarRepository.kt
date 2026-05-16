@@ -9,8 +9,10 @@ import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
@@ -59,15 +61,6 @@ class RemoteCalendarRepository(
             .map(GoogleCalendarEventResponse::toDomainModel)
     }
 
-    override suspend fun reserveDay(
-        id: UserId,
-        volunteer: Volunteer,
-    ): Result<Unit> = runCatching {
-        firestore
-            .collection("volunteers")
-            .add(volunteer.toFirebaseModel(id))
-    }
-
     override suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>> =
         runCatching {
             val timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble())
@@ -93,51 +86,43 @@ private fun GoogleCalendarEventResponse.toDomainModel() =
         end = Instant.parse(start).toLocalDateTime(TimeZone.currentSystemDefault()),
     )
 
-private fun Volunteer.toFirebaseModel(userId: UserId) =
-    FirebaseVolunteer(
-        userId = userId.value,
-        timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble()),
-        shift = "",
-        specificArea = "",
-        mealTypes = meals.map(Meal::toFirebaseValue),
-        sleep = sleep,
-    )
-
 private fun FirebaseVolunteer.toDomainModel(docId: String) =
     Volunteer(
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = Shift.Unknown,
+        shift = shift.toVolunteerShiftModel(types),
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
 
-/*
-private fun Shift.toFirebaseValue() =
-    when (this) {
-        Shift.Morning -> "morning"
-        Shift.Afternoon -> "afternoon"
-        Shift.AllDay -> "all_day"
-        else -> EMPTY_VALUE
-    }
- */
-
-private fun Meal.toFirebaseValue() =
-    when (this) {
-        Meal.Lunch -> "lunch"
-        Meal.Dinner -> "dinner"
-        else -> EMPTY_VALUE
-    }
-/*
-private fun String.toVolunteerShiftModel() =
-    when (this) {
-        "morning" -> Shift.Morning
-        "afternoon" -> Shift.Afternoon
-        "all_day" -> Shift.AllDay
+private fun String.toVolunteerShiftModel(types: List<String>): Shift {
+    val modelTypes = types.map(String::toVolunteerTypeModel)
+    return when (this) {
+        "morning" -> Shift.Morning(
+            type = modelTypes.first(),
+            timeRange = TimeRange.DefaultMorning,
+        )
+        "afternoon" -> Shift.Afternoon(
+            type = modelTypes.first(),
+            timeRange = TimeRange.DefaultMorning,
+        )
+        "all_day" -> Shift.AllDay(
+            morningType = modelTypes.first(),
+            morningTimeRange = TimeRange.DefaultMorning,
+            afternoonType = modelTypes.last(),
+            afternoonTimeRange = TimeRange.DefaultMorning,
+        )
         else -> Shift.Unknown
     }
- */
+}
+
+private fun String.toVolunteerTypeModel() =
+    when (this) {
+        "general" -> VolunteerType.General
+        "specific" -> VolunteerType.Specific
+        else -> VolunteerType.Unknown
+    }
 
 private fun String.toMealTypeModel() =
     when (this) {
@@ -145,8 +130,6 @@ private fun String.toMealTypeModel() =
         "dinner" -> Meal.Dinner
         else -> Meal.Unknown
     }
-
-private const val EMPTY_VALUE = ""
 
 private fun Timestamp.toDate() =
     Instant

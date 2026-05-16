@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
+import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
@@ -39,7 +40,7 @@ import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
 
 class ReservationFormViewModel(
     private val authRepository: AuthRepository,
-    private val calendarRepository: CalendarRepository,
+    private val volunteerRepository: VolunteerRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReservationFormUiState())
     val uiState: StateFlow<ReservationFormUiState> = _uiState.asStateFlow()
@@ -260,7 +261,7 @@ class ReservationFormViewModel(
             authRepository
                 .getCurrentUser()
                 .onSuccess { user ->
-                    calendarRepository
+                    volunteerRepository
                         .reserveDay(user.id, buildReservation())
                         .onSuccess {
                             navigateBack()

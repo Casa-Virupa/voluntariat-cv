@@ -64,5 +64,6 @@ enum class Meal {
 
 enum class VolunteerType {
     General,
-    Specific
+    Specific,
+    Unknown,
 }
