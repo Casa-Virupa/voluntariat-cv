@@ -54,11 +54,18 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.friday_short
 import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
+import voluntariatcv.features.calendar.generated.resources.monday_short
+import voluntariatcv.features.calendar.generated.resources.saturday_short
 import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
+import voluntariatcv.features.calendar.generated.resources.sunday_short
+import voluntariatcv.features.calendar.generated.resources.thursday_short
+import voluntariatcv.features.calendar.generated.resources.tuesday_short
 import voluntariatcv.features.calendar.generated.resources.volunteers_count
+import voluntariatcv.features.calendar.generated.resources.wednesday_short
 
 @Composable
 internal fun CalendarScreen(
@@ -236,7 +243,15 @@ private fun CalendarNavigationArrows(
 
 @Composable
 private fun WeekHeader(modifier: Modifier = Modifier) {
-    val weekDayNames = listOf("Dl", "Dt", "Dc", "Dj", "Dv", "Ds", "Dm")
+    val weekDayNames = listOf(
+        stringResource(Res.string.monday_short),
+        stringResource(Res.string.tuesday_short),
+        stringResource(Res.string.wednesday_short),
+        stringResource(Res.string.thursday_short),
+        stringResource(Res.string.friday_short),
+        stringResource(Res.string.saturday_short),
+        stringResource(Res.string.sunday_short),
+    )
     val borderColor = MaterialTheme.colorScheme.outlineVariant
 
     Column(modifier = modifier) {

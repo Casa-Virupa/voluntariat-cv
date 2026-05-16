@@ -197,7 +197,6 @@ private fun ReservationForm(
                     .date,
             )
         }
-        HorizontalDivider()
         FormSection(
             title = stringResource(Res.string.overnight_stay),
             icon = painterResource(Res.drawable.ic_calendar_today),
@@ -207,7 +206,6 @@ private fun ReservationForm(
                 onSleepChanged = onSleepChanged,
             )
         }
-        HorizontalDivider()
         FormSection(
             title = stringResource(Res.string.schedule),
             icon = painterResource(Res.drawable.ic_calendar_today),
@@ -219,7 +217,6 @@ private fun ReservationForm(
                 displayMode = { Text(it.displayName()) },
             )
         }
-        HorizontalDivider()
         FormSection(
             title = stringResource(Res.string.specific_volunteering),
             icon = painterResource(Res.drawable.ic_calendar_today),
@@ -231,7 +228,6 @@ private fun ReservationForm(
                 displayMode = { Text(it.displayName()) },
             )
         }
-        HorizontalDivider()
         FormSection(
             title = stringResource(Res.string.meals_included),
             icon = painterResource(Res.drawable.ic_calendar_today),

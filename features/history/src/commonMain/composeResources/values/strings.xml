@@ -1,4 +1,11 @@
 <resources>
     <string name="morning">Morning</string>
     <string name="afternoon">Afternoon</string>
+    <string name="my_volunteerings">My volunteerings</string>
+    <string name="hours">Hours</string>
+    <string name="days">Days</string>
+    <string name="pending_payment">Pending payment</string>
+    <string name="remember_payment">Remember to make the payment for the month</string>
+    <string name="volunteerings_history">Volunteerings history</string>
+    <string name="hours_format">%1$dh</string>
 </resources>

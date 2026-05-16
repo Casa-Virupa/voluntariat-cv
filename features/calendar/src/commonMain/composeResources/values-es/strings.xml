@@ -35,4 +35,14 @@
         <item quantity="one">1 voluntario</item>
         <item quantity="other">%1$d voluntarios</item>
     </plurals>
+    <string name="delete_volunteering_title">Eliminar voluntariado</string>
+    <string name="delete_volunteering_description">¿Estás seguro que quieres eliminar tu voluntariado de este día? Esta acción no se puede deshacer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="monday_short">Lu</string>
+    <string name="tuesday_short">Ma</string>
+    <string name="wednesday_short">Mi</string>
+    <string name="thursday_short">Ju</string>
+    <string name="friday_short">Vi</string>
+    <string name="saturday_short">Sá</string>
+    <string name="sunday_short">Do</string>
 </resources>

@@ -1,3 +1,20 @@
 <resources>
-
+    <string name="sign_in">Iniciar sesión</string>
+    <string name="app_name_volunteering">Voluntariado\nCasa Virupa</string>
+    <string name="email_label">Correo electrónico</string>
+    <string name="email_placeholder">nombre@ejemplo.com</string>
+    <string name="password_label">Contraseña</string>
+    <string name="password_placeholder">********</string>
+    <string name="create_password">Crear contraseña</string>
+    <string name="create_new_password_title">Crear nueva contraseña</string>
+    <string name="create_password_description">Por seguridad, debes cambiar tu contraseña antes de continuar</string>
+    <string name="actual_password_label">Contraseña actual</string>
+    <string name="new_password_label">Nueva contraseña</string>
+    <string name="confirm_password_label">Confirmar contraseña</string>
+    <string name="password_not_valid_error">La contraseña no cumple los requisitos de seguridad</string>
+    <string name="passwords_do_not_match_error">Las contraseñas no coinciden</string>
+    <string name="security_requirements">Requisitos de seguridad</string>
+    <string name="requirement_8_characters">Mínimo 8 caracteres</string>
+    <string name="requirement_uppercase_lowercase">Una mayúscula y una minúscula</string>
+    <string name="requirement_number_symbol">Un número o símbolo especial</string>
 </resources>

@@ -20,7 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter.Companion.tint
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.shared.designsystem.generated.resources.Res
+import voluntariatcv.shared.designsystem.generated.resources.cancel
 import voluntariatcv.shared.designsystem.generated.resources.ic_warning
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +85,7 @@ fun WarningDialog(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CVOutlinedButton(
-                        text = "Cancel·lar",
+                        text = stringResource(Res.string.cancel),
                         onClick = onCancel,
                         modifier = Modifier.weight(1f),
                     )

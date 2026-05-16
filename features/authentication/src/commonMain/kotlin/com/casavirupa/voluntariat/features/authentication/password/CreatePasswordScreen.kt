@@ -40,12 +40,26 @@ import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
 import kotlinx.coroutines.flow.filter
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.authentication.generated.resources.Res
+import voluntariatcv.features.authentication.generated.resources.actual_password_label
+import voluntariatcv.features.authentication.generated.resources.confirm_password_label
+import voluntariatcv.features.authentication.generated.resources.create_new_password_title
+import voluntariatcv.features.authentication.generated.resources.create_password
+import voluntariatcv.features.authentication.generated.resources.create_password_description
 import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
 import voluntariatcv.features.authentication.generated.resources.ic_lock
 import voluntariatcv.features.authentication.generated.resources.ic_visibility
 import voluntariatcv.features.authentication.generated.resources.ic_visibility_off
+import voluntariatcv.features.authentication.generated.resources.new_password_label
+import voluntariatcv.features.authentication.generated.resources.password_not_valid_error
+import voluntariatcv.features.authentication.generated.resources.password_placeholder
+import voluntariatcv.features.authentication.generated.resources.passwords_do_not_match_error
+import voluntariatcv.features.authentication.generated.resources.requirement_8_characters
+import voluntariatcv.features.authentication.generated.resources.requirement_number_symbol
+import voluntariatcv.features.authentication.generated.resources.requirement_uppercase_lowercase
+import voluntariatcv.features.authentication.generated.resources.security_requirements
 
 @Composable
 internal fun CreatePasswordScreen(
@@ -118,7 +132,7 @@ private fun ConfirmPasswordContent(
                 .padding(start = 4.dp),
         )
         CVButton(
-            text = "Crear contrasenya",
+            text = stringResource(Res.string.create_password),
             onClick = onClickCreatePassword,
             modifier = Modifier
                 .padding(top = 8.dp)
@@ -132,11 +146,11 @@ private fun ConfirmPasswordContent(
 private fun Header(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(
-            text = "Crear nova contrasenya",
+            text = stringResource(Res.string.create_new_password_title),
             style = MaterialTheme.typography.headlineLarge,
         )
         Text(
-            text = "Per seguretat, has de canviar la teva contrasenya abans de continuar",
+            text = stringResource(Res.string.create_password_description),
             modifier = Modifier.padding(top = 8.dp, start = 4.dp),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -179,7 +193,7 @@ private fun CreatePasswordInputs(
         CVTextField(
             value = actualPassword,
             onValueChanged = onActualPasswordChanged,
-            label = "Contrasenya actual",
+            label = stringResource(Res.string.actual_password_label),
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
@@ -188,7 +202,7 @@ private fun CreatePasswordInputs(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
-            placeholder = "********",
+            placeholder = stringResource(Res.string.password_placeholder),
             visualTransformation = actualPasswordVisualTransformation,
             trailingIcon = {
                 PasswordVisibilityButton(
@@ -260,7 +274,7 @@ private fun SecurityRequirements(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Requisits de seguretat".uppercase(),
+            text = stringResource(Res.string.security_requirements).uppercase(),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
@@ -268,15 +282,15 @@ private fun SecurityRequirements(
         )
         Column(modifier = Modifier.padding(start = 4.dp)) {
             RequirementCheck(
-                text = "Mínim 8 caràcters",
+                text = stringResource(Res.string.requirement_8_characters),
                 modifier = Modifier.padding(top = 8.dp)
             )
             RequirementCheck(
-                text = "Una majúscula i una minúscula",
+                text = stringResource(Res.string.requirement_uppercase_lowercase),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
             RequirementCheck(
-                text = "Un número o símbol especial",
+                text = stringResource(Res.string.requirement_number_symbol),
             )
         }
     }

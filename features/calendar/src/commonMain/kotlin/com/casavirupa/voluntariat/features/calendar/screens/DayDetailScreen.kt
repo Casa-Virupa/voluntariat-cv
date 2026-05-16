@@ -44,6 +44,9 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.all_day
+import voluntariatcv.features.calendar.generated.resources.delete
+import voluntariatcv.features.calendar.generated.resources.delete_volunteering_description
+import voluntariatcv.features.calendar.generated.resources.delete_volunteering_title
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
@@ -74,10 +77,10 @@ fun DayDetailScreen(
     if (showDeleteDialog) {
         WarningDialog(
             onDismiss = viewModel::onCloseDeleteDialog,
-            title = "Eliminar voluntariat",
-            description = "Estàs segur que vols eliminar el teu voluntariat del dia 5? Aquesta acció no es pot desfer.",
+            title = stringResource(Res.string.delete_volunteering_title),
+            description = stringResource(Res.string.delete_volunteering_description),
             onCancel = viewModel::onCloseDeleteDialog,
-            confirmText = "Eliminar",
+            confirmText = stringResource(Res.string.delete),
             onConfirm = viewModel::deleteVolunteer,
         )
     }

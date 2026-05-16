@@ -35,4 +35,14 @@
         <item quantity="one">1 voluntari</item>
         <item quantity="other">%1$d voluntaris</item>
     </plurals>
+    <string name="delete_volunteering_title">Eliminar voluntariat</string>
+    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d\'aquest dia? Aquesta acció no es pot desfer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="monday_short">Dl</string>
+    <string name="tuesday_short">Dt</string>
+    <string name="wednesday_short">Dc</string>
+    <string name="thursday_short">Dj</string>
+    <string name="friday_short">Dv</string>
+    <string name="saturday_short">Ds</string>
+    <string name="sunday_short">Dm</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -98,9 +99,16 @@ fun CVTextField(
                 }
                 Row(
                     modifier = Modifier
-                        .border(width = borderWidth, color = textFieldBorderColor)
+                        .border(
+                            width = borderWidth,
+                            color = textFieldBorderColor,
+                            shape = RoundedCornerShape(8.dp),
+                        )
                         .height(56.dp)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp),
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (leadingIcon != null) {

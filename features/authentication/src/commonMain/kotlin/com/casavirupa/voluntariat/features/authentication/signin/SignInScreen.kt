@@ -38,14 +38,21 @@ import androidx.lifecycle.flowWithLifecycle
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.authentication.generated.resources.Res
+import voluntariatcv.features.authentication.generated.resources.app_name_volunteering
 import voluntariatcv.features.authentication.generated.resources.cv_logo
+import voluntariatcv.features.authentication.generated.resources.email_label
+import voluntariatcv.features.authentication.generated.resources.email_placeholder
 import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
 import voluntariatcv.features.authentication.generated.resources.ic_lock
 import voluntariatcv.features.authentication.generated.resources.ic_mail
 import voluntariatcv.features.authentication.generated.resources.ic_visibility
 import voluntariatcv.features.authentication.generated.resources.ic_visibility_off
+import voluntariatcv.features.authentication.generated.resources.password_label
+import voluntariatcv.features.authentication.generated.resources.password_placeholder
+import voluntariatcv.features.authentication.generated.resources.sign_in
 
 @Composable
 internal fun SignInScreen(
@@ -110,7 +117,7 @@ private fun SignInContent(
             modifier = Modifier.padding(top = 32.dp),
         )
         CVButton(
-            text = "Iniciar sessió",
+            text = stringResource(Res.string.sign_in),
             onClick = onClickLogIn,
             modifier = Modifier
                 .padding(top = 32.dp)
@@ -132,7 +139,7 @@ private fun HeaderImageWithTitle(modifier: Modifier = Modifier) {
             contentScale = ContentScale.Crop,
         )
         Text(
-            text = "Voluntariat\nCasa Virupa",
+            text = stringResource(Res.string.app_name_volunteering),
             style = MaterialTheme.typography.displayMedium,
             textAlign = TextAlign.Center,
         )
@@ -159,13 +166,13 @@ private fun SignInInputs(
         CVTextField(
             value = email,
             onValueChanged = onEmailChanged,
-            label = "Correu electrónic",
+            label = stringResource(Res.string.email_label),
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next,
             ),
-            placeholder = "nom@exemple.com",
+            placeholder = stringResource(Res.string.email_placeholder),
             leadingIcon = {
                 Icon(
                     painter = painterResource(Res.drawable.ic_mail),
@@ -177,7 +184,7 @@ private fun SignInInputs(
         CVTextField(
             value = password,
             onValueChanged = onPasswordChanged,
-            label = "Contrasenya",
+            label = stringResource(Res.string.password_label),
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
@@ -192,7 +199,7 @@ private fun SignInInputs(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
-            placeholder = "********",
+            placeholder = stringResource(Res.string.password_placeholder),
             visualTransformation = visualTransformation,
             trailingIcon = {
                 IconButton(onClick = onTogglePasswordVisibility) {

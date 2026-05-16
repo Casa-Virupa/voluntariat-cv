@@ -35,4 +35,14 @@
         <item quantity="one">1 volunteer</item>
         <item quantity="other">%1$d volunteers</item>
     </plurals>
+    <string name="delete_volunteering_title">Delete volunteering</string>
+    <string name="delete_volunteering_description">Are you sure you want to delete your volunteering for this day? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="monday_short">Mon</string>
+    <string name="tuesday_short">Tue</string>
+    <string name="wednesday_short">Wed</string>
+    <string name="thursday_short">Thu</string>
+    <string name="friday_short">Fri</string>
+    <string name="saturday_short">Sat</string>
+    <string name="sunday_short">Sun</string>
 </resources>

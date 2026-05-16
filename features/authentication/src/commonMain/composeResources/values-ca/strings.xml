@@ -1,3 +1,20 @@
 <resources>
-
+    <string name="sign_in">Iniciar sessió</string>
+    <string name="app_name_volunteering">Voluntariat\nCasa Virupa</string>
+    <string name="email_label">Correu electrònic</string>
+    <string name="email_placeholder">nom@exemple.com</string>
+    <string name="password_label">Contrasenya</string>
+    <string name="password_placeholder">********</string>
+    <string name="create_password">Crear contrasenya</string>
+    <string name="create_new_password_title">Crear nova contrasenya</string>
+    <string name="create_password_description">Per seguretat, has de canviar la teva contrasenya abans de continuar</string>
+    <string name="actual_password_label">Contrasenya actual</string>
+    <string name="new_password_label">Nova contrasenya</string>
+    <string name="confirm_password_label">Confirmar contrasenya</string>
+    <string name="password_not_valid_error">La contrasenya no compleix els requisits de seguretat</string>
+    <string name="passwords_do_not_match_error">Les contrasenyes no coincideixen</string>
+    <string name="security_requirements">Requisits de seguretat</string>
+    <string name="requirement_8_characters">Mínim 8 caràcters</string>
+    <string name="requirement_uppercase_lowercase">Una majúscula i una minúscula</string>
+    <string name="requirement_number_symbol">Un número o símbol especial</string>
 </resources>
