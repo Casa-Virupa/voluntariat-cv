@@ -312,17 +312,17 @@ private fun ShiftTags(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         when (shift) {
-            Shift.Morning -> CVTag(
+            is Shift.Morning -> CVTag(
                 text = stringResource(Res.string.morning),
                 icon = painterResource(Res.drawable.ic_sun),
                 backgroundColor = Color(0xFFC2A47D),
             )
-            Shift.Afternoon -> CVTag(
+            is Shift.Afternoon -> CVTag(
                 text = stringResource(Res.string.afternoon),
                 icon = painterResource(Res.drawable.ic_afternoon),
                 backgroundColor = Color(0xFF9E816E),
             )
-            Shift.AllDay -> {
+            is Shift.AllDay -> {
                 CVTag(
                     text = stringResource(Res.string.morning),
                     icon = painterResource(Res.drawable.ic_sun),

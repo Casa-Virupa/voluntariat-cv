@@ -114,9 +114,9 @@ data class VolunteerHistoryItem(
 
 private fun Shift.getHour() =
     when (this) {
-        Shift.Morning -> HALF_JOURNEY
-        Shift.Afternoon -> HALF_JOURNEY
-        Shift.AllDay -> ALL_DAY_JOURNEY
+        is Shift.Morning -> HALF_JOURNEY
+        is Shift.Afternoon -> HALF_JOURNEY
+        is Shift.AllDay -> ALL_DAY_JOURNEY
         else -> 0
     }
 

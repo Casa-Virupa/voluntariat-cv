@@ -30,16 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.casavirupa.voluntariat.features.calendar.components.ChipMultiOptionsSelector
 import com.casavirupa.voluntariat.features.calendar.viewmodels.AdditionalOption
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
-import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
-import com.casavirupa.voluntariat.shared.model.calendar.Meal
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -62,22 +58,16 @@ internal fun ReservationFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
-    val sleep by viewModel.sleep.collectAsStateWithLifecycle()
     val shifts by viewModel.shifts.collectAsStateWithLifecycle()
-    val technicalArea by viewModel.technicalArea.collectAsStateWithLifecycle()
     val options by viewModel.additionalOptions.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
         date = date,
-        sleep = sleep,
         shifts = shifts,
-        technicalArea = technicalArea,
         options = options,
         onDateChanged = viewModel::onDateChanged,
-        onSleepChanged = viewModel::onSleepChanged,
         onShiftSelected = viewModel::onShiftChanged,
-        onTechnicalAreaChanged = viewModel::onTechnicalAreaChanged,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
         onConfirm = viewModel::onConfirm,
     )
@@ -95,14 +85,10 @@ internal fun ReservationFormScreen(
 private fun ReservationFormContent(
     onNavBack: () -> Unit,
     date: LocalDate?,
-    sleep: Boolean,
     shifts: List<ShiftUi>,
-    technicalArea: SpecificArea?,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
-    onSleepChanged: (Boolean) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
-    onTechnicalAreaChanged: (SpecificArea) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
@@ -131,14 +117,10 @@ private fun ReservationFormContent(
         ) {
             ReservationForm(
                 date = date,
-                sleep = sleep,
                 shifts = shifts,
-                technicalArea = technicalArea,
                 options = options,
                 onDateChanged = onDateChanged,
-                onSleepChanged = onSleepChanged,
                 onShiftSelected = onShiftSelected,
-                onTechnicalAreaChanged = onTechnicalAreaChanged,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -157,14 +139,10 @@ private fun ReservationFormContent(
 @Composable
 private fun ReservationForm(
     date: LocalDate?,
-    sleep: Boolean,
     shifts: List<ShiftUi>,
-    technicalArea: SpecificArea?,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
-    onSleepChanged: (Boolean) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
-    onTechnicalAreaChanged: (SpecificArea) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     modifier: Modifier = Modifier,
 ) {

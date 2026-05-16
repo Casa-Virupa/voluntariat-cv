@@ -5,7 +5,6 @@ import com.casavirupa.voluntariat.shared.core.utils.toMilliseconds
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.user.UserId
@@ -66,12 +65,12 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = shift.toVolunteerShiftModel(),
-        specificArea = specificArea.toSpecificAreaModel(),
+        shift = Shift.Unknown,
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
 
+/*
 private fun String.toVolunteerShiftModel() =
     when (this) {
         "morning" -> Shift.Morning
@@ -79,14 +78,7 @@ private fun String.toVolunteerShiftModel() =
         "all_day" -> Shift.AllDay
         else -> Shift.Unknown
     }
-
-private fun String?.toSpecificAreaModel() =
-    when (this) {
-        "morning" -> SpecificArea.Morning
-        "afternoon" -> SpecificArea.Afternoon
-        "all_day" -> SpecificArea.AllDay
-        else -> null
-    }
+ */
 
 private fun String.toMealTypeModel() =
     when (this) {

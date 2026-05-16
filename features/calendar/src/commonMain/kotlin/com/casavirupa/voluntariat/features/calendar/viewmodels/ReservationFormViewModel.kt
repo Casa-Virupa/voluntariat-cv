@@ -9,7 +9,8 @@ import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,24 +42,14 @@ class ReservationFormViewModel(
     private val _date = MutableStateFlow<LocalDate?>(null)
     val date: StateFlow<LocalDate?> = _date.asStateFlow()
 
-    private val _sleep = MutableStateFlow(false)
-    val sleep: StateFlow<Boolean> = _sleep.asStateFlow()
-
     private val _shifts = MutableStateFlow<List<ShiftUi>>(emptyList())
     val shifts: StateFlow<List<ShiftUi>> = _shifts.asStateFlow()
-
-    private val _technicalArea = MutableStateFlow<SpecificArea?>(null)
-    val technicalArea: StateFlow<SpecificArea?> = _technicalArea.asStateFlow()
 
     private val _additionalOptions = MutableStateFlow<List<AdditionalOption>>(emptyList())
     val additionalOptions: StateFlow<List<AdditionalOption>> = _additionalOptions.asStateFlow()
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
-    }
-
-    fun onSleepChanged(sleep: Boolean) {
-        _sleep.update { sleep }
     }
 
     fun onShiftChanged(shift: ShiftUi) {
@@ -71,10 +62,6 @@ class ReservationFormViewModel(
             }
             mutableShifts.toList()
         }
-    }
-
-    fun onTechnicalAreaChanged(technicalArea: SpecificArea) {
-        _technicalArea.update { technicalArea }
     }
 
     fun onAdditionOptionSelected(option: AdditionalOption) {
@@ -118,16 +105,13 @@ class ReservationFormViewModel(
     }
 
     private fun formInputsAreValid() =
-        date.value != null &&
-            shifts.value.isNotEmpty() &&
-            technicalArea.value != null
+        date.value != null && shifts.value.isNotEmpty()
     private fun buildReservation() =
         Volunteer(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shift = shifts.value.toDomainModel(),
-            specificArea = technicalArea.value!!,
+            shift = Shift.Unknown,
             meals = additionalOptions.value.getMeals(),
             sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
         )
@@ -172,17 +156,6 @@ enum class AdditionalOption(
         icon = Res.drawable.ic_sleep_bed,
     ),
 }
-
-private fun List<ShiftUi>.toDomainModel() =
-    when {
-        containsAll(ShiftUi.entries.toList()) -> Shift.AllDay
-        else -> {
-            when (this.first()) {
-                ShiftUi.Morning -> Shift.Morning
-                ShiftUi.Afternoon -> Shift.Afternoon
-            }
-        }
-    }
 
 private fun List<AdditionalOption>.getMeals() =
     filter { it != AdditionalOption.Sleep }.map(AdditionalOption::toMeal)

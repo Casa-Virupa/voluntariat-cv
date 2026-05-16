@@ -9,7 +9,6 @@ import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.user.UserId
@@ -98,8 +97,8 @@ private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
         userId = userId.value,
         timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble()),
-        shift = shift.toFirebaseValue(),
-        specificArea = specificArea?.toFirebaseValue(),
+        shift = "",
+        specificArea = "",
         mealTypes = meals.map(Meal::toFirebaseValue),
         sleep = sleep,
     )
@@ -109,12 +108,12 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = shift.toVolunteerShiftModel(),
-        specificArea = specificArea.toSpecificAreaModel(),
+        shift = Shift.Unknown,
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
 
+/*
 private fun Shift.toFirebaseValue() =
     when (this) {
         Shift.Morning -> "morning"
@@ -122,14 +121,7 @@ private fun Shift.toFirebaseValue() =
         Shift.AllDay -> "all_day"
         else -> EMPTY_VALUE
     }
-
-private fun SpecificArea?.toFirebaseValue() =
-    when (this) {
-        SpecificArea.Morning -> "morning"
-        SpecificArea.Afternoon -> "afternoon"
-        SpecificArea.AllDay -> "all_day"
-        else -> EMPTY_VALUE
-    }
+ */
 
 private fun Meal.toFirebaseValue() =
     when (this) {
@@ -137,7 +129,7 @@ private fun Meal.toFirebaseValue() =
         Meal.Dinner -> "dinner"
         else -> EMPTY_VALUE
     }
-
+/*
 private fun String.toVolunteerShiftModel() =
     when (this) {
         "morning" -> Shift.Morning
@@ -145,14 +137,7 @@ private fun String.toVolunteerShiftModel() =
         "all_day" -> Shift.AllDay
         else -> Shift.Unknown
     }
-
-private fun String?.toSpecificAreaModel() =
-    when (this) {
-        "morning" -> SpecificArea.Morning
-        "afternoon" -> SpecificArea.Afternoon
-        "all_day" -> SpecificArea.AllDay
-        else -> null
-    }
+ */
 
 private fun String.toMealTypeModel() =
     when (this) {
