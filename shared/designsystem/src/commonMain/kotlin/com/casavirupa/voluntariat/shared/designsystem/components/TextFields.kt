@@ -194,6 +194,7 @@ fun TimeTextField(
     time: LocalTime?,
     onTimeChanged: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
+    label: String? = null,
     placeholder: String? = null,
     leadingIcon: Painter? = null,
     pattern: String? = null,
@@ -208,6 +209,14 @@ fun TimeTextField(
     }
 
     Column(modifier = modifier) {
+        if (label != null) {
+            Text(
+                text = label.uppercase(),
+                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
         CVTextField(
             value = timeString,
             onValueChanged = {},

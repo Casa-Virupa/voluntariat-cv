@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,12 +33,19 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.viewmodels.AdditionalOption
+import com.casavirupa.voluntariat.features.calendar.viewmodels.FormVolunteerTypeUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
+import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftInfoSummary
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
+import com.casavirupa.voluntariat.features.calendar.viewmodels.ShownModal
+import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
@@ -46,7 +55,9 @@ import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.confirm
 import voluntariatcv.features.calendar.generated.resources.date_placeholder
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
+import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
+import voluntariatcv.features.calendar.generated.resources.ic_edit
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.select_date
 import kotlin.time.Clock
@@ -60,17 +71,54 @@ internal fun ReservationFormScreen(
     val date by viewModel.date.collectAsStateWithLifecycle()
     val shifts by viewModel.shifts.collectAsStateWithLifecycle()
     val options by viewModel.additionalOptions.collectAsStateWithLifecycle()
+    val shownModal by viewModel.shownModal.collectAsStateWithLifecycle()
+    val morningVolunteerType by viewModel.morningVolunteerType.collectAsStateWithLifecycle()
+    val afternoonVolunteerType by viewModel.afternoonVolunteerType.collectAsStateWithLifecycle()
+    val morningTimeRange by viewModel.morningTimeRange.collectAsStateWithLifecycle()
+    val afternoonTimeRange by viewModel.afternoonTimeRange.collectAsStateWithLifecycle()
+    val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
         date = date,
         shifts = shifts,
+        shiftsInfo = shiftsInfo,
         options = options,
         onDateChanged = viewModel::onDateChanged,
         onShiftSelected = viewModel::onShiftChanged,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
+        onEditShiftInfo = {
+            when (it) {
+                ShiftUi.Morning -> viewModel.openMorningModal()
+                ShiftUi.Afternoon -> viewModel.openAfternoonModal()
+            }
+        },
         onConfirm = viewModel::onConfirm,
     )
+
+    when (shownModal) {
+        ShownModal.MorningShift -> ShiftModal(
+            title = "Turno de mañana",
+            type = morningVolunteerType,
+            onVolunteerTypeChanged = viewModel::onMorningVolunteerTypeChanged,
+            timeRange = morningTimeRange,
+            onDismiss = viewModel::dismissModal,
+            onStartTimeChanged = viewModel::onMorningStartTimeChanged,
+            onEndTimeChanged = viewModel::onMorningEndTimeChanged,
+            onConfirm = viewModel::onConfirmShift,
+        )
+        ShownModal.AfternoonShift -> ShiftModal(
+            title = "Turno de tarde",
+            type = afternoonVolunteerType,
+            onVolunteerTypeChanged = viewModel::onAfternoonVolunteerTypeChanged,
+            timeRange = afternoonTimeRange,
+            onDismiss = viewModel::dismissModal,
+            onStartTimeChanged = viewModel::onAfternoonStartTimeChanged,
+            onEndTimeChanged = viewModel::onAfternoonEndTimeChanged,
+            onConfirm = viewModel::onConfirmShift,
+        )
+        else -> {}
+    }
 
     val currentOnNavBack by rememberUpdatedState(onNavBack)
     LaunchedEffect(uiState.isFormSavedSuccessfully) {
@@ -86,10 +134,12 @@ private fun ReservationFormContent(
     onNavBack: () -> Unit,
     date: LocalDate?,
     shifts: List<ShiftUi>,
+    shiftsInfo: List<ShiftInfoSummary>,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
+    onEditShiftInfo: (ShiftUi) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -118,10 +168,12 @@ private fun ReservationFormContent(
             ReservationForm(
                 date = date,
                 shifts = shifts,
+                shiftsInfo = shiftsInfo,
                 options = options,
                 onDateChanged = onDateChanged,
                 onShiftSelected = onShiftSelected,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
+                onEditShiftInfo = onEditShiftInfo,
                 modifier = Modifier.fillMaxSize(),
             )
             CVButton(
@@ -140,10 +192,12 @@ private fun ReservationFormContent(
 private fun ReservationForm(
     date: LocalDate?,
     shifts: List<ShiftUi>,
+    shiftsInfo: List<ShiftInfoSummary>,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
+    onEditShiftInfo: (ShiftUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -172,6 +226,8 @@ private fun ReservationForm(
             ShiftSelector(
                 selectedShifts = shifts,
                 onSelectShift = onShiftSelected,
+                shiftsInfo = shiftsInfo,
+                onEditInfo = onEditShiftInfo,
             )
         }
         FormSection(
@@ -221,6 +277,8 @@ private fun FormSection(
 private fun ShiftSelector(
     selectedShifts: List<ShiftUi>,
     onSelectShift: (ShiftUi) -> Unit,
+    shiftsInfo: List<ShiftInfoSummary>,
+    onEditInfo: (ShiftUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column {
@@ -239,14 +297,11 @@ private fun ShiftSelector(
                 )
             }
         }
-        Column(
-            modifier = Modifier.padding(top = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            selectedShifts.forEach { shift ->
+        Column {
+            shiftsInfo.forEach { shift ->
                 ShiftScheduleInfo(
                     shift = shift,
-                    onClickCustomSchedule = {},
+                    onClickEditInfo = { onEditInfo(shift.shift) },
                 )
             }
         }
@@ -323,24 +378,100 @@ private fun FormChip(
 
 @Composable
 private fun ShiftScheduleInfo(
-    shift: ShiftUi,
-    onClickCustomSchedule: () -> Unit,
+    shift: ShiftInfoSummary,
+    onClickEditInfo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = shift.displayInfo(),
-            style = MaterialTheme.typography.labelSmall,
-        )
+        Column {
+            Text(
+                text = shift.displayTime(),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        IconButton(onClick = onClickEditInfo) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_edit),
+                contentDescription = null,
+            )
+        }
     }
 }
 
-private fun ShiftUi.displayInfo() =
-    when (this) {
-        ShiftUi.Morning -> "Matí: 10:00h-14:00h"
-        ShiftUi.Afternoon -> "Tarda: 16:30h-20:30h"
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShiftModal(
+    title: String,
+    type: FormVolunteerTypeUi,
+    onVolunteerTypeChanged: (FormVolunteerTypeUi) -> Unit,
+    timeRange: TimeRange,
+    onDismiss: () -> Unit,
+    onStartTimeChanged: (LocalTime) -> Unit,
+    onEndTimeChanged: (LocalTime) -> Unit,
+    onConfirm: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+            )
+            FlowRow(
+                modifier = modifier,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FormVolunteerTypeUi.entries.forEach { volunteerType ->
+                    FormChip(
+                        text = stringResource(volunteerType.text),
+                        isSelected = type == volunteerType,
+                        icon = painterResource(volunteerType.icon),
+                        onClick = { onVolunteerTypeChanged(volunteerType) },
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                TimeTextField(
+                    time = timeRange.start,
+                    onTimeChanged = onStartTimeChanged,
+                    modifier = Modifier.weight(1f),
+                    label = "Inicio",
+                    leadingIcon = painterResource(Res.drawable.ic_clock),
+                )
+                TimeTextField(
+                    time = timeRange.end,
+                    onTimeChanged = onEndTimeChanged,
+                    modifier = Modifier.weight(1f),
+                    label = "Fin",
+                    leadingIcon = painterResource(Res.drawable.ic_clock),
+                )
+            }
+            CVButton(
+                text = "Confirmar",
+                onClick = onConfirm,
+                modifier = Modifier
+                    .padding(top = 16.dp)
+                    .fillMaxWidth(),
+            )
+        }
     }
+}
+
+private fun ShiftInfoSummary.displayTime() =
+    when (shift) {
+        ShiftUi.Morning -> "Matí: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
+        ShiftUi.Afternoon -> "Tarda: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
+    }
+
 
 private const val DATE_PATTERN = "d MMMM yyyy"

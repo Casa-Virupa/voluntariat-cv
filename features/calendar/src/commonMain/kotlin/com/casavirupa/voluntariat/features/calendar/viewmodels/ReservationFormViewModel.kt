@@ -18,18 +18,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.afternoon
 import voluntariatcv.features.calendar.generated.resources.dinner
+import voluntariatcv.features.calendar.generated.resources.general
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
+import voluntariatcv.features.calendar.generated.resources.ic_group
 import voluntariatcv.features.calendar.generated.resources.ic_lunch
 import voluntariatcv.features.calendar.generated.resources.ic_moon
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
+import voluntariatcv.features.calendar.generated.resources.ic_target
 import voluntariatcv.features.calendar.generated.resources.lunch
 import voluntariatcv.features.calendar.generated.resources.morning
+import voluntariatcv.features.calendar.generated.resources.specific
 import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
 
 class ReservationFormViewModel(
@@ -48,17 +53,45 @@ class ReservationFormViewModel(
     private val _additionalOptions = MutableStateFlow<List<AdditionalOption>>(emptyList())
     val additionalOptions: StateFlow<List<AdditionalOption>> = _additionalOptions.asStateFlow()
 
+    private val _shownModal = MutableStateFlow(ShownModal.None)
+    val shownModal: StateFlow<ShownModal> = _shownModal.asStateFlow()
+
+    private val _morningVolunteerType = MutableStateFlow(FormVolunteerTypeUi.General)
+    val morningVolunteerType: StateFlow<FormVolunteerTypeUi> = _morningVolunteerType.asStateFlow()
+
+    private val _afternoonVolunteerType = MutableStateFlow(FormVolunteerTypeUi.General)
+    val afternoonVolunteerType: StateFlow<FormVolunteerTypeUi> =
+        _afternoonVolunteerType.asStateFlow()
+
+    private val _morningTimeRange = MutableStateFlow(TimeRange.DefaultMorning)
+    val morningTimeRange: StateFlow<TimeRange> = _morningTimeRange.asStateFlow()
+
+    private val _afternoonTimeRange = MutableStateFlow(TimeRange.DefaultAfternoon)
+    val afternoonTimeRange: StateFlow<TimeRange> = _afternoonTimeRange.asStateFlow()
+
+    private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
+    val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
+
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
     }
 
     fun onShiftChanged(shift: ShiftUi) {
-        _shifts.update {
-            val mutableShifts = it.toMutableList()
-            if (mutableShifts.contains(shift)) {
+        _shifts.update { shifts ->
+            val mutableShifts = shifts.toMutableList()
+            if (shifts.contains(shift)) {
                 mutableShifts.remove(shift)
+                _shiftsInfo.update {
+                    val mutableInfo = it.toMutableList()
+                    mutableInfo.removeAll { it.shift == shift }
+                    mutableInfo.toList()
+                }
             } else {
                 mutableShifts.add(shift)
+                when (shift) {
+                    ShiftUi.Morning -> openMorningModal()
+                    ShiftUi.Afternoon -> openAfternoonModal()
+                }
             }
             mutableShifts.toList()
         }
@@ -74,6 +107,93 @@ class ReservationFormViewModel(
             }
             mutableOptions.toList()
         }
+    }
+
+    fun openMorningModal() {
+        _shownModal.update { ShownModal.MorningShift }
+    }
+
+    fun openAfternoonModal() {
+        _shownModal.update { ShownModal.AfternoonShift }
+    }
+
+    fun dismissModal() {
+        when (_shownModal.value) {
+            ShownModal.MorningShift -> {
+                val mutableShifts = _shifts.value.toMutableList()
+                mutableShifts.remove(ShiftUi.Morning)
+                _shifts.update { mutableShifts.toList() }
+            }
+            ShownModal.AfternoonShift -> {
+                val mutableShifts = _shifts.value.toMutableList()
+                mutableShifts.remove(ShiftUi.Afternoon)
+                _shifts.update { mutableShifts.toList() }
+            }
+            else -> {}
+        }
+        _shownModal.update { ShownModal.None }
+    }
+
+    fun onMorningVolunteerTypeChanged(type: FormVolunteerTypeUi) {
+        _morningVolunteerType.update { type }
+    }
+
+    fun onAfternoonVolunteerTypeChanged(type: FormVolunteerTypeUi) {
+        _afternoonVolunteerType.update { type }
+    }
+
+    fun onMorningStartTimeChanged(time: LocalTime) {
+        _morningTimeRange.update { it.copy(start = time) }
+    }
+
+    fun onMorningEndTimeChanged(time: LocalTime) {
+        _morningTimeRange.update { it.copy(end = time) }
+    }
+
+    fun onAfternoonStartTimeChanged(time: LocalTime) {
+        _afternoonTimeRange.update { it.copy(start = time) }
+    }
+
+    fun onAfternoonEndTimeChanged(time: LocalTime) {
+        _afternoonTimeRange.update { it.copy(end = time) }
+    }
+
+    fun onConfirmShift() {
+        when (_shownModal.value) {
+            ShownModal.MorningShift -> {
+                _shiftsInfo.update {
+                    val mutableInfo = it.toMutableList()
+                    mutableInfo.add(
+                        index = 0,
+                        element = ShiftInfoSummary(
+                            shift = ShiftUi.Morning,
+                            timeRange = morningTimeRange.value,
+                            type = morningVolunteerType.value,
+                        )
+                    )
+                    mutableInfo.toList()
+                }
+            }
+            ShownModal.AfternoonShift -> {
+                _shiftsInfo.update {
+                    val mutableInfo = it.toMutableList()
+                    mutableInfo.add(
+                        element = ShiftInfoSummary(
+                            shift = ShiftUi.Afternoon,
+                            timeRange = afternoonTimeRange.value,
+                            type = afternoonVolunteerType.value,
+                        )
+                    )
+                    mutableInfo.toList()
+                }
+            }
+            ShownModal.None -> {}
+        }
+        closeModal()
+    }
+
+    private fun closeModal() {
+        _shownModal.update { ShownModal.None }
     }
 
     fun onConfirm() {
@@ -119,6 +239,16 @@ class ReservationFormViewModel(
     private fun navigateBack() {
         _uiState.update { it.copy(isFormSavedSuccessfully = true) }
     }
+
+    private fun List<AdditionalOption>.getMeals() =
+        filter { it != AdditionalOption.Sleep }.map { it.toMeal() }
+
+    private fun AdditionalOption.toMeal() =
+        when (this) {
+            AdditionalOption.Lunch -> Meal.Lunch
+            AdditionalOption.Dinner -> Meal.Dinner
+            else -> Meal.Unknown
+        }
 }
 
 data class ReservationFormUiState(
@@ -157,14 +287,30 @@ enum class AdditionalOption(
     ),
 }
 
-private fun List<AdditionalOption>.getMeals() =
-    filter { it != AdditionalOption.Sleep }.map(AdditionalOption::toMeal)
+enum class FormVolunteerTypeUi(
+    val text: StringResource,
+    val icon: DrawableResource,
+) {
+    General(
+        text = Res.string.general,
+        icon = Res.drawable.ic_group,
+    ),
+    Specific(
+        text = Res.string.specific,
+        icon = Res.drawable.ic_target,
+    ),
+}
 
-private fun AdditionalOption.toMeal() =
-    when (this) {
-        AdditionalOption.Lunch -> Meal.Lunch
-        AdditionalOption.Dinner -> Meal.Dinner
-        else -> Meal.Unknown
-    }
+enum class ShownModal {
+    MorningShift,
+    AfternoonShift,
+    None,
+}
+
+data class ShiftInfoSummary(
+    val shift: ShiftUi,
+    val timeRange: TimeRange,
+    val type: FormVolunteerTypeUi,
+)
 
 private const val LOG_TAG = "ReservationFormViewModel"
