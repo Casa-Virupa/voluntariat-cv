@@ -11,6 +11,7 @@ val voluntariatCVColorScheme = lightColorScheme(
     primaryContainer = LightOrange100,
     onPrimaryContainer = DarkGrayBrown,
     surfaceContainerLowest = LightOrange50,
+    surfaceContainerLow = LightOrange200,
     surface = Color.White,
     onSurface = GrayBrown,
     onSurfaceVariant = LightGrayBrown,

@@ -51,6 +51,14 @@ class FirebaseVolunteerRepository(
                 }
             }
     }
+
+    override suspend fun deleteVolunteer(id: VolunteerId): Result<Unit> =
+        runCatching {
+            firestore
+                .collection("volunteers")
+                .document(id.value)
+                .delete()
+        }
 }
 
 private fun FirebaseVolunteer.toDomainModel(docId: String) =

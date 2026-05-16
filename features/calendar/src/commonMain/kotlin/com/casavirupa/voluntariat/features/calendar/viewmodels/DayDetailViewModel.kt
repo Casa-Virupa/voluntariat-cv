@@ -7,10 +7,12 @@ import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
+import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.KoinApplication.Companion.init
 import kotlin.collections.emptyList
 
 class DayDetailViewModel(
@@ -26,6 +29,7 @@ class DayDetailViewModel(
     private val calendarRepository: CalendarRepository,
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
+    private val volunteerRepository: VolunteerRepository,
 ) : ViewModel() {
     private val date = navKey.date
 
@@ -34,22 +38,57 @@ class DayDetailViewModel(
     )
     val uiState: StateFlow<DayDetailUiState> = _uiState.asStateFlow()
 
+    private val _showDeleteDialog = MutableStateFlow(false)
+    val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
+
+    private var selectedVolunteerToDelete: VolunteerId? = null
+
     init {
+        refreshVolunteers()
+    }
+
+    fun onDeleteVolunteer(id: VolunteerId) {
+        selectedVolunteerToDelete = id
+        _showDeleteDialog.update { true }
+    }
+
+    fun onCloseDeleteDialog() {
+        selectedVolunteerToDelete = null
+        _showDeleteDialog.update { false }
+    }
+
+    fun deleteVolunteer() {
+        if (selectedVolunteerToDelete == null) {
+            return
+        }
         viewModelScope.launch {
-           calendarRepository
-               .getVolunteersByDate(date)
-               .mapCatching { volunteers ->
-                   val users = userRepository.getAllUsers().getOrElse { emptyList() }
-                   val currentUser = authRepository.getCurrentUser().getOrElse { null }
-                   Triple(volunteers, users, currentUser)
-               }.onSuccess { (volunteers, users, currentUser) ->
-                   _uiState.update {
-                       it.copy(
-                           dayShifts = buildDayShifts(volunteers, users, currentUser?.id),
-                           headerUi = it.headerUi.copy(numOfVolunteers = volunteers.size),
-                       )
-                   }
-               }
+            volunteerRepository
+                .deleteVolunteer(selectedVolunteerToDelete!!)
+                .onSuccess {
+                    refreshVolunteers()
+                    onCloseDeleteDialog()
+                }.onFailure {
+                    // TODO: Handle the failure
+                }
+        }
+    }
+
+    private fun refreshVolunteers() {
+        viewModelScope.launch {
+            calendarRepository
+                .getVolunteersByDate(date)
+                .mapCatching { volunteers ->
+                    val users = userRepository.getAllUsers().getOrElse { emptyList() }
+                    val currentUser = authRepository.getCurrentUser().getOrElse { null }
+                    Triple(volunteers, users, currentUser)
+                }.onSuccess { (volunteers, users, currentUser) ->
+                    _uiState.update {
+                        it.copy(
+                            dayShifts = buildDayShifts(volunteers, users, currentUser?.id),
+                            headerUi = it.headerUi.copy(numOfVolunteers = volunteers.size),
+                        )
+                    }
+                }
         }
     }
 
@@ -105,6 +144,7 @@ data class DayShifts(
 )
 
 data class VolunteerItemUi(
+    val id: VolunteerId,
     val name: String,
     val type: VolunteerTypeUi,
     val meals: List<Meal>,
@@ -124,6 +164,7 @@ sealed class VolunteerTypeUi {
 private fun Volunteer.toUiModel(name: String, userId: UserId?) =
     if (volunteerShift == Shift.AllDay) {
         VolunteerItemUi(
+            id = id,
             name = name,
             type = buildAllDayVolunteerType(specificArea),
             meals = meals,
@@ -132,6 +173,7 @@ private fun Volunteer.toUiModel(name: String, userId: UserId?) =
         )
     } else {
         VolunteerItemUi(
+            id = id,
             name = name,
             type = buildSingleVolunteerType(specificArea, volunteerShift),
             meals = meals,

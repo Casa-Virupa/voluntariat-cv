@@ -3,6 +3,7 @@ package com.casavirupa.voluntariat.shared.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 internal val Orange = Color(0xFFD29054)
+internal val LightOrange200 = Color(0xFFFAF3EC)
 internal val LightOrange100 = Color(0xFFE9E0CD)
 internal val LightOrange50 = Color(0xFFFBF8F5)
 
