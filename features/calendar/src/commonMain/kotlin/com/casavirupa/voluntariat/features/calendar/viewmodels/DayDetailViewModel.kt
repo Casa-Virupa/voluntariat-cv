@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.features.calendar.navigation.DayDetailNavKey
 import com.casavirupa.voluntariat.shared.core.utils.format
+import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
@@ -12,6 +13,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
+import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +25,7 @@ class DayDetailViewModel(
     navKey: DayDetailNavKey,
     private val calendarRepository: CalendarRepository,
     private val userRepository: UserRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
     private val date = navKey.date
 
@@ -37,11 +40,12 @@ class DayDetailViewModel(
                .getVolunteersByDate(date)
                .mapCatching { volunteers ->
                    val users = userRepository.getAllUsers().getOrElse { emptyList() }
-                   volunteers to users
-               }.onSuccess { (volunteers, users) ->
+                   val currentUser = authRepository.getCurrentUser().getOrElse { null }
+                   Triple(volunteers, users, currentUser)
+               }.onSuccess { (volunteers, users, currentUser) ->
                    _uiState.update {
                        it.copy(
-                           dayShifts = buildDayShifts(volunteers, users),
+                           dayShifts = buildDayShifts(volunteers, users, currentUser?.id),
                            headerUi = it.headerUi.copy(numOfVolunteers = volunteers.size),
                        )
                    }
@@ -49,36 +53,39 @@ class DayDetailViewModel(
         }
     }
 
-    private fun buildDayShifts(volunteers: List<Volunteer>, users: List<User>) =
-        DayShifts(
-            allDayVolunteers = volunteers
-                .filter { it.volunteerShift == Shift.AllDay }
-                .mapNotNull { volunteer ->
-                    users
-                        .find { user -> user.id == volunteer.userId }
-                        ?.let { user ->
-                            volunteer.toUiModel(user.name)
-                        }
-                },
-            morningVolunteers = volunteers
-                .filter { it.volunteerShift == Shift.Morning }
-                .mapNotNull { volunteer ->
-                    users
-                        .find { user -> user.id == volunteer.userId }
-                        ?.let { user ->
-                            volunteer.toUiModel(user.name)
-                        }
-                },
-            afternoonVolunteers = volunteers
-                .filter { it.volunteerShift == Shift.Afternoon }
-                .mapNotNull { volunteer ->
-                    users
-                        .find { user -> user.id == volunteer.userId }
-                        ?.let { user ->
-                            volunteer.toUiModel(user.name)
-                        }
-                },
-        )
+    private fun buildDayShifts(
+        volunteers: List<Volunteer>,
+        users: List<User>,
+        currentUserId: UserId?,
+    ) = DayShifts(
+        allDayVolunteers = volunteers
+            .filter { it.volunteerShift == Shift.AllDay }
+            .mapNotNull { volunteer ->
+                users
+                    .find { user -> user.id == volunteer.userId }
+                    ?.let { user ->
+                        volunteer.toUiModel(user.name, currentUserId)
+                    }
+            },
+        morningVolunteers = volunteers
+            .filter { it.volunteerShift == Shift.Morning }
+            .mapNotNull { volunteer ->
+                users
+                    .find { user -> user.id == volunteer.userId }
+                    ?.let { user ->
+                        volunteer.toUiModel(user.name, currentUserId)
+                    }
+            },
+        afternoonVolunteers = volunteers
+            .filter { it.volunteerShift == Shift.Afternoon }
+            .mapNotNull { volunteer ->
+                users
+                    .find { user -> user.id == volunteer.userId }
+                    ?.let { user ->
+                        volunteer.toUiModel(user.name, currentUserId)
+                    }
+            },
+    )
 }
 
 data class DayDetailUiState(
@@ -102,6 +109,7 @@ data class VolunteerItemUi(
     val type: VolunteerTypeUi,
     val meals: List<Meal>,
     val sleep: Boolean,
+    val canBeDeleted: Boolean,
 )
 
 sealed class VolunteerTypeUi {
@@ -113,13 +121,14 @@ sealed class VolunteerTypeUi {
     ) : VolunteerTypeUi()
 }
 
-private fun Volunteer.toUiModel(name: String) =
+private fun Volunteer.toUiModel(name: String, userId: UserId?) =
     if (volunteerShift == Shift.AllDay) {
         VolunteerItemUi(
             name = name,
             type = buildAllDayVolunteerType(specificArea),
             meals = meals,
             sleep = sleep,
+            canBeDeleted = this.userId == userId,
         )
     } else {
         VolunteerItemUi(
@@ -127,6 +136,7 @@ private fun Volunteer.toUiModel(name: String) =
             type = buildSingleVolunteerType(specificArea, volunteerShift),
             meals = meals,
             sleep = sleep,
+            canBeDeleted = this.userId == userId,
         )
     }
 
