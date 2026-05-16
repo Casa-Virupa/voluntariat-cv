@@ -286,7 +286,7 @@ class ReservationFormViewModel(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shift = Shift.Unknown,
+            shift = shifts.value.toDomainModel(),
             meals = additionalOptions.value.getMeals(),
             sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
         )
@@ -303,6 +303,34 @@ class ReservationFormViewModel(
             AdditionalOption.Lunch -> Meal.Lunch
             AdditionalOption.Dinner -> Meal.Dinner
             else -> Meal.Unknown
+        }
+
+    private fun List<ShiftUi>.toDomainModel() =
+        when {
+            containsAll(ShiftUi.entries.toList()) -> Shift.AllDay(
+                morningType = morningVolunteerType.value.toDomainModel(),
+                afternoonType = afternoonVolunteerType.value.toDomainModel(),
+                morningTimeRange = morningTimeRange.value,
+                afternoonTimeRange = afternoonTimeRange.value,
+            )
+            else -> {
+                when (this.first()) {
+                    ShiftUi.Morning -> Shift.Morning(
+                        type = morningVolunteerType.value.toDomainModel(),
+                        timeRange = morningTimeRange.value,
+                    )
+                    ShiftUi.Afternoon -> Shift.Afternoon(
+                        type = afternoonVolunteerType.value.toDomainModel(),
+                        timeRange = afternoonTimeRange.value,
+                    )
+                }
+            }
+        }
+
+    private fun FormVolunteerTypeUi.toDomainModel() =
+        when (this) {
+            FormVolunteerTypeUi.General -> VolunteerType.General
+            FormVolunteerTypeUi.Specific -> VolunteerType.Specific
         }
 }
 
