@@ -98,7 +98,7 @@ private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
         userId = userId.value,
         timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble()),
-        shift = volunteerShift.toFirebaseValue(),
+        shift = shift.toFirebaseValue(),
         specificArea = specificArea?.toFirebaseValue(),
         mealTypes = meals.map(Meal::toFirebaseValue),
         sleep = sleep,
@@ -109,7 +109,7 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        volunteerShift = shift.toVolunteerShiftModel(),
+        shift = shift.toVolunteerShiftModel(),
         specificArea = specificArea.toSpecificAreaModel(),
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,

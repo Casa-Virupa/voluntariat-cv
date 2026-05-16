@@ -7,7 +7,7 @@ data class Volunteer(
     val id: VolunteerId,
     val userId: UserId,
     val date: LocalDate,
-    val volunteerShift: Shift,
+    val shift: Shift,
     val specificArea: SpecificArea?,
     val meals: List<Meal>,
     val sleep: Boolean,

@@ -17,6 +17,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.StringResource
+import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.afternoon
+import voluntariatcv.features.calendar.generated.resources.dinner
+import voluntariatcv.features.calendar.generated.resources.ic_afternoon
+import voluntariatcv.features.calendar.generated.resources.ic_lunch
+import voluntariatcv.features.calendar.generated.resources.ic_moon
+import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
+import voluntariatcv.features.calendar.generated.resources.ic_sun
+import voluntariatcv.features.calendar.generated.resources.lunch
+import voluntariatcv.features.calendar.generated.resources.morning
+import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
 
 class ReservationFormViewModel(
     private val authRepository: AuthRepository,
@@ -31,14 +44,14 @@ class ReservationFormViewModel(
     private val _sleep = MutableStateFlow(false)
     val sleep: StateFlow<Boolean> = _sleep.asStateFlow()
 
-    private val _schedule = MutableStateFlow<Shift?>(null)
-    val schedule: StateFlow<Shift?> = _schedule.asStateFlow()
+    private val _shifts = MutableStateFlow<List<ShiftUi>>(emptyList())
+    val shifts: StateFlow<List<ShiftUi>> = _shifts.asStateFlow()
 
     private val _technicalArea = MutableStateFlow<SpecificArea?>(null)
     val technicalArea: StateFlow<SpecificArea?> = _technicalArea.asStateFlow()
 
-    private val _meals = MutableStateFlow<Set<Meal>>(emptySet())
-    val meals: StateFlow<Set<Meal>> = _meals.asStateFlow()
+    private val _additionalOptions = MutableStateFlow<List<AdditionalOption>>(emptyList())
+    val additionalOptions: StateFlow<List<AdditionalOption>> = _additionalOptions.asStateFlow()
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -48,23 +61,31 @@ class ReservationFormViewModel(
         _sleep.update { sleep }
     }
 
-    fun onScheduleChanged(schedules: Shift) {
-        _schedule.update { schedules }
+    fun onShiftChanged(shift: ShiftUi) {
+        _shifts.update {
+            val mutableShifts = it.toMutableList()
+            if (mutableShifts.contains(shift)) {
+                mutableShifts.remove(shift)
+            } else {
+                mutableShifts.add(shift)
+            }
+            mutableShifts.toList()
+        }
     }
 
     fun onTechnicalAreaChanged(technicalArea: SpecificArea) {
         _technicalArea.update { technicalArea }
     }
 
-    fun onMealChanged(meal: Meal) {
-        _meals.update {
-            val mutableMeals = it.toMutableList()
-            if (mutableMeals.contains(meal)) {
-                mutableMeals.remove(meal)
+    fun onAdditionOptionSelected(option: AdditionalOption) {
+        _additionalOptions.update {
+            val mutableOptions = it.toMutableList()
+            if (mutableOptions.contains(option)) {
+                mutableOptions.remove(option)
             } else {
-                mutableMeals.add(meal)
+                mutableOptions.add(option)
             }
-            mutableMeals.toSet()
+            mutableOptions.toList()
         }
     }
 
@@ -77,7 +98,6 @@ class ReservationFormViewModel(
             authRepository
                 .getCurrentUser()
                 .onSuccess { user ->
-                    Logger.d("asdd") { user.id.toString() }
                     calendarRepository
                         .reserveDay(user.id, buildReservation())
                         .onSuccess {
@@ -99,17 +119,17 @@ class ReservationFormViewModel(
 
     private fun formInputsAreValid() =
         date.value != null &&
-            schedule.value != null &&
+            shifts.value.isNotEmpty() &&
             technicalArea.value != null
     private fun buildReservation() =
         Volunteer(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            volunteerShift = schedule.value!!,
+            shift = shifts.value.toDomainModel(),
             specificArea = technicalArea.value!!,
-            meals = meals.value.toList(),
-            sleep = sleep.value,
+            meals = additionalOptions.value.getMeals(),
+            sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
         )
 
     private fun navigateBack() {
@@ -120,5 +140,58 @@ class ReservationFormViewModel(
 data class ReservationFormUiState(
     val isFormSavedSuccessfully: Boolean = false,
 )
+
+enum class ShiftUi(
+    val text: StringResource,
+    val icon: DrawableResource,
+) {
+    Morning(
+        text = Res.string.morning,
+        icon = Res.drawable.ic_sun,
+    ),
+    Afternoon(
+        text = Res.string.afternoon,
+        icon = Res.drawable.ic_afternoon,
+    ),
+}
+
+enum class AdditionalOption(
+    val text: StringResource,
+    val icon: DrawableResource,
+) {
+    Lunch(
+        text = Res.string.lunch,
+        icon = Res.drawable.ic_lunch,
+    ),
+    Dinner(
+        text = Res.string.dinner,
+        icon = Res.drawable.ic_moon,
+    ),
+    Sleep(
+        text = Res.string.stay_to_sleep,
+        icon = Res.drawable.ic_sleep_bed,
+    ),
+}
+
+private fun List<ShiftUi>.toDomainModel() =
+    when {
+        containsAll(ShiftUi.entries.toList()) -> Shift.AllDay
+        else -> {
+            when (this.first()) {
+                ShiftUi.Morning -> Shift.Morning
+                ShiftUi.Afternoon -> Shift.Afternoon
+            }
+        }
+    }
+
+private fun List<AdditionalOption>.getMeals() =
+    filter { it != AdditionalOption.Sleep }.map(AdditionalOption::toMeal)
+
+private fun AdditionalOption.toMeal() =
+    when (this) {
+        AdditionalOption.Lunch -> Meal.Lunch
+        AdditionalOption.Dinner -> Meal.Dinner
+        else -> Meal.Unknown
+    }
 
 private const val LOG_TAG = "ReservationFormViewModel"

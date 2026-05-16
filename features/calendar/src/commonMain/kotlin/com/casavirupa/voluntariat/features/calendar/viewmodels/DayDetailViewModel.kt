@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.KoinApplication.Companion.init
 import kotlin.collections.emptyList
 
 class DayDetailViewModel(
@@ -98,7 +97,7 @@ class DayDetailViewModel(
         currentUserId: UserId?,
     ) = DayShifts(
         allDayVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.AllDay }
+            .filter { it.shift == Shift.AllDay }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -107,7 +106,7 @@ class DayDetailViewModel(
                     }
             },
         morningVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.Morning }
+            .filter { it.shift == Shift.Morning }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -116,7 +115,7 @@ class DayDetailViewModel(
                     }
             },
         afternoonVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.Afternoon }
+            .filter { it.shift == Shift.Afternoon }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -162,7 +161,7 @@ sealed class VolunteerTypeUi {
 }
 
 private fun Volunteer.toUiModel(name: String, userId: UserId?) =
-    if (volunteerShift == Shift.AllDay) {
+    if (shift == Shift.AllDay) {
         VolunteerItemUi(
             id = id,
             name = name,
@@ -175,7 +174,7 @@ private fun Volunteer.toUiModel(name: String, userId: UserId?) =
         VolunteerItemUi(
             id = id,
             name = name,
-            type = buildSingleVolunteerType(specificArea, volunteerShift),
+            type = buildSingleVolunteerType(specificArea, shift),
             meals = meals,
             sleep = sleep,
             canBeDeleted = this.userId == userId,
