@@ -16,6 +16,7 @@ val voluntariatCVColorScheme = lightColorScheme(
     onSurfaceVariant = LightGrayBrown,
     inverseOnSurface = DarkGray,
     error = Red,
+    outlineVariant = LightGray,
 )
 
 @Composable

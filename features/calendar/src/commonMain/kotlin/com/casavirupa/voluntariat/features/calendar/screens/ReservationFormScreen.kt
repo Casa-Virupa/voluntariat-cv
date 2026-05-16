@@ -32,10 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.components.ChipMultiOptionsSelector
 import com.casavirupa.voluntariat.features.calendar.components.ChipOptionsSelector
-import com.casavirupa.voluntariat.features.calendar.components.MediumTopBar
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
+import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
+import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
@@ -300,28 +301,6 @@ private fun SleepSwitch(
             onCheckedChange = onSleepChanged,
         )
     }
-}
-
-@Composable
-private fun Shift.displayName(): String = when (this) {
-    Shift.Morning -> stringResource(Res.string.morning)
-    Shift.Afternoon -> stringResource(Res.string.afternoon)
-    Shift.AllDay -> stringResource(Res.string.all_day)
-    else -> ""
-}
-
-@Composable
-private fun SpecificArea.displayName(): String = when (this) {
-    SpecificArea.Morning -> stringResource(Res.string.morning)
-    SpecificArea.Afternoon -> stringResource(Res.string.afternoon)
-    SpecificArea.AllDay -> stringResource(Res.string.all_day)
-}
-
-@Composable
-private fun Meal.displayName(): String = when (this) {
-    Meal.Lunch -> stringResource(Res.string.lunch)
-    Meal.Dinner -> stringResource(Res.string.dinner)
-    else -> ""
 }
 
 private const val DATE_PATTERN = "d MMMM yyyy"

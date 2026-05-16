@@ -28,11 +28,11 @@ fun rememberMainNavigationState(
 
 
 class MainNavigationState(val stack: NavBackStack<NavKey>) {
-    val currentKey by derivedStateOf { stack.last() }
+    val currentKey by derivedStateOf { stack.last() as MainNavKey }
 }
 
 class MainNavigator(val state: MainNavigationState) {
-    fun navigate(key: NavKey) {
+    fun navigate(key: MainNavKey) {
         state.stack.add(key)
     }
 

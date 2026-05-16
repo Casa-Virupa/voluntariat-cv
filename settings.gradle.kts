@@ -32,6 +32,7 @@ dependencyResolutionManagement {
 include(":androidApp")
 include(":features:authentication")
 include(":features:calendar")
+include(":features:history")
 include(":shared:common")
 include(":shared:core")
 include(":shared:data")

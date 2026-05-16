@@ -6,6 +6,7 @@ import com.casavirupa.voluntariat.features.calendar.screens.CalendarScreen
 import com.casavirupa.voluntariat.features.calendar.screens.DayDetailScreen
 import com.casavirupa.voluntariat.features.calendar.screens.ReservationFormScreen
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
+import com.casavirupa.voluntariat.shared.core.navigation.MainNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
@@ -13,13 +14,13 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Serializable
-data object CalendarNavKey : NavKey
+data object CalendarNavKey : MainNavKey(showNavigationBar = true)
 
 @Serializable
-data object ReservationFormNavKey : NavKey
+data object ReservationFormNavKey : MainNavKey()
 
 @Serializable
-data class DayDetailNavKey(val date: LocalDate) : NavKey
+data class DayDetailNavKey(val date: LocalDate) : MainNavKey()
 
 fun EntryProviderScope<NavKey>.calendarEntry(navigator: MainNavigator) {
     entry<CalendarNavKey> {

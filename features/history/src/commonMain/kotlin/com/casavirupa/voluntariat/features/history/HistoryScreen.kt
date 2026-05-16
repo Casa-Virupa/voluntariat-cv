@@ -1,0 +1,333 @@
+package com.casavirupa.voluntariat.features.history
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.casavirupa.voluntariat.shared.core.utils.format
+import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
+import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import voluntariatcv.features.history.generated.resources.Res
+import voluntariatcv.features.history.generated.resources.afternoon
+import voluntariatcv.features.history.generated.resources.ic_afternoon
+import voluntariatcv.features.history.generated.resources.ic_arrow_left
+import voluntariatcv.features.history.generated.resources.ic_arrow_right
+import voluntariatcv.features.history.generated.resources.ic_calendar_today
+import voluntariatcv.features.history.generated.resources.ic_cancel
+import voluntariatcv.features.history.generated.resources.ic_clock
+import voluntariatcv.features.history.generated.resources.ic_sun
+import voluntariatcv.features.history.generated.resources.morning
+
+@Composable
+internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
+    val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    HistoryContent(
+        currentDate = currentDate,
+        onPreviousMonth = viewModel::previousMonth,
+        onNextMonth = viewModel::nextMonth,
+        uiState = uiState,
+    )
+}
+
+@Composable
+private fun HistoryContent(
+    currentDate: LocalDate,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    uiState: HistoryUiState,
+) {
+    Scaffold(
+        topBar = {
+            Header(
+                currentDate = currentDate,
+                onClickPreviousMonth = onPreviousMonth,
+                onClickNextMonth = onNextMonth,
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            InformationSummary(
+                info = uiState.summary,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            PaymentWarning()
+            HistoryList(
+                history = uiState.volunteers,
+                modifier = Modifier.padding(bottom = 24.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun Header(
+    currentDate: LocalDate,
+    onClickPreviousMonth: () -> Unit,
+    onClickNextMonth: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        MediumTopBar(title = "Els meus voluntariats")
+        MonthSelector(
+            currentDate = currentDate,
+            onClickPreviousMonth = onClickPreviousMonth,
+            onClickNextMonth = onClickNextMonth,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@Composable
+private fun MonthSelector(
+    currentDate: LocalDate,
+    onClickPreviousMonth: () -> Unit,
+    onClickNextMonth: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onClickPreviousMonth) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_arrow_left),
+                contentDescription = null,
+            )
+        }
+        Text(
+            text = currentDate.format("MMMM yyyy").uppercase(),
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        IconButton(onClick = onClickNextMonth) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_arrow_right),
+                contentDescription = null,
+            )
+        }
+    }
+}
+
+@Composable
+private fun InformationSummary(
+    info: MonthSummary,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SummaryContainer(
+            title = "Hores",
+            icon = painterResource(Res.drawable.ic_clock),
+            value = info.hours,
+            modifier = Modifier.weight(1f),
+        )
+        SummaryContainer(
+            title = "Dies",
+            icon = painterResource(Res.drawable.ic_calendar_today),
+            value = info.days,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun SummaryContainer(
+    title: String,
+    icon: Painter,
+    value: Int,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = title.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PaymentWarning(
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_cancel),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "Pendent de pagament",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Medium,
+                    ),
+                )
+                Text(
+                    text = "Recorda fer el pagament del mes",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryList(
+    history: List<VolunteerHistoryItem>,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = "Historial de voluntariats".uppercase(),
+            modifier = Modifier.padding(bottom = 12.dp),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            history.forEach {
+                HistoryItem(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryItem(
+    volunteer: VolunteerHistoryItem,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = volunteer.date.format("d MMMM"),
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = "${volunteer.hours}h",
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+            Column {
+                ShiftTags(shift = volunteer.shift)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShiftTags(
+    shift: Shift,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        when (shift) {
+            Shift.Morning -> CVTag(
+                text = stringResource(Res.string.morning),
+                icon = painterResource(Res.drawable.ic_sun),
+                backgroundColor = Color(0xFFC2A47D),
+            )
+            Shift.Afternoon -> CVTag(
+                text = stringResource(Res.string.afternoon),
+                icon = painterResource(Res.drawable.ic_afternoon),
+                backgroundColor = Color(0xFF9E816E),
+            )
+            Shift.AllDay -> {
+                CVTag(
+                    text = stringResource(Res.string.morning),
+                    icon = painterResource(Res.drawable.ic_sun),
+                    backgroundColor = Color(0xFFC2A47D),
+                )
+                CVTag(
+                    text = stringResource(Res.string.afternoon),
+                    icon = painterResource(Res.drawable.ic_afternoon),
+                    backgroundColor = Color(0xFF9E816E),
+                )
+            }
+            else -> {}
+        }
+    }
+}
