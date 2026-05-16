@@ -120,14 +120,20 @@ class ReservationFormViewModel(
     fun dismissModal() {
         when (_shownModal.value) {
             ShownModal.MorningShift -> {
-                val mutableShifts = _shifts.value.toMutableList()
-                mutableShifts.remove(ShiftUi.Morning)
-                _shifts.update { mutableShifts.toList() }
+                val hasSavedInfo = shiftsInfo.value.map { it.shift }.contains(ShiftUi.Morning)
+                if (!hasSavedInfo) {
+                    val mutableShifts = _shifts.value.toMutableList()
+                    mutableShifts.remove(ShiftUi.Morning)
+                    _shifts.update { mutableShifts.toList() }
+                }
             }
             ShownModal.AfternoonShift -> {
-                val mutableShifts = _shifts.value.toMutableList()
-                mutableShifts.remove(ShiftUi.Afternoon)
-                _shifts.update { mutableShifts.toList() }
+                val hasSavedInfo = shiftsInfo.value.map { it.shift }.contains(ShiftUi.Afternoon)
+                if (!hasSavedInfo) {
+                    val mutableShifts = _shifts.value.toMutableList()
+                    mutableShifts.remove(ShiftUi.Afternoon)
+                    _shifts.update { mutableShifts.toList() }
+                }
             }
             else -> {}
         }
