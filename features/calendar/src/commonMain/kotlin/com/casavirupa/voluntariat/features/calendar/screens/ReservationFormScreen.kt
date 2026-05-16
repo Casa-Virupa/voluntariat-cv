@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +41,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShownModal
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
+import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
@@ -251,7 +253,7 @@ private fun FormSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Column(modifier = modifier.padding(vertical = 8.dp, horizontal = 16.dp)) {
+    Column(modifier = modifier.padding(vertical = 16.dp, horizontal = 16.dp)) {
         Row(
             modifier = Modifier.padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -297,11 +299,15 @@ private fun ShiftSelector(
                 )
             }
         }
-        Column {
+        Column(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             shiftsInfo.forEach { shift ->
                 ShiftScheduleInfo(
                     shift = shift,
                     onClickEditInfo = { onEditInfo(shift.shift) },
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
         }
@@ -391,6 +397,12 @@ private fun ShiftScheduleInfo(
                 text = shift.displayTime(),
                 style = MaterialTheme.typography.labelSmall,
             )
+            CVTag(
+                text = stringResource(shift.type.text),
+                icon = painterResource(shift.type.icon),
+                modifier = Modifier.padding(top = 8.dp),
+                backgroundColor = shift.type.getBackgroundColor(),
+            )
         }
         IconButton(onClick = onClickEditInfo) {
             Icon(
@@ -471,6 +483,13 @@ private fun ShiftInfoSummary.displayTime() =
     when (shift) {
         ShiftUi.Morning -> "Matí: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
         ShiftUi.Afternoon -> "Tarda: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
+    }
+
+@Composable
+private fun FormVolunteerTypeUi.getBackgroundColor() =
+    when (this) {
+        FormVolunteerTypeUi.General -> Color(0xFFC2A47D)
+        FormVolunteerTypeUi.Specific -> Color(0xFF9E816E)
     }
 
 

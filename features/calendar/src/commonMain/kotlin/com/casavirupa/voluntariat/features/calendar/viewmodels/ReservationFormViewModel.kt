@@ -167,29 +167,78 @@ class ReservationFormViewModel(
     fun onConfirmShift() {
         when (_shownModal.value) {
             ShownModal.MorningShift -> {
-                _shiftsInfo.update {
-                    val mutableInfo = it.toMutableList()
-                    mutableInfo.add(
-                        index = 0,
-                        element = ShiftInfoSummary(
-                            shift = ShiftUi.Morning,
-                            timeRange = morningTimeRange.value,
-                            type = morningVolunteerType.value,
+                _shiftsInfo.update { shift ->
+                    val mutableInfo = shift.toMutableList()
+                    when {
+                        mutableInfo.isEmpty() -> mutableInfo.add(
+                            element = ShiftInfoSummary(
+                                shift = ShiftUi.Morning,
+                                timeRange = morningTimeRange.value,
+                                type = morningVolunteerType.value,
+                            ),
                         )
-                    )
+                        else -> {
+                            val existInfo = mutableInfo.any { it.shift == ShiftUi.Morning }
+                            if (existInfo) {
+                                mutableInfo.set(
+                                    index = 0,
+                                    element = ShiftInfoSummary(
+                                        shift = ShiftUi.Morning,
+                                        timeRange = morningTimeRange.value,
+                                        type = morningVolunteerType.value,
+                                    ),
+                                )
+                            } else {
+                                mutableInfo.add(
+                                    index = 0,
+                                    element = ShiftInfoSummary(
+                                        shift = ShiftUi.Morning,
+                                        timeRange = morningTimeRange.value,
+                                        type = morningVolunteerType.value,
+                                    ),
+                                )
+                            }
+                        }
+                    }
                     mutableInfo.toList()
                 }
             }
             ShownModal.AfternoonShift -> {
-                _shiftsInfo.update {
-                    val mutableInfo = it.toMutableList()
-                    mutableInfo.add(
-                        element = ShiftInfoSummary(
-                            shift = ShiftUi.Afternoon,
-                            timeRange = afternoonTimeRange.value,
-                            type = afternoonVolunteerType.value,
+                _shiftsInfo.update { info ->
+                    val mutableInfo = info.toMutableList()
+                    when {
+                        mutableInfo.isEmpty() ->  mutableInfo.add(
+                            element = ShiftInfoSummary(
+                                shift = ShiftUi.Afternoon,
+                                timeRange = afternoonTimeRange.value,
+                                type = afternoonVolunteerType.value,
+                            ),
                         )
-                    )
+                        else -> {
+                            val existInfo = mutableInfo.any { it.shift == ShiftUi.Afternoon }
+                            if (existInfo) {
+                                val index = mutableInfo.indexOfFirst {
+                                    it.shift == ShiftUi.Afternoon
+                                }
+                                mutableInfo.set(
+                                    index = index,
+                                    element = ShiftInfoSummary(
+                                        shift = ShiftUi.Afternoon,
+                                        timeRange = afternoonTimeRange.value,
+                                        type = afternoonVolunteerType.value,
+                                    )
+                                )
+                            } else {
+                                mutableInfo.add(
+                                    element = ShiftInfoSummary(
+                                        shift = ShiftUi.Afternoon,
+                                        timeRange = afternoonTimeRange.value,
+                                        type = afternoonVolunteerType.value,
+                                    )
+                                )
+                            }
+                        }
+                    }
                     mutableInfo.toList()
                 }
             }
