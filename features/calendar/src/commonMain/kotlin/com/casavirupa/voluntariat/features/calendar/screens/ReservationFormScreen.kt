@@ -87,7 +87,7 @@ internal fun ReservationFormScreen(
         shiftsInfo = shiftsInfo,
         options = options,
         onDateChanged = viewModel::onDateChanged,
-        onShiftSelected = viewModel::onShiftChanged,
+        onShiftSelected = viewModel::onShiftSelected,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
         onEditShiftInfo = {
             when (it) {

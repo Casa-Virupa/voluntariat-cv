@@ -3,8 +3,8 @@ package com.casavirupa.voluntariat.features.calendar.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.casavirupa.voluntariat.shared.core.utils.Throttler
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
-import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -42,6 +42,8 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
 ) : ViewModel() {
+    private val throttler = Throttler()
+
     private val _uiState = MutableStateFlow(ReservationFormUiState())
     val uiState: StateFlow<ReservationFormUiState> = _uiState.asStateFlow()
 
@@ -77,16 +79,12 @@ class ReservationFormViewModel(
         _date.update { date }
     }
 
-    fun onShiftChanged(shift: ShiftUi) {
+    fun onShiftSelected(shift: ShiftUi) {
         _shifts.update { shifts ->
             val mutableShifts = shifts.toMutableList()
             if (shifts.contains(shift)) {
                 mutableShifts.remove(shift)
-                _shiftsInfo.update {
-                    val mutableInfo = it.toMutableList()
-                    mutableInfo.removeAll { it.shift == shift }
-                    mutableInfo.toList()
-                }
+                removeShiftInfo(shift)
             } else {
                 mutableShifts.add(shift)
                 when (shift) {
@@ -111,11 +109,15 @@ class ReservationFormViewModel(
     }
 
     fun openMorningModal() {
-        _shownModal.update { ShownModal.MorningShift }
+        throttler.throttle {
+            _shownModal.update { ShownModal.MorningShift }
+        }
     }
 
     fun openAfternoonModal() {
-        _shownModal.update { ShownModal.AfternoonShift }
+        throttler.throttle {
+            _shownModal.update { ShownModal.AfternoonShift }
+        }
     }
 
     fun dismissModal() {
@@ -166,20 +168,24 @@ class ReservationFormViewModel(
     }
 
     fun onConfirmShift() {
-        when (_shownModal.value) {
-            ShownModal.MorningShift -> {
-                _shiftsInfo.update { shifts -> addMorningShift(shifts) }
+        throttler.throttle {
+            when (_shownModal.value) {
+                ShownModal.MorningShift -> {
+                    _shiftsInfo.update { shifts -> addMorningShiftInfo(shifts) }
+                }
+                ShownModal.AfternoonShift -> {
+                    _shiftsInfo.update { shifts -> addAfternoonShiftInfo(shifts) }
+                }
+                ShownModal.None -> {}
             }
-            ShownModal.AfternoonShift -> {
-                _shiftsInfo.update { shifts -> addAfternoonShift(shifts) }
-            }
-            ShownModal.None -> {}
         }
         closeModal()
     }
 
     private fun closeModal() {
-        _shownModal.update { ShownModal.None }
+        throttler.throttle {
+            _shownModal.update { ShownModal.None }
+        }
     }
 
     fun onConfirm() {
@@ -187,22 +193,24 @@ class ReservationFormViewModel(
             // TODO: Show error
             return
         }
-        viewModelScope.launch {
-            authRepository
-                .getCurrentUser()
-                .onSuccess { user ->
-                    volunteerRepository
-                        .reserveDay(user.id, buildReservation())
-                        .onSuccess {
-                            navigateBack()
-                        }.onFailure {
-                            // TODO: Show error
-                            Logger.d(LOG_TAG) { "Error reserving a day" }
-                        }
-                }.onFailure {
-                    // TODO: Show error
-                    Logger.d(LOG_TAG) { "Error getting current user when reserving a day" }
-                }
+        throttler.throttle {
+            viewModelScope.launch {
+                authRepository
+                    .getCurrentUser()
+                    .onSuccess { user ->
+                        volunteerRepository
+                            .reserveDay(user.id, buildReservation())
+                            .onSuccess {
+                                navigateBack()
+                            }.onFailure {
+                                // TODO: Show error
+                                Logger.d(LOG_TAG) { "Error reserving a day" }
+                            }
+                    }.onFailure {
+                        // TODO: Show error
+                        Logger.d(LOG_TAG) { "Error getting current user when reserving a day" }
+                    }
+            }
         }
     }
 
@@ -226,7 +234,7 @@ class ReservationFormViewModel(
         _uiState.update { it.copy(isFormSavedSuccessfully = true) }
     }
 
-    private fun addMorningShift(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
+    private fun addMorningShiftInfo(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
         val newShift = ShiftInfoSummary(
             shift = ShiftUi.Morning,
             timeRange = morningTimeRange.value,
@@ -244,7 +252,7 @@ class ReservationFormViewModel(
         return mutableInfo.toList()
     }
 
-    private fun addAfternoonShift(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
+    private fun addAfternoonShiftInfo(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
         val newShift = ShiftInfoSummary(
             shift = ShiftUi.Afternoon,
             timeRange = afternoonTimeRange.value,
@@ -261,6 +269,14 @@ class ReservationFormViewModel(
             mutableInfo.add(newShift)
         }
         return mutableInfo.toList()
+    }
+
+    private fun removeShiftInfo(from: ShiftUi) {
+        _shiftsInfo.update { shiftsInfo ->
+            val mutableInfo = shiftsInfo.toMutableList()
+            mutableInfo.removeAll { it.shift == from }
+            mutableInfo.toList()
+        }
     }
 
     private fun List<AdditionalOption>.getMeals() =
