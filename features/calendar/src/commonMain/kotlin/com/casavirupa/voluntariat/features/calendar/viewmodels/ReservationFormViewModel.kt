@@ -168,80 +168,10 @@ class ReservationFormViewModel(
     fun onConfirmShift() {
         when (_shownModal.value) {
             ShownModal.MorningShift -> {
-                _shiftsInfo.update { shift ->
-                    val mutableInfo = shift.toMutableList()
-                    when {
-                        mutableInfo.isEmpty() -> mutableInfo.add(
-                            element = ShiftInfoSummary(
-                                shift = ShiftUi.Morning,
-                                timeRange = morningTimeRange.value,
-                                type = morningVolunteerType.value,
-                            ),
-                        )
-                        else -> {
-                            val existInfo = mutableInfo.any { it.shift == ShiftUi.Morning }
-                            if (existInfo) {
-                                mutableInfo.set(
-                                    index = 0,
-                                    element = ShiftInfoSummary(
-                                        shift = ShiftUi.Morning,
-                                        timeRange = morningTimeRange.value,
-                                        type = morningVolunteerType.value,
-                                    ),
-                                )
-                            } else {
-                                mutableInfo.add(
-                                    index = 0,
-                                    element = ShiftInfoSummary(
-                                        shift = ShiftUi.Morning,
-                                        timeRange = morningTimeRange.value,
-                                        type = morningVolunteerType.value,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                    mutableInfo.toList()
-                }
+                _shiftsInfo.update { shifts -> addMorningShift(shifts) }
             }
             ShownModal.AfternoonShift -> {
-                _shiftsInfo.update { info ->
-                    val mutableInfo = info.toMutableList()
-                    when {
-                        mutableInfo.isEmpty() ->  mutableInfo.add(
-                            element = ShiftInfoSummary(
-                                shift = ShiftUi.Afternoon,
-                                timeRange = afternoonTimeRange.value,
-                                type = afternoonVolunteerType.value,
-                            ),
-                        )
-                        else -> {
-                            val existInfo = mutableInfo.any { it.shift == ShiftUi.Afternoon }
-                            if (existInfo) {
-                                val index = mutableInfo.indexOfFirst {
-                                    it.shift == ShiftUi.Afternoon
-                                }
-                                mutableInfo.set(
-                                    index = index,
-                                    element = ShiftInfoSummary(
-                                        shift = ShiftUi.Afternoon,
-                                        timeRange = afternoonTimeRange.value,
-                                        type = afternoonVolunteerType.value,
-                                    )
-                                )
-                            } else {
-                                mutableInfo.add(
-                                    element = ShiftInfoSummary(
-                                        shift = ShiftUi.Afternoon,
-                                        timeRange = afternoonTimeRange.value,
-                                        type = afternoonVolunteerType.value,
-                                    )
-                                )
-                            }
-                        }
-                    }
-                    mutableInfo.toList()
-                }
+                _shiftsInfo.update { shifts -> addAfternoonShift(shifts) }
             }
             ShownModal.None -> {}
         }
@@ -294,6 +224,43 @@ class ReservationFormViewModel(
 
     private fun navigateBack() {
         _uiState.update { it.copy(isFormSavedSuccessfully = true) }
+    }
+
+    private fun addMorningShift(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
+        val newShift = ShiftInfoSummary(
+            shift = ShiftUi.Morning,
+            timeRange = morningTimeRange.value,
+            type = morningVolunteerType.value,
+        )
+        if (shiftsInfo.isEmpty()) {
+            return listOf(newShift)
+        }
+        val mutableInfo = shiftsInfo.toMutableList()
+        if (shiftsInfo.any { it.shift == ShiftUi.Morning }) {
+            mutableInfo.set(index = 0, element = newShift)
+        } else {
+            mutableInfo.add(index = 0, element = newShift)
+        }
+        return mutableInfo.toList()
+    }
+
+    private fun addAfternoonShift(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
+        val newShift = ShiftInfoSummary(
+            shift = ShiftUi.Afternoon,
+            timeRange = afternoonTimeRange.value,
+            type = afternoonVolunteerType.value,
+        )
+        if (shiftsInfo.isEmpty()) {
+            return listOf(newShift)
+        }
+        val mutableInfo = shiftsInfo.toMutableList()
+        if (shiftsInfo.any { it.shift == ShiftUi.Afternoon }) {
+            val index = shiftsInfo.indexOfFirst { it.shift == ShiftUi.Afternoon }
+            mutableInfo.set(index = index, element = newShift)
+        } else {
+            mutableInfo.add(newShift)
+        }
+        return mutableInfo.toList()
     }
 
     private fun List<AdditionalOption>.getMeals() =
