@@ -80,19 +80,21 @@ class ReservationFormViewModel(
     }
 
     fun onShiftSelected(shift: ShiftUi) {
-        _shifts.update { shifts ->
-            val mutableShifts = shifts.toMutableList()
-            if (shifts.contains(shift)) {
-                mutableShifts.remove(shift)
-                removeShiftInfo(shift)
-            } else {
-                mutableShifts.add(shift)
-                when (shift) {
-                    ShiftUi.Morning -> openMorningModal()
-                    ShiftUi.Afternoon -> openAfternoonModal()
+        throttler.throttle {
+            _shifts.update { shifts ->
+                val mutableShifts = shifts.toMutableList()
+                if (shifts.contains(shift)) {
+                    mutableShifts.remove(shift)
+                    removeShiftInfo(shift)
+                } else {
+                    mutableShifts.add(shift)
+                    when (shift) {
+                        ShiftUi.Morning -> openMorningModal()
+                        ShiftUi.Afternoon -> openAfternoonModal()
+                    }
                 }
+                mutableShifts.toList()
             }
-            mutableShifts.toList()
         }
     }
 
@@ -109,15 +111,11 @@ class ReservationFormViewModel(
     }
 
     fun openMorningModal() {
-        throttler.throttle {
-            _shownModal.update { ShownModal.MorningShift }
-        }
+        _shownModal.update { ShownModal.MorningShift }
     }
 
     fun openAfternoonModal() {
-        throttler.throttle {
-            _shownModal.update { ShownModal.AfternoonShift }
-        }
+        _shownModal.update { ShownModal.AfternoonShift }
     }
 
     fun dismissModal() {
@@ -178,14 +176,12 @@ class ReservationFormViewModel(
                 }
                 ShownModal.None -> {}
             }
+            closeModal()
         }
-        closeModal()
     }
 
     private fun closeModal() {
-        throttler.throttle {
-            _shownModal.update { ShownModal.None }
-        }
+        _shownModal.update { ShownModal.None }
     }
 
     fun onConfirm() {

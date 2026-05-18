@@ -214,7 +214,7 @@ private fun CreatePasswordInputs(
         CVTextField(
             value = newPassword,
             onValueChanged = onNewPasswordChanged,
-            label = "Nova contrasenya",
+            label = stringResource(Res.string.new_password_label),
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
@@ -223,7 +223,7 @@ private fun CreatePasswordInputs(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
-            placeholder = "********",
+            placeholder = stringResource(Res.string.password_placeholder),
             visualTransformation = newPasswordVisualTransformation,
             trailingIcon = {
                 PasswordVisibilityButton(
@@ -233,7 +233,7 @@ private fun CreatePasswordInputs(
             },
             showError = showPasswordNotValidError,
             supportingText = if (showPasswordNotValidError) {
-                "La contrasenya no compleix els requisits de seguretat"
+                stringResource(Res.string.password_not_valid_error)
             } else {
                 null
             },
@@ -241,7 +241,7 @@ private fun CreatePasswordInputs(
         CVTextField(
             value = confirmPassword,
             onValueChanged = onConfirmPasswordChanged,
-            label = "Confirmar contrasenya",
+            label = stringResource(Res.string.confirm_password_label),
             modifier = Modifier
                 .padding(top = 16.dp)
                 .fillMaxWidth(),
@@ -250,7 +250,7 @@ private fun CreatePasswordInputs(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
             ),
-            placeholder = "********",
+            placeholder = stringResource(Res.string.password_placeholder),
             visualTransformation = confirmPasswordVisualTransformation,
             trailingIcon = {
                 PasswordVisibilityButton(
@@ -260,7 +260,7 @@ private fun CreatePasswordInputs(
             },
             showError = showPasswordNotMatchError,
             supportingText = if (showPasswordNotMatchError) {
-                "Les contrasenyes no coincideixen"
+                stringResource(Res.string.passwords_do_not_match_error)
             } else {
                 null
             }

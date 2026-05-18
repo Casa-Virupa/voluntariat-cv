@@ -45,4 +45,12 @@
     <string name="friday_short">Dv</string>
     <string name="saturday_short">Ds</string>
     <string name="sunday_short">Dm</string>
+    <string name="morning_shift_title">Torn de matí</string>
+    <string name="afternoon_shift_title">Torn de tarda</string>
+    <string name="shift_label">Torn</string>
+    <string name="additional_options">Opcions addicionals</string>
+    <string name="start_label">Inici</string>
+    <string name="end_label">Fi</string>
+    <string name="morning_label">Matí: %1$s</string>
+    <string name="afternoon_label">Tarda: %1$s</string>
 </resources>

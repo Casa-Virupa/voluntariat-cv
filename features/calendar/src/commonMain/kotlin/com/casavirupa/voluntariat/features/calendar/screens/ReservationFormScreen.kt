@@ -54,14 +54,22 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.additional_options
+import voluntariatcv.features.calendar.generated.resources.afternoon_label
+import voluntariatcv.features.calendar.generated.resources.afternoon_shift_title
 import voluntariatcv.features.calendar.generated.resources.confirm
 import voluntariatcv.features.calendar.generated.resources.date_placeholder
+import voluntariatcv.features.calendar.generated.resources.end_label
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_edit
+import voluntariatcv.features.calendar.generated.resources.morning_label
+import voluntariatcv.features.calendar.generated.resources.morning_shift_title
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.select_date
+import voluntariatcv.features.calendar.generated.resources.shift_label
+import voluntariatcv.features.calendar.generated.resources.start_label
 import kotlin.time.Clock
 
 @Composable
@@ -89,8 +97,8 @@ internal fun ReservationFormScreen(
         onDateChanged = viewModel::onDateChanged,
         onShiftSelected = viewModel::onShiftSelected,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
-        onEditShiftInfo = {
-            when (it) {
+        onEditShiftInfo = { shift ->
+            when (shift) {
                 ShiftUi.Morning -> viewModel.openMorningModal()
                 ShiftUi.Afternoon -> viewModel.openAfternoonModal()
             }
@@ -100,7 +108,7 @@ internal fun ReservationFormScreen(
 
     when (shownModal) {
         ShownModal.MorningShift -> ShiftModal(
-            title = "Turno de mañana",
+            title = stringResource(Res.string.morning_shift_title),
             type = morningVolunteerType,
             onVolunteerTypeChanged = viewModel::onMorningVolunteerTypeChanged,
             timeRange = morningTimeRange,
@@ -110,7 +118,7 @@ internal fun ReservationFormScreen(
             onConfirm = viewModel::onConfirmShift,
         )
         ShownModal.AfternoonShift -> ShiftModal(
-            title = "Turno de tarde",
+            title = stringResource(Res.string.afternoon_shift_title),
             type = afternoonVolunteerType,
             onVolunteerTypeChanged = viewModel::onAfternoonVolunteerTypeChanged,
             timeRange = afternoonTimeRange,
@@ -222,7 +230,7 @@ private fun ReservationForm(
             )
         }
         FormSection(
-            title = "Torn",
+            title = stringResource(Res.string.shift_label),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ShiftSelector(
@@ -233,7 +241,7 @@ private fun ReservationForm(
             )
         }
         FormSection(
-            title = "Opcions addicionals",
+            title = stringResource(Res.string.additional_options),
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             AdditionalOptionsSelector(
@@ -457,19 +465,19 @@ private fun ShiftModal(
                     time = timeRange.start,
                     onTimeChanged = onStartTimeChanged,
                     modifier = Modifier.weight(1f),
-                    label = "Inicio",
+                    label = stringResource(Res.string.start_label),
                     leadingIcon = painterResource(Res.drawable.ic_clock),
                 )
                 TimeTextField(
                     time = timeRange.end,
                     onTimeChanged = onEndTimeChanged,
                     modifier = Modifier.weight(1f),
-                    label = "Fin",
+                    label = stringResource(Res.string.end_label),
                     leadingIcon = painterResource(Res.drawable.ic_clock),
                 )
             }
             CVButton(
-                text = "Confirmar",
+                text = stringResource(Res.string.confirm),
                 onClick = onConfirm,
                 modifier = Modifier
                     .padding(top = 16.dp)
@@ -479,11 +487,14 @@ private fun ShiftModal(
     }
 }
 
-private fun ShiftInfoSummary.displayTime() =
-    when (shift) {
-        ShiftUi.Morning -> "Matí: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
-        ShiftUi.Afternoon -> "Tarda: ${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
+@Composable
+private fun ShiftInfoSummary.displayTime(): String {
+    val timeRangeStr = "${timeRange.start.format("HH:mm")}h-${timeRange.end.format("HH:mm")}"
+    return when (shift) {
+        ShiftUi.Morning -> stringResource(Res.string.morning_label, timeRangeStr)
+        ShiftUi.Afternoon -> stringResource(Res.string.afternoon_label, timeRangeStr)
     }
+}
 
 @Composable
 private fun FormVolunteerTypeUi.getBackgroundColor() =
