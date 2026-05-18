@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CVTag(
     text: String,
-    icon: Painter,
     modifier: Modifier = Modifier,
+    icon: Painter? = null,
     extraText: String? = null,
-    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    backgroundColor: Color? = null,
 ) {
     val tagText = buildAnnotatedString {
         append(text)
@@ -35,7 +35,7 @@ fun CVTag(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
-        color = backgroundColor,
+        color = backgroundColor ?: MaterialTheme.colorScheme.primary,
         contentColor = Color.White,
     ) {
         Row(
@@ -43,11 +43,13 @@ fun CVTag(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Icon(
-                painter = icon,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-            )
+            if (icon != null) {
+                Icon(
+                    painter = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
             Text(
                 text = tagText,
                 style = MaterialTheme.typography.labelMedium,

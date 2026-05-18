@@ -7,16 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
 interface CalendarRepository {
-    fun getVolunteersByDateRange(
-        year: Int,
-        monthNumber: Int,
-        currentDate: LocalDate,
-    ): Flow<List<Volunteer>>
-
     suspend fun getGoogleCalendarEvents(
         year: Int,
         monthNumber: Int,
     ): Result<List<GoogleCalendarEvent>>
-
-    suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>>
 }

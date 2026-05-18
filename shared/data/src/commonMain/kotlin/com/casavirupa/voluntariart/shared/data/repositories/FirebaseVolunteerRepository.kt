@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
 import com.casavirupa.voluntariat.shared.core.utils.toMilliseconds
@@ -24,6 +25,38 @@ import kotlin.time.Instant
 class FirebaseVolunteerRepository(
     private val firestore: FirebaseFirestore,
 ) : VolunteerRepository {
+    override fun getVolunteersByDateRange(
+        year: Int,
+        monthNumber: Int,
+        currentDate: LocalDate,
+    ): Flow<List<Volunteer>> {
+        val timestamp = Timestamp.fromMilliseconds(currentDate.toMilliseconds().toDouble())
+        return firestore
+            .collection("volunteers")
+            .where { "timestamp" greaterThanOrEqualTo timestamp }
+            .snapshots
+            .map { snapshot ->
+                snapshot.documents.map { doc ->
+                    doc.data<FirebaseVolunteer>().toDomainModel(doc.id)
+                }
+            }
+    }
+
+    override suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>> =
+        runCatching {
+            val timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble())
+            firestore
+                .collection("volunteers")
+                .where { "timestamp" equalTo timestamp }
+                .get()
+                .documents
+                .map { document ->
+                    document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                }
+        }.onFailure {
+            Logger.d("asdd", it)
+        }
+
     override fun getVolunteersByUserAndMonth(
         id: UserId,
         monthNumber: Int,
@@ -37,7 +70,6 @@ class FirebaseVolunteerRepository(
         val endTimestamp = Timestamp.fromMilliseconds(
             LocalDate(nextYear, nextMonth, 1).toMilliseconds().toDouble()
         )
-
         return firestore
             .collection("volunteers")
             .where {
@@ -49,7 +81,9 @@ class FirebaseVolunteerRepository(
             .snapshots
             .map { snapshot ->
                 snapshot.documents.map { doc ->
-                    doc.data<FirebaseVolunteer>().toDomainModel(doc.id)
+                    doc
+                        .data<FirebaseVolunteer>()
+                        .toDomainModel(doc.id)
                 }
             }
     }
@@ -77,10 +111,45 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = Shift.Unknown,
+        shift = shift.toVolunteerShiftModel(types),
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
+
+private fun String.toVolunteerShiftModel(types: List<String>): Shift {
+    val modelTypes = types.map(String::toVolunteerTypeModel)
+    return when (this) {
+        "morning" -> Shift.Morning(
+            type = modelTypes.first(),
+            timeRange = TimeRange.DefaultMorning,
+        )
+        "afternoon" -> Shift.Afternoon(
+            type = modelTypes.first(),
+            timeRange = TimeRange.DefaultMorning,
+        )
+        "all_day" -> Shift.AllDay(
+            morningType = modelTypes.first(),
+            morningTimeRange = TimeRange.DefaultMorning,
+            afternoonType = modelTypes.last(),
+            afternoonTimeRange = TimeRange.DefaultMorning,
+        )
+        else -> Shift.Unknown
+    }
+}
+
+private fun String.toVolunteerTypeModel() =
+    when (this) {
+        "general" -> VolunteerType.General
+        "specific" -> VolunteerType.Specific
+        else -> VolunteerType.Unknown
+    }
+
+private fun String.toMealTypeModel() =
+    when (this) {
+        "lunch" -> Meal.Lunch
+        "dinner" -> Meal.Dinner
+        else -> Meal.Unknown
+    }
 
 private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
@@ -138,13 +207,6 @@ private fun Meal.toFirebaseValue() =
         Meal.Lunch -> "lunch"
         Meal.Dinner -> "dinner"
         else -> EMPTY_VALUE
-    }
-
-private fun String.toMealTypeModel() =
-    when (this) {
-        "lunch" -> Meal.Lunch
-        "dinner" -> Meal.Dinner
-        else -> Meal.Unknown
     }
 
 private fun Timestamp.toDate() =

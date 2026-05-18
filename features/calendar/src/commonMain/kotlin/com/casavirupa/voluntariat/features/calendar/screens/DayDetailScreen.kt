@@ -215,7 +215,7 @@ private fun VolunteerShiftItem(
             when (val volunteerType = volunteer.type) {
                 is VolunteerTypeUi.Single -> {
                     CVTag(
-                        text = volunteerType.type.displayName(),
+                        text = volunteerType.type.displayName().orEmpty(),
                         icon = volunteerType.type.getIcon(),
                         backgroundColor = volunteerType.type.getBackgroundColor(),
                     )
@@ -223,12 +223,12 @@ private fun VolunteerShiftItem(
                 is VolunteerTypeUi.AllDay -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CVTag(
-                            text = volunteerType.morning.displayName(),
+                            text = volunteerType.morning.displayName().orEmpty(),
                             icon = painterResource(Res.drawable.ic_sun),
                             backgroundColor = volunteerType.morning.getBackgroundColor(),
                         )
                         CVTag(
-                            text = volunteerType.afternoon.displayName(),
+                            text = volunteerType.afternoon.displayName().orEmpty(),
                             icon = painterResource(Res.drawable.ic_afternoon),
                             backgroundColor = volunteerType.afternoon.getBackgroundColor(),
                         )

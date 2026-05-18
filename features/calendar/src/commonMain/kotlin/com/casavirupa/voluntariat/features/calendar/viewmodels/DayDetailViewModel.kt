@@ -24,7 +24,6 @@ import kotlin.collections.emptyList
 
 class DayDetailViewModel(
     navKey: DayDetailNavKey,
-    private val calendarRepository: CalendarRepository,
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
@@ -73,7 +72,7 @@ class DayDetailViewModel(
 
     private fun refreshVolunteers() {
         viewModelScope.launch {
-            calendarRepository
+            volunteerRepository
                 .getVolunteersByDate(date)
                 .mapCatching { volunteers ->
                     val users = userRepository.getAllUsers().getOrElse { emptyList() }

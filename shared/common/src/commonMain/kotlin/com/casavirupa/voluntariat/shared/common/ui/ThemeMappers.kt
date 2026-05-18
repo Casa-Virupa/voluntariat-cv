@@ -60,6 +60,7 @@ fun VolunteerType.displayName() =
     when (this) {
         VolunteerType.General -> stringResource(Res.string.general)
         VolunteerType.Specific -> stringResource(Res.string.specific)
+        else -> null
     }
 
 @Composable
@@ -67,6 +68,7 @@ fun VolunteerType.getBackgroundColor() =
     when (this) {
         VolunteerType.General -> Color(0xFFC2A47D)
         VolunteerType.Specific -> Color(0xFF9E816E)
+        else -> null
     }
 
 @Composable
@@ -74,4 +76,5 @@ fun VolunteerType.getIcon() =
     when (this) {
         VolunteerType.General -> painterResource(Res.drawable.ic_group)
         VolunteerType.Specific -> painterResource(Res.drawable.ic_target)
+        else -> null
     }
