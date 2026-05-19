@@ -53,8 +53,18 @@ class FirebaseVolunteerRepository(
                 .map { document ->
                     document.data<FirebaseVolunteer>().toDomainModel(document.id)
                 }
-        }.onFailure {
-            Logger.d("asdd", it)
+        }
+
+    override suspend fun getVolunteersByUser(id: UserId): Result<List<Volunteer>> =
+        runCatching {
+            firestore
+                .collection("volunteers")
+                .where { "userId" equalTo id }
+                .get()
+                .documents
+                .map { document ->
+                    document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                }
         }
 
     override fun getVolunteersByUserAndMonth(

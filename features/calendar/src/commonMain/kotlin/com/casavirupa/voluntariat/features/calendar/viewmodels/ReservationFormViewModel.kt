@@ -75,6 +75,10 @@ class ReservationFormViewModel(
     private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
     val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
 
+    private val _showExistingVolunteerDialogError = MutableStateFlow(false)
+    val showExistingVolunteerDialogError: StateFlow<Boolean> =
+        _showExistingVolunteerDialogError.asStateFlow()
+
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
     }
@@ -185,12 +189,16 @@ class ReservationFormViewModel(
     }
 
     fun onConfirm() {
-        if (!formInputsAreValid()) {
-            // TODO: Show error
-            return
-        }
         throttler.throttle {
             viewModelScope.launch {
+                if (!formInputsAreValid()) {
+                    // TODO: Show error
+                    return@launch
+                }
+                if (existVolunteerFromUser()) {
+                    _showExistingVolunteerDialogError.update { true }
+                    return@launch
+                }
                 authRepository
                     .getCurrentUser()
                     .onSuccess { user ->
@@ -212,6 +220,10 @@ class ReservationFormViewModel(
 
     fun onNavigationHandled() {
         _uiState.update { it.copy(isFormSavedSuccessfully = false) }
+    }
+
+    fun closeExistVolunteerDialog() {
+        _showExistingVolunteerDialogError.update { false }
     }
 
     private fun formInputsAreValid() =
@@ -312,6 +324,20 @@ class ReservationFormViewModel(
             FormVolunteerTypeUi.General -> VolunteerType.General
             FormVolunteerTypeUi.Specific -> VolunteerType.Specific
         }
+
+    private suspend fun existVolunteerFromUser(): Boolean {
+        var result = false
+        // TODO: Handle this error with a message
+        val user = authRepository.getCurrentUser().getOrNull() ?: return true
+        volunteerRepository
+            .getVolunteersByUser(user.id)
+            .onSuccess { volunteers ->
+                result = volunteers.any { it.date == date.value }
+            }.onFailure {
+                result = true
+            }
+        return result
+    }
 }
 
 data class ReservationFormUiState(

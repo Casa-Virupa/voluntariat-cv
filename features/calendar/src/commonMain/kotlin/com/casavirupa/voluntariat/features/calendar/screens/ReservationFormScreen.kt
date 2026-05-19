@@ -45,6 +45,7 @@ import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -54,12 +55,15 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.accept
 import voluntariatcv.features.calendar.generated.resources.additional_options
 import voluntariatcv.features.calendar.generated.resources.afternoon_label
 import voluntariatcv.features.calendar.generated.resources.afternoon_shift_title
 import voluntariatcv.features.calendar.generated.resources.confirm
 import voluntariatcv.features.calendar.generated.resources.date_placeholder
 import voluntariatcv.features.calendar.generated.resources.end_label
+import voluntariatcv.features.calendar.generated.resources.existing_volunteer_dialog_description
+import voluntariatcv.features.calendar.generated.resources.existing_volunteer_dialog_title
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
@@ -87,6 +91,8 @@ internal fun ReservationFormScreen(
     val morningTimeRange by viewModel.morningTimeRange.collectAsStateWithLifecycle()
     val afternoonTimeRange by viewModel.afternoonTimeRange.collectAsStateWithLifecycle()
     val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
+    val showExistingVolunteerDialog by viewModel
+        .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -128,6 +134,17 @@ internal fun ReservationFormScreen(
             onConfirm = viewModel::onConfirmShift,
         )
         else -> {}
+    }
+    
+    if (showExistingVolunteerDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closeExistVolunteerDialog,
+            title = stringResource(Res.string.existing_volunteer_dialog_title),
+            description = stringResource(Res.string.existing_volunteer_dialog_description),
+            onCancel = viewModel::closeExistVolunteerDialog,
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::closeExistVolunteerDialog,
+        )
     }
 
     val currentOnNavBack by rememberUpdatedState(onNavBack)

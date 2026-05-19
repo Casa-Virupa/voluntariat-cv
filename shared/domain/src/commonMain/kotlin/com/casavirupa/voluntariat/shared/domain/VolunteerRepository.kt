@@ -16,6 +16,8 @@ interface VolunteerRepository {
 
     suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>>
 
+    suspend fun getVolunteersByUser(id: UserId): Result<List<Volunteer>>
+
     fun getVolunteersByUserAndMonth(
         id: UserId,
         monthNumber: Int,

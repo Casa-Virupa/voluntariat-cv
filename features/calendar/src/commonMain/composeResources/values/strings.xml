@@ -53,4 +53,7 @@
     <string name="end_label">End</string>
     <string name="morning_label">Morning: %1$s</string>
     <string name="afternoon_label">Afternoon: %1$s</string>
+    <string name="existing_volunteer_dialog_title">Volunteer already registered</string>
+    <string name="existing_volunteer_dialog_description">You already have a volunteering on this day. If you want to add a new one, you must delete the existing one first.</string>
+    <string name="accept">Accept</string>
 </resources>
