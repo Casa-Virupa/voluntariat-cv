@@ -30,6 +30,8 @@ import com.casavirupa.voluntariat.features.calendar.navigation.ReservationFormNa
 import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
 import com.casavirupa.voluntariat.features.history.navigation.HistoryNavKey
 import com.casavirupa.voluntariat.features.history.navigation.historyEntry
+import com.casavirupa.voluntariat.features.profile.navigation.ProfileNavKey
+import com.casavirupa.voluntariat.features.profile.navigation.profileEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
@@ -42,7 +44,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun MainApp() {
+fun MainApp(onLogOut: () -> Unit) {
     val navigationState = rememberMainNavigationState(
         startKey = CalendarNavKey,
         config = mainContentNavigationConfig(),
@@ -51,6 +53,7 @@ fun MainApp() {
     val entryProvider = entryProvider {
         calendarEntry(navigator)
         historyEntry(navigator)
+        profileEntry(onLogOut)
     }
 
     VoluntariatCVTheme {
@@ -88,6 +91,7 @@ private fun mainContentNavigationConfig() = SavedStateConfiguration {
             subclass(ReservationFormNavKey::class, ReservationFormNavKey.serializer())
             subclass(DayDetailNavKey::class, DayDetailNavKey.serializer())
             subclass(HistoryNavKey::class, HistoryNavKey.serializer())
+            subclass(ProfileNavKey::class, ProfileNavKey.serializer())
         }
     }
 }

@@ -12,19 +12,19 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.casavirupa.voluntariat.features.authentication.navigation.CreatePasswordNavKey
-import com.casavirupa.voluntariat.features.authentication.navigation.MainAppContentNavKey
 import com.casavirupa.voluntariat.features.authentication.navigation.SignInNavKey
 import com.casavirupa.voluntariat.features.authentication.navigation.authEntry
 import com.casavirupa.voluntariat.features.authentication.navigation.authNavigationConfig
 import com.casavirupa.voluntariat.shared.common.InitialUserState
 import com.casavirupa.voluntariat.shared.core.navigation.AuthNavigator
+import com.casavirupa.voluntariat.shared.core.navigation.MainAppContentNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.rememberAuthNavigationState
 import com.casavirupa.voluntariat.shared.core.navigation.toEntries
 import com.casavirupa.voluntariat.shared.designsystem.theme.VoluntariatCVTheme
-import com.casavirupa.voluntariat.shared.ui.navigation.mainContentEntry
+import com.casavirupa.voluntariat.shared.ui.navigation.rootMainContentEntry
 
 @Composable
-fun RootApp(userState: InitialUserState) {
+fun RootApp(userState: InitialUserState = InitialUserState.NotLogged) {
     val navigationState = rememberAuthNavigationState(
         startKey = userState.toStartDestination(),
         config = authNavigationConfig(),
@@ -32,7 +32,7 @@ fun RootApp(userState: InitialUserState) {
     val navigator = remember { AuthNavigator(navigationState) }
     val entryProvider = entryProvider {
         authEntry(navigator)
-        mainContentEntry()
+        rootMainContentEntry(navigator)
     }
 
     VoluntariatCVTheme {

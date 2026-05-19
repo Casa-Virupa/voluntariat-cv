@@ -62,6 +62,11 @@ class FirebaseAuthRepository(
                     .toDomainModel(UserId(userId), auth.currentUser?.email!!)
             }
 
+    override suspend fun logOut(): Result<Unit> =
+        runCatching {
+            auth.signOut()
+        }
+
     private suspend fun findUserFromFirestore(user: FirebaseUser): Result<User> {
         val email = user.email
             ?: return Result.failure(NullPointerException("User email not found"))

@@ -14,6 +14,7 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.savedstate.serialization.SavedStateConfiguration
+import kotlinx.serialization.Serializable
 
 @Composable
 fun rememberMainNavigationState(
@@ -25,7 +26,6 @@ fun rememberMainNavigationState(
         MainNavigationState(stack = stack)
     }
 }
-
 
 class MainNavigationState(val stack: NavBackStack<NavKey>) {
     val currentKey by derivedStateOf { stack.last() as MainNavKey }
