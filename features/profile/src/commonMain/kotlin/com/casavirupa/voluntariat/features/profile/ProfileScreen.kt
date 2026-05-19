@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.flowWithLifecycle
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -19,6 +24,19 @@ internal fun ProfileScreen(
     viewModel: ProfileViewModel = koinViewModel(),
 ) {
     ProfileContent(onLogOut = viewModel::logOut)
+
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val currentOnNavigateToSignIn by rememberUpdatedState(onNavigateToSignIn)
+
+    LaunchedEffect(viewModel, lifecycle) {
+        viewModel.uiState
+            .flowWithLifecycle(lifecycle)
+            .collect { state ->
+                if (state.navigateToSignIn) {
+                    currentOnNavigateToSignIn()
+                }
+            }
+    }
 }
 
 @Composable

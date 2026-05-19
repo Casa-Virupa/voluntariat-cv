@@ -11,4 +11,6 @@ interface AuthRepository {
     suspend fun getCurrentUser(): Result<User>
 
     fun getCurrentUserFlow(): Flow<User>
+
+    suspend fun logOut(): Result<Unit>
 }

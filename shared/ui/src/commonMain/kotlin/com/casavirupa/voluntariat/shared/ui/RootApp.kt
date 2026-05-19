@@ -32,7 +32,7 @@ fun RootApp(userState: InitialUserState = InitialUserState.NotLogged) {
     val navigator = remember { AuthNavigator(navigationState) }
     val entryProvider = entryProvider {
         authEntry(navigator)
-        rootMainContentEntry()
+        rootMainContentEntry(navigator)
     }
 
     VoluntariatCVTheme {

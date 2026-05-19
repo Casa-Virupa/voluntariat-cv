@@ -44,7 +44,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun MainApp() {
+fun MainApp(onLogOut: () -> Unit) {
     val navigationState = rememberMainNavigationState(
         startKey = CalendarNavKey,
         config = mainContentNavigationConfig(),
@@ -53,7 +53,7 @@ fun MainApp() {
     val entryProvider = entryProvider {
         calendarEntry(navigator)
         historyEntry(navigator)
-        profileEntry(navigator)
+        profileEntry(onLogOut)
     }
 
     VoluntariatCVTheme {

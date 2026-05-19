@@ -33,9 +33,6 @@ class MainNavigationState(val stack: NavBackStack<NavKey>) {
 
 class MainNavigator(val state: MainNavigationState) {
     fun navigate(key: MainNavKey) {
-        if (key.shouldLogOut) {
-            state.stack.clear()
-        }
         state.stack.add(key)
     }
 

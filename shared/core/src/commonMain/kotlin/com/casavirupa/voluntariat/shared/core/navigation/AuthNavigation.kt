@@ -35,8 +35,8 @@ class AuthNavigationState(val stack: NavBackStack<NavKey>) {
 }
 
 class AuthNavigator(val state: AuthNavigationState) {
-    fun navigate(key: AuthNavKey) {
-        if (key.isLastNavKey) {
+    fun navigate(key: AuthNavKey, clearStack: Boolean = false) {
+        if (key.isLastNavKey || clearStack) {
             state.stack.clear()
         }
         state.stack.add(key)

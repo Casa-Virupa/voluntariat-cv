@@ -9,8 +9,4 @@ data object MainAppContentNavKey : AuthNavKey(isLastNavKey = true)
 @Serializable
 open class MainNavKey(
     val showNavigationBar: Boolean = false,
-    val shouldLogOut: Boolean = false,
 ) : NavKey
-
-@Serializable
-data object AuthRootNavKey : MainNavKey(shouldLogOut = true)
