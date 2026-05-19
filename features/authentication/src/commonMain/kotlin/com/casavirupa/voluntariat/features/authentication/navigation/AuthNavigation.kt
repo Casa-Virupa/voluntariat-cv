@@ -7,6 +7,7 @@ import com.casavirupa.voluntariat.features.authentication.password.CreatePasswor
 import com.casavirupa.voluntariat.features.authentication.signin.SignInScreen
 import com.casavirupa.voluntariat.shared.core.navigation.AuthNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.AuthNavigator
+import com.casavirupa.voluntariat.shared.core.navigation.AuthRootNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.MainAppContentNavKey
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
@@ -24,6 +25,7 @@ fun authNavigationConfig() = SavedStateConfiguration {
             subclass(SignInNavKey::class, SignInNavKey.serializer())
             subclass(CreatePasswordNavKey::class, CreatePasswordNavKey.serializer())
             subclass(MainAppContentNavKey::class, MainAppContentNavKey.serializer())
+            subclass(AuthRootNavKey::class, AuthRootNavKey.serializer())
         }
     }
 }
