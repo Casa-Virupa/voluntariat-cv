@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -22,6 +21,7 @@ import voluntariatcv.shared.common.generated.resources.lunch
 import voluntariatcv.shared.common.generated.resources.morning
 import voluntariatcv.shared.common.generated.resources.specific
 
+/*
 @Composable
 fun Shift.displayName(): String = when (this) {
     Shift.Morning -> stringResource(Res.string.morning)
@@ -29,13 +29,7 @@ fun Shift.displayName(): String = when (this) {
     Shift.AllDay -> stringResource(Res.string.all_day)
     else -> ""
 }
-
-@Composable
-fun SpecificArea.displayName(): String = when (this) {
-    SpecificArea.Morning -> stringResource(Res.string.morning)
-    SpecificArea.Afternoon -> stringResource(Res.string.afternoon)
-    SpecificArea.AllDay -> stringResource(Res.string.all_day)
-}
+ */
 
 @Composable
 fun Meal.displayName() =
@@ -66,6 +60,7 @@ fun VolunteerType.displayName() =
     when (this) {
         VolunteerType.General -> stringResource(Res.string.general)
         VolunteerType.Specific -> stringResource(Res.string.specific)
+        else -> null
     }
 
 @Composable
@@ -73,6 +68,7 @@ fun VolunteerType.getBackgroundColor() =
     when (this) {
         VolunteerType.General -> Color(0xFFC2A47D)
         VolunteerType.Specific -> Color(0xFF9E816E)
+        else -> null
     }
 
 @Composable
@@ -80,4 +76,5 @@ fun VolunteerType.getIcon() =
     when (this) {
         VolunteerType.General -> painterResource(Res.drawable.ic_group)
         VolunteerType.Specific -> painterResource(Res.drawable.ic_target)
+        else -> null
     }

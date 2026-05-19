@@ -37,6 +37,9 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
 import voluntariatcv.features.history.generated.resources.afternoon
+import voluntariatcv.features.history.generated.resources.days
+import voluntariatcv.features.history.generated.resources.hours
+import voluntariatcv.features.history.generated.resources.hours_format
 import voluntariatcv.features.history.generated.resources.ic_afternoon
 import voluntariatcv.features.history.generated.resources.ic_arrow_left
 import voluntariatcv.features.history.generated.resources.ic_arrow_right
@@ -45,6 +48,10 @@ import voluntariatcv.features.history.generated.resources.ic_cancel
 import voluntariatcv.features.history.generated.resources.ic_clock
 import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.morning
+import voluntariatcv.features.history.generated.resources.my_volunteerings
+import voluntariatcv.features.history.generated.resources.pending_payment
+import voluntariatcv.features.history.generated.resources.remember_payment
+import voluntariatcv.features.history.generated.resources.volunteerings_history
 
 @Composable
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
@@ -104,7 +111,7 @@ private fun Header(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        MediumTopBar(title = "Els meus voluntariats")
+        MediumTopBar(title = stringResource(Res.string.my_volunteerings))
         MonthSelector(
             currentDate = currentDate,
             onClickPreviousMonth = onClickPreviousMonth,
@@ -157,13 +164,13 @@ private fun InformationSummary(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         SummaryContainer(
-            title = "Hores",
+            title = stringResource(Res.string.hours),
             icon = painterResource(Res.drawable.ic_clock),
             value = info.hours,
             modifier = Modifier.weight(1f),
         )
         SummaryContainer(
-            title = "Dies",
+            title = stringResource(Res.string.days),
             icon = painterResource(Res.drawable.ic_calendar_today),
             value = info.days,
             modifier = Modifier.weight(1f),
@@ -232,13 +239,13 @@ private fun PaymentWarning(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = "Pendent de pagament",
+                    text = stringResource(Res.string.pending_payment),
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
                     ),
                 )
                 Text(
-                    text = "Recorda fer el pagament del mes",
+                    text = stringResource(Res.string.remember_payment),
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Normal,
                     ),
@@ -255,7 +262,7 @@ private fun HistoryList(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = "Historial de voluntariats".uppercase(),
+            text = stringResource(Res.string.volunteerings_history).uppercase(),
             modifier = Modifier.padding(bottom = 12.dp),
             style = MaterialTheme.typography.labelLarge,
         )
@@ -284,7 +291,7 @@ private fun HistoryItem(
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
-                    text = "${volunteer.hours}h",
+                    text = stringResource(Res.string.hours_format, volunteer.hours),
                     style = MaterialTheme.typography.labelLarge,
                 )
             }
@@ -305,17 +312,17 @@ private fun ShiftTags(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         when (shift) {
-            Shift.Morning -> CVTag(
+            is Shift.Morning -> CVTag(
                 text = stringResource(Res.string.morning),
                 icon = painterResource(Res.drawable.ic_sun),
                 backgroundColor = Color(0xFFC2A47D),
             )
-            Shift.Afternoon -> CVTag(
+            is Shift.Afternoon -> CVTag(
                 text = stringResource(Res.string.afternoon),
                 icon = painterResource(Res.drawable.ic_afternoon),
                 backgroundColor = Color(0xFF9E816E),
             )
-            Shift.AllDay -> {
+            is Shift.AllDay -> {
                 CVTag(
                     text = stringResource(Res.string.morning),
                     icon = painterResource(Res.drawable.ic_sun),

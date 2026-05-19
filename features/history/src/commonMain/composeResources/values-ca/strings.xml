@@ -1,4 +1,11 @@
 <resources>
     <string name="morning">Matí</string>
     <string name="afternoon">Tarda</string>
+    <string name="my_volunteerings">Els meus voluntariats</string>
+    <string name="hours">Hores</string>
+    <string name="days">Dies</string>
+    <string name="pending_payment">Pendent de pagament</string>
+    <string name="remember_payment">Recorda fer el pagament del mes</string>
+    <string name="volunteerings_history">Historial de voluntariats</string>
+    <string name="hours_format">%1$dh</string>
 </resources>

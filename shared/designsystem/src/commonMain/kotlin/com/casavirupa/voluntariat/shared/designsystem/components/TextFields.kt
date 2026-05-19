@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -98,9 +99,16 @@ fun CVTextField(
                 }
                 Row(
                     modifier = Modifier
-                        .border(width = borderWidth, color = textFieldBorderColor)
+                        .border(
+                            width = borderWidth,
+                            color = textFieldBorderColor,
+                            shape = RoundedCornerShape(8.dp),
+                        )
                         .height(56.dp)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp),
+                        ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (leadingIcon != null) {
@@ -186,6 +194,7 @@ fun TimeTextField(
     time: LocalTime?,
     onTimeChanged: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
+    label: String? = null,
     placeholder: String? = null,
     leadingIcon: Painter? = null,
     pattern: String? = null,
@@ -200,6 +209,14 @@ fun TimeTextField(
     }
 
     Column(modifier = modifier) {
+        if (label != null) {
+            Text(
+                text = label.uppercase(),
+                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
         CVTextField(
             value = timeString,
             onValueChanged = {},

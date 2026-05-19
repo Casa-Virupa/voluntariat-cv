@@ -44,6 +44,9 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.all_day
+import voluntariatcv.features.calendar.generated.resources.delete
+import voluntariatcv.features.calendar.generated.resources.delete_volunteering_description
+import voluntariatcv.features.calendar.generated.resources.delete_volunteering_title
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
@@ -74,10 +77,10 @@ fun DayDetailScreen(
     if (showDeleteDialog) {
         WarningDialog(
             onDismiss = viewModel::onCloseDeleteDialog,
-            title = "Eliminar voluntariat",
-            description = "Estàs segur que vols eliminar el teu voluntariat del dia 5? Aquesta acció no es pot desfer.",
+            title = stringResource(Res.string.delete_volunteering_title),
+            description = stringResource(Res.string.delete_volunteering_description),
             onCancel = viewModel::onCloseDeleteDialog,
-            confirmText = "Eliminar",
+            confirmText = stringResource(Res.string.delete),
             onConfirm = viewModel::deleteVolunteer,
         )
     }
@@ -212,7 +215,7 @@ private fun VolunteerShiftItem(
             when (val volunteerType = volunteer.type) {
                 is VolunteerTypeUi.Single -> {
                     CVTag(
-                        text = volunteerType.type.displayName(),
+                        text = volunteerType.type.displayName().orEmpty(),
                         icon = volunteerType.type.getIcon(),
                         backgroundColor = volunteerType.type.getBackgroundColor(),
                     )
@@ -220,12 +223,12 @@ private fun VolunteerShiftItem(
                 is VolunteerTypeUi.AllDay -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CVTag(
-                            text = volunteerType.morning.displayName(),
+                            text = volunteerType.morning.displayName().orEmpty(),
                             icon = painterResource(Res.drawable.ic_sun),
                             backgroundColor = volunteerType.morning.getBackgroundColor(),
                         )
                         CVTag(
-                            text = volunteerType.afternoon.displayName(),
+                            text = volunteerType.afternoon.displayName().orEmpty(),
                             icon = painterResource(Res.drawable.ic_afternoon),
                             backgroundColor = volunteerType.afternoon.getBackgroundColor(),
                         )

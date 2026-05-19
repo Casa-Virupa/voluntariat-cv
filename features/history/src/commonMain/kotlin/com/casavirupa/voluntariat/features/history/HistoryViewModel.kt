@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
-import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -21,7 +20,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
@@ -73,8 +71,8 @@ class HistoryViewModel(
         map {
             VolunteerHistoryItem(
                 date = it.date,
-                hours = it.volunteerShift.getHour(),
-                shift = it.volunteerShift,
+                hours = it.shift.getHour(),
+                shift = it.shift,
                 meals = it.meals,
             )
         }
@@ -100,7 +98,7 @@ data class MonthSummary(
         operator fun invoke(volunteers: List<Volunteer>): MonthSummary =
             MonthSummary(
                 days = volunteers.map { it.date }.distinct().count(),
-                hours = volunteers.map { it.volunteerShift }.calculateHours(),
+                hours = volunteers.map { it.shift }.calculateHours(),
             )
 
         private fun List<Shift>.calculateHours() = this.sumOf { it.getHour() }
@@ -116,9 +114,9 @@ data class VolunteerHistoryItem(
 
 private fun Shift.getHour() =
     when (this) {
-        Shift.Morning -> HALF_JOURNEY
-        Shift.Afternoon -> HALF_JOURNEY
-        Shift.AllDay -> ALL_DAY_JOURNEY
+        is Shift.Morning -> HALF_JOURNEY
+        is Shift.Afternoon -> HALF_JOURNEY
+        is Shift.AllDay -> ALL_DAY_JOURNEY
         else -> 0
     }
 

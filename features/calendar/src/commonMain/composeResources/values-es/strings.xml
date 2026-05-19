@@ -35,4 +35,25 @@
         <item quantity="one">1 voluntario</item>
         <item quantity="other">%1$d voluntarios</item>
     </plurals>
+    <string name="delete_volunteering_title">Eliminar voluntariado</string>
+    <string name="delete_volunteering_description">¿Estás seguro que quieres eliminar tu voluntariado de este día? Esta acción no se puede deshacer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="monday_short">Lu</string>
+    <string name="tuesday_short">Ma</string>
+    <string name="wednesday_short">Mi</string>
+    <string name="thursday_short">Ju</string>
+    <string name="friday_short">Vi</string>
+    <string name="saturday_short">Sá</string>
+    <string name="sunday_short">Do</string>
+    <string name="morning_shift_title">Turno de mañana</string>
+    <string name="afternoon_shift_title">Turno de tarde</string>
+    <string name="shift_label">Turno</string>
+    <string name="additional_options">Opciones adicionales</string>
+    <string name="start_label">Inicio</string>
+    <string name="end_label">Fin</string>
+    <string name="morning_label">Mañana: %1$s</string>
+    <string name="afternoon_label">Tarde: %1$s</string>
+    <string name="existing_volunteer_dialog_title">Voluntariado ya registrado</string>
+    <string name="existing_volunteer_dialog_description">Ya tienes un voluntariado en este día. Si quieres añadir uno nuevo, debes eliminar el existente primero.</string>
+    <string name="accept">Aceptar</string>
 </resources>

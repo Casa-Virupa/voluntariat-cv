@@ -1,0 +1,20 @@
+<resources>
+    <string name="sign_in">Sign In</string>
+    <string name="app_name_volunteering">Volunteering\nCasa Virupa</string>
+    <string name="email_label">Email</string>
+    <string name="email_placeholder">name@example.com</string>
+    <string name="password_label">Password</string>
+    <string name="password_placeholder">********</string>
+    <string name="create_password">Create Password</string>
+    <string name="create_new_password_title">Create New Password</string>
+    <string name="create_password_description">For security, you must change your password before continuing</string>
+    <string name="actual_password_label">Current Password</string>
+    <string name="new_password_label">New Password</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="password_not_valid_error">Password does not meet security requirements</string>
+    <string name="passwords_do_not_match_error">Passwords do not match</string>
+    <string name="security_requirements">Security Requirements</string>
+    <string name="requirement_8_characters">Minimum 8 characters</string>
+    <string name="requirement_uppercase_lowercase">One uppercase and one lowercase</string>
+    <string name="requirement_number_symbol">One number or special symbol</string>
+</resources>

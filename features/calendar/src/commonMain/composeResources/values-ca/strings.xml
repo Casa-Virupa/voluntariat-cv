@@ -35,4 +35,25 @@
         <item quantity="one">1 voluntari</item>
         <item quantity="other">%1$d voluntaris</item>
     </plurals>
+    <string name="delete_volunteering_title">Eliminar voluntariat</string>
+    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d\'aquest dia? Aquesta acció no es pot desfer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="monday_short">Dl</string>
+    <string name="tuesday_short">Dt</string>
+    <string name="wednesday_short">Dc</string>
+    <string name="thursday_short">Dj</string>
+    <string name="friday_short">Dv</string>
+    <string name="saturday_short">Ds</string>
+    <string name="sunday_short">Dm</string>
+    <string name="morning_shift_title">Torn de matí</string>
+    <string name="afternoon_shift_title">Torn de tarda</string>
+    <string name="shift_label">Torn</string>
+    <string name="additional_options">Opcions addicionals</string>
+    <string name="start_label">Inici</string>
+    <string name="end_label">Fi</string>
+    <string name="morning_label">Matí: %1$s</string>
+    <string name="afternoon_label">Tarda: %1$s</string>
+    <string name="existing_volunteer_dialog_title">Voluntariat ja registrat</string>
+    <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l\'existent primerament.</string>
+    <string name="accept">Acceptar</string>
 </resources>

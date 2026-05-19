@@ -10,7 +10,6 @@ import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.calendar.SpecificArea
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
@@ -21,12 +20,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.KoinApplication.Companion.init
 import kotlin.collections.emptyList
 
 class DayDetailViewModel(
     navKey: DayDetailNavKey,
-    private val calendarRepository: CalendarRepository,
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
@@ -75,7 +72,7 @@ class DayDetailViewModel(
 
     private fun refreshVolunteers() {
         viewModelScope.launch {
-            calendarRepository
+            volunteerRepository
                 .getVolunteersByDate(date)
                 .mapCatching { volunteers ->
                     val users = userRepository.getAllUsers().getOrElse { emptyList() }
@@ -98,7 +95,7 @@ class DayDetailViewModel(
         currentUserId: UserId?,
     ) = DayShifts(
         allDayVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.AllDay }
+            .filter { it.shift is Shift.AllDay }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -107,7 +104,7 @@ class DayDetailViewModel(
                     }
             },
         morningVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.Morning }
+            .filter { it.shift is Shift.Morning }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -116,7 +113,7 @@ class DayDetailViewModel(
                     }
             },
         afternoonVolunteers = volunteers
-            .filter { it.volunteerShift == Shift.Afternoon }
+            .filter { it.shift is Shift.Afternoon }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -162,11 +159,11 @@ sealed class VolunteerTypeUi {
 }
 
 private fun Volunteer.toUiModel(name: String, userId: UserId?) =
-    if (volunteerShift == Shift.AllDay) {
+    if (shift is Shift.AllDay) {
         VolunteerItemUi(
             id = id,
             name = name,
-            type = buildAllDayVolunteerType(specificArea),
+            type = buildAllDayVolunteerType(),
             meals = meals,
             sleep = sleep,
             canBeDeleted = this.userId == userId,
@@ -175,41 +172,24 @@ private fun Volunteer.toUiModel(name: String, userId: UserId?) =
         VolunteerItemUi(
             id = id,
             name = name,
-            type = buildSingleVolunteerType(specificArea, volunteerShift),
+            type = buildSingleVolunteerType(shift),
             meals = meals,
             sleep = sleep,
             canBeDeleted = this.userId == userId,
         )
     }
 
-private fun buildAllDayVolunteerType(specificArea: SpecificArea?) =
+private fun buildAllDayVolunteerType() =
     VolunteerTypeUi.AllDay(
-        morning = setMorningVolunteerType(specificArea),
-        afternoon = setAfternoonVolunteerType(specificArea),
+        morning = VolunteerType.Specific,
+        afternoon = VolunteerType.General,
     )
 
-private fun buildSingleVolunteerType(
-    specificArea: SpecificArea?,
-    volunteerShift: Shift,
-) =
+private fun buildSingleVolunteerType(volunteerShift: Shift) =
     VolunteerTypeUi.Single(
         type = when (volunteerShift) {
-            Shift.Morning -> setMorningVolunteerType(specificArea)
-            Shift.Afternoon -> setAfternoonVolunteerType(specificArea)
+            is Shift.Morning -> VolunteerType.Specific
+            is Shift.Afternoon -> VolunteerType.General
             else -> VolunteerType.General
         }
     )
-
-private fun setMorningVolunteerType(specificArea: SpecificArea?): VolunteerType =
-    if (specificArea == SpecificArea.Morning) {
-        VolunteerType.Specific
-    } else {
-        VolunteerType.General
-    }
-
-private fun setAfternoonVolunteerType(specificArea: SpecificArea?): VolunteerType =
-    if (specificArea == SpecificArea.Afternoon) {
-        VolunteerType.Specific
-    } else {
-        VolunteerType.General
-    }
