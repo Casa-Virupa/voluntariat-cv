@@ -30,6 +30,7 @@ import com.casavirupa.voluntariat.features.calendar.navigation.ReservationFormNa
 import com.casavirupa.voluntariat.features.calendar.navigation.calendarEntry
 import com.casavirupa.voluntariat.features.history.navigation.HistoryNavKey
 import com.casavirupa.voluntariat.features.history.navigation.historyEntry
+import com.casavirupa.voluntariat.features.profile.navigation.profileEntry
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
 import com.casavirupa.voluntariat.shared.core.navigation.rememberMainNavigationState
@@ -51,6 +52,7 @@ fun MainApp() {
     val entryProvider = entryProvider {
         calendarEntry(navigator)
         historyEntry(navigator)
+        profileEntry(navigator)
     }
 
     VoluntariatCVTheme {
