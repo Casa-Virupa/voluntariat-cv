@@ -10,6 +10,9 @@ CREATE TABLE GoogleCalendarEventDb (
 insertGoogleCalendarEvent:
 INSERT INTO GoogleCalendarEventDb VALUES (?, ?, ?, ?, ?, ?);
 
+deleteAllGoogleCalendarEvents:
+DELETE FROM GoogleCalendarEventDb;
+
 getGoogleCalendarEvents:
 SELECT *
 FROM GoogleCalendarEventDb;

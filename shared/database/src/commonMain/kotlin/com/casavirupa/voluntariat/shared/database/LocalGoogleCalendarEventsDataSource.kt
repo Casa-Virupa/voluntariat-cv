@@ -17,6 +17,7 @@ internal class LocalGoogleCalendarEventsDataSource(
         events: List<GoogleCalendarEventDb>,
     ): Result<Unit> = runCatching {
         dbQueries.transaction {
+            dbQueries.deleteAllGoogleCalendarEvents()
             events.forEach { event ->
                 with(event) {
                     dbQueries.insertGoogleCalendarEvent(

@@ -42,12 +42,14 @@ class AppViewModel(
         }
     }
 
-    private fun calculateNextMonth(currentDate: LocalDate): Int =
-        if (currentDate.month.number + NEXT_MONTHS > MAX_MONTH_NUMBER) {
-            currentDate.month.number + NEXT_MONTHS - MAX_MONTH_NUMBER
+    private fun calculateNextMonth(currentDate: LocalDate): Int {
+        val nextMonth = currentDate.month.number + NEXT_MONTHS
+        return if (currentDate.month.number + NEXT_MONTHS > MAX_MONTH_NUMBER) {
+            nextMonth - MAX_MONTH_NUMBER
         } else {
-            currentDate.month.number
+            nextMonth
         }
+    }
 
     companion object {
         private const val MAX_MONTH_NUMBER = 12
