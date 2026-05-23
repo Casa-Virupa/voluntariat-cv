@@ -15,8 +15,6 @@ data class YearMonth(
 ) {
     val firstDayOfMonth = LocalDate(year, month, 1)
 
-    val lastDayOfMonth = LocalDate(year, Month(month.number + 1), 1).minus(DatePeriod(days = 1))
-
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
 
     val daysInMonth = month.lengthOfMonth(year.isLeap())
