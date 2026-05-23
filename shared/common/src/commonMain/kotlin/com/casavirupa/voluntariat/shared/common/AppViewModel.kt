@@ -2,20 +2,36 @@ package com.casavirupa.voluntariat.shared.common
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
+import kotlinx.datetime.plus
+import kotlin.time.Clock
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
-class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class AppViewModel(
+    private val authRepository: AuthRepository,
+    private val calendarRepository: CalendarRepository,
+) : ViewModel() {
     private val _initialUserState = MutableStateFlow<InitialUserState?>(null)
     val initialUserState: StateFlow<InitialUserState?> = _initialUserState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            delay(1000) // Fake delay
+            val currentDate = Clock.System.now().toDate()
+            calendarRepository.syncGoogleCalendarEvents(
+                year = currentDate.year,
+                startMonth = currentDate.month.number,
+                endMonth = calculateNextMonth(currentDate),
+            )
             authRepository
                 .getCurrentUser()
                 .onSuccess {
@@ -24,6 +40,18 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
                     _initialUserState.value = InitialUserState.NotLogged
                 }
         }
+    }
+
+    private fun calculateNextMonth(currentDate: LocalDate): Int =
+        if (currentDate.month.number + NEXT_MONTHS > MAX_MONTH_NUMBER) {
+            currentDate.month.number + NEXT_MONTHS - MAX_MONTH_NUMBER
+        } else {
+            currentDate.month.number
+        }
+
+    companion object {
+        private const val MAX_MONTH_NUMBER = 12
+        private const val NEXT_MONTHS = 3
     }
 }
 

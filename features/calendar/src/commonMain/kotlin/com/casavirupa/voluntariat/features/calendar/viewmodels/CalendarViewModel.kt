@@ -63,14 +63,6 @@ class CalendarViewModel(
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
 
-    init {
-        viewModelScope.launch {
-            yearMonth.collectLatest { yearMonth ->
-                loadGoogleCalendarEvents(yearMonth)
-            }
-        }
-    }
-
     fun onNextMonth() {
         _yearMonth.update { current ->
             current.copy(
@@ -91,20 +83,5 @@ class CalendarViewModel(
 
     fun onYearMonthChanged(newYearMonth: YearMonth) {
         _yearMonth.update { newYearMonth }
-    }
-
-    private fun loadGoogleCalendarEvents(yearMonth: YearMonth) {
-        viewModelScope.launch {
-            calendarRepository
-                .getGoogleCalendarEvents(
-                    year = yearMonth.year,
-                    monthNumber = yearMonth.month.number,
-                ).onSuccess { events ->
-                    _googleCalendarEvents.update { events }
-                }.onFailure {
-                    Logger.d("GoogleCalendarEvents") { it.message.toString() }
-                    // TODO: Handle error
-                }
-        }
     }
 }

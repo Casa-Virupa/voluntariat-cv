@@ -7,6 +7,7 @@ import com.casavirupa.voluntariat.features.history.di.historyModule
 import com.casavirupa.voluntariat.features.profile.di.profileModule
 import com.casavirupa.voluntariat.shared.common.di.commonModule
 import com.casavirupa.voluntariat.shared.core.di.coreModule
+import com.casavirupa.voluntariat.shared.database.di.databaseModule
 import org.koin.dsl.module
 
 val sharedModule = module {
@@ -18,5 +19,6 @@ val sharedModule = module {
         commonModule,
         coreModule,
         dataModule,
+        databaseModule,
     )
 }

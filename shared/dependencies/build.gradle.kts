@@ -15,6 +15,7 @@ kotlin {
             implementation(projects.shared.common)
             implementation(projects.shared.core)
             implementation(projects.shared.data)
+            implementation(projects.shared.database)
         }
     }
 }

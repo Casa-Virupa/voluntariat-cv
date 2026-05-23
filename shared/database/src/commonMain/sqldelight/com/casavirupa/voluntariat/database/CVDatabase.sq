@@ -1,0 +1,10 @@
+CREATE TABLE GoogleCalendarEventDb (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    start INTEGER NOT NULL,
+    end INTEGER NOT NULL
+);
+
+insertGoogleCalendarEvent:
+INSERT INTO GoogleCalendarEventDb VALUES ?;

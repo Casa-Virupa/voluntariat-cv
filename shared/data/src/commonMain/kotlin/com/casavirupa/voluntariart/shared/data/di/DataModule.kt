@@ -3,7 +3,7 @@ package com.casavirupa.voluntariart.shared.data.di
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseAuthRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseUserRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseVolunteerRepository
-import com.casavirupa.voluntariart.shared.data.repositories.RemoteCalendarRepository
+import com.casavirupa.voluntariart.shared.data.repositories.GoogleCalendarRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
@@ -22,7 +22,7 @@ val dataModule = module {
     single<FirebaseFirestore> { Firebase.firestore }
 
     singleOf(::FirebaseAuthRepository) bind AuthRepository::class
-    singleOf(::RemoteCalendarRepository) bind CalendarRepository::class
+    singleOf(::GoogleCalendarRepository) bind CalendarRepository::class
     singleOf(::FirebaseUserRepository) bind UserRepository::class
     singleOf(::FirebaseVolunteerRepository) bind VolunteerRepository::class
 }

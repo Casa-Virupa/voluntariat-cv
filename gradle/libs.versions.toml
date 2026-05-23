@@ -20,6 +20,7 @@ kotlinxDatetime = "0.7.1"
 kotlinxSerialization = "1.10.0"
 ktor = "3.4.0"
 runtime = "1.10.6"
+sqldelight = "2.3.2"
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle-api", version.ref = "androidGradlePlugin" }
@@ -58,6 +59,8 @@ ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging"  }
 ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin" }
+sqldelight-android = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqldelight" }
+sqldelight-native = { group = "app.cash.sqldelight", name = "native-driver", version.ref = "sqldelight" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "androidGradlePlugin" }
@@ -68,6 +71,7 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "kotlinAtomicfu" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 
 voluntariatcv-android-application = { id = "voluntariatcv.android.application" }
 voluntariatcv-android-application-compose = { id = "voluntariatcv.android.application.compose" }
