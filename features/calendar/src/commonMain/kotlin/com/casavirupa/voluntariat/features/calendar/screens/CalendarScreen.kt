@@ -313,15 +313,16 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEvent = googleCalendarEvents.firstOrNull {
-                            it.start.day == date.day && it.start.month == date.month
+                        val googleCalendarEvents = googleCalendarEvents.filter {
+                            (it.start.day >= date.day && it.end.day <= date.day)
+                                    && it.start.month == date.month
                         }
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
                             isPast = date < today,
                             today = today,
-                            googleCalendarEvent = googleCalendarEvent,
+                            googleCalendarEvents = googleCalendarEvents,
                             cellSize = dayCellSize,
                             numOfVolunteers = volunteers[date],
                             onClick = { onDayClick(date) }
@@ -340,7 +341,7 @@ private fun DayCell(
     isPast: Boolean,
     today: LocalDate,
     cellSize: DpSize,
-    googleCalendarEvent: GoogleCalendarEvent?,
+    googleCalendarEvents: List<GoogleCalendarEvent>,
     onClick: () -> Unit,
     numOfVolunteers: Int?,
     modifier: Modifier = Modifier,
@@ -382,36 +383,46 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (googleCalendarEvent != null && !isPast) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .height(6.dp)
-                        .background(Color.Blue)
-                )
+            if (!isPast) {
+                googleCalendarEvents.forEach {
+                    CalendarEvent(
+                        text = it.title,
+                        color = Color(0xFF8FA399),
+                    )
+                }
             }
             if (numOfVolunteers != null) {
-                Text(
+                CalendarEvent(
                     text = pluralStringResource(
                         Res.plurals.volunteers_count,
                         numOfVolunteers,
                         numOfVolunteers,
-                    ),
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(2.dp)
-                        ).padding(horizontal = 2.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
+                    )
                 )
             }
         }
     }
+}
+
+@Composable
+private fun CalendarEvent(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.primary,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .padding(horizontal = 4.dp)
+            .background(
+                color = color,
+                shape = RoundedCornerShape(2.dp)
+            ).padding(horizontal = 2.dp),
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+        color = MaterialTheme.colorScheme.onPrimary,
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1,
+    )
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
