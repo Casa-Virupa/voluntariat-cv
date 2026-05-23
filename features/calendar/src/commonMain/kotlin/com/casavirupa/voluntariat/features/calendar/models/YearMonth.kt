@@ -1,12 +1,9 @@
 package com.casavirupa.voluntariat.features.calendar.models
 
 import androidx.compose.runtime.Immutable
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
-import kotlinx.datetime.minus
 import kotlinx.datetime.number
-import kotlin.time.Duration.Companion.days
 
 @Immutable
 data class YearMonth(
