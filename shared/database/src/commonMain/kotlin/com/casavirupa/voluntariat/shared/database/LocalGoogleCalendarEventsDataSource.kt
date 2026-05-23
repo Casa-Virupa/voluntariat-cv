@@ -45,4 +45,10 @@ internal class LocalGoogleCalendarEventsDataSource(
             .getGoogleCalendarEventsByDate(millis)
             .asFlow()
             .mapToList(Dispatchers.IO)
+
+    override fun getGoogleCalendarEventsByRange(startMillis: Long, endMillis: Long): Flow<List<GoogleCalendarEventDb>> =
+        dbQueries
+            .getGoogleCalendarEventsByRange(endMillis, startMillis)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
 }

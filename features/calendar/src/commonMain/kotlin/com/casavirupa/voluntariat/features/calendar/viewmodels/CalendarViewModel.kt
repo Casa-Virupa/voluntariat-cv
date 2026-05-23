@@ -20,10 +20,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.number
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.toInstant
 import kotlin.time.Clock
 
 class CalendarViewModel(
@@ -54,13 +58,16 @@ class CalendarViewModel(
             )
     @OptIn(ExperimentalCoroutinesApi::class)
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
-        calendarRepository
-            .getGoogleCalendarEvents()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = emptyList(),
+        yearMonth.flatMapLatest { ym ->
+            calendarRepository.getGoogleCalendarEventsByRange(
+                startDate = ym.firstDayOfMonth,
+                endDate = ym.lastDayOfMonth.plus(1, DateTimeUnit.DAY)
             )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyList(),
+        )
 
 
     val todayDate

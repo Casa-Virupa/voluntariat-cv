@@ -32,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -308,15 +310,19 @@ private fun MonthGrid(
             DpSize(width = maxWidth / 7, height = maxHeight/ 6)
         }
 
+        val eventsByDate = remember(googleCalendarEvents, calendarDays) {
+            calendarDays.associate { (date, _) ->
+                date to googleCalendarEvents.filter { it.isHappeningOn(date) }
+            }
+        }
+
         Column {
             for (row in 0 until 6) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEventsForDay = googleCalendarEvents.filter {
-                            it.isHappeningOn(date)
-                        }
+                        val googleCalendarEventsForDay = eventsByDate[date] ?: emptyList()
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
@@ -348,19 +354,34 @@ private fun DayCell(
 ) {
     val isToday = date == today
     val isAvailable = googleCalendarEvents.all { it.available }
+    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val backgroundColor = when {
+        isAvailable || isPast -> Color.Transparent
+        else -> Color.Gray.copy(alpha = 0.1f)
+    }
+
     Box(
         modifier = modifier
-            .background(
-                color = when {
-                    isAvailable || isPast -> Color.Transparent
-                    else -> Color.Gray.copy(alpha = 0.1f)
-                },
-            ).border(
-                width = 0.5.dp,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = CutCornerShape(0.dp),
-            )
             .size(cellSize)
+            .drawBehind {
+                if (backgroundColor != Color.Transparent) {
+                    drawRect(color = backgroundColor)
+                }
+                val strokeWidth = 0.5.dp.toPx()
+                // Draw bottom and right borders for the grid effect
+                drawLine(
+                    color = borderColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = strokeWidth
+                )
+                drawLine(
+                    color = borderColor,
+                    start = Offset(size.width, 0f),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = strokeWidth
+                )
+            }
             .then(if (isPast || !isAvailable) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {

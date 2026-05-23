@@ -9,4 +9,6 @@ interface GoogleCalendarEventsDataSource {
     fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEventDb>>
 
     fun getGoogleCalendarEventsByDate(millis: Long): Flow<List<GoogleCalendarEventDb>>
+
+    fun getGoogleCalendarEventsByRange(startMillis: Long, endMillis: Long): Flow<List<GoogleCalendarEventDb>>
 }

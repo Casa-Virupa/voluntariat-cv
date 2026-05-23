@@ -71,7 +71,7 @@ internal fun <T> CalendarPager(
         modifier = modifier,
         verticalAlignment = Alignment.Top,
         pageSpacing = 8.dp,
-        beyondViewportPageCount = 2,
+        beyondViewportPageCount = 0,
     ) { page ->
         val reference = pageConverter(page)
         content(reference)

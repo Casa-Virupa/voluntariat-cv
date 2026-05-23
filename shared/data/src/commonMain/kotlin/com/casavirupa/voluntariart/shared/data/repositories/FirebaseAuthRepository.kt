@@ -10,7 +10,8 @@ import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.mapNotNull
 
 class FirebaseAuthRepository(
     val auth: FirebaseAuth,
@@ -49,18 +50,24 @@ class FirebaseAuthRepository(
         return findUserFromFirestore(authUser)
     }
 
-    override fun getCurrentUserFlow(): Flow<User> =
-        firestore
+    override fun getCurrentUserFlow(): Flow<User> {
+        val userId = auth.currentUser?.uid ?: return emptyFlow()
+        val email = auth.currentUser?.email ?: return emptyFlow()
+
+        return firestore
             .collection("users")
+            .document(userId)
             .snapshots
-            .map { snapshot ->
-                val userId = auth.currentUser?.uid!!
-                snapshot
-                    .documents
-                    .first { it.id == userId }
-                    .data<FirestoreUser>()
-                    .toDomainModel(UserId(userId), auth.currentUser?.email!!)
+            .mapNotNull { snapshot ->
+                if (snapshot.exists) {
+                    snapshot
+                        .data<FirestoreUser>()
+                        .toDomainModel(UserId(userId), email)
+                } else {
+                    null
+                }
             }
+    }
 
     override suspend fun logOut(): Result<Unit> =
         runCatching {

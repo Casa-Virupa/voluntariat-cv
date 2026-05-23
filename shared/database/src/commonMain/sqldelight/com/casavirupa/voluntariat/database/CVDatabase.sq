@@ -24,3 +24,8 @@ getGoogleCalendarEventsByDate:
 SELECT DISTINCT *
 FROM GoogleCalendarEventDb
 WHERE start < (:date + 86400000) AND end > :date;
+
+getGoogleCalendarEventsByRange:
+SELECT DISTINCT *
+FROM GoogleCalendarEventDb
+WHERE start < :endTimestamp AND end > :startTimestamp;

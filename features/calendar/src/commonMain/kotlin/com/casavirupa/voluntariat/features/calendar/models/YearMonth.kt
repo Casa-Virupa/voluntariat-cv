@@ -15,11 +15,11 @@ data class YearMonth(
 ) {
     val firstDayOfMonth = LocalDate(year, month, 1)
 
-    val lastDayOfMonth = LocalDate(year, Month(month.number + 1), 1).minus(DatePeriod(days = 1))
-
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
 
     val daysInMonth = month.lengthOfMonth(year.isLeap())
+
+    val lastDayOfMonth = LocalDate(year, month, daysInMonth)
 
 
     val nextMonth = if (month.number == 12) Month(1) else Month(month.number + 1)
