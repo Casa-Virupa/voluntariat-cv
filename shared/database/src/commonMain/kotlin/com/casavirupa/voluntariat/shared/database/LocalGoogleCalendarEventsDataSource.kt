@@ -1,7 +1,12 @@
 package com.casavirupa.voluntariat.shared.database
 
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 import com.casavirupa.voluntariat.database.CVDatabase
 import com.casavirupa.voluntariat.database.GoogleCalendarEventDb
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
 
 internal class LocalGoogleCalendarEventsDataSource(
     database: CVDatabase,
@@ -13,8 +18,23 @@ internal class LocalGoogleCalendarEventsDataSource(
     ): Result<Unit> = runCatching {
         dbQueries.transaction {
             events.forEach { event ->
-                dbQueries.insertGoogleCalendarEvent(event)
+                with(event) {
+                    dbQueries.insertGoogleCalendarEvent(
+                        id = null,
+                        googleId = googleId,
+                        title = title,
+                        description = description,
+                        start = start,
+                        end = end,
+                    )
+                }
             }
         }
     }
+
+    override fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEventDb>> =
+        dbQueries
+            .getGoogleCalendarEvents()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
 }

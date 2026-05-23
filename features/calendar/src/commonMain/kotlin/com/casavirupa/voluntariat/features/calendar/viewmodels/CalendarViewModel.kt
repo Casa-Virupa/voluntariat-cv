@@ -52,10 +52,14 @@ class CalendarViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyMap(),
             )
-
-    private val _googleCalendarEvents = MutableStateFlow<List<GoogleCalendarEvent>>(emptyList())
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
-        _googleCalendarEvents.asStateFlow()
+        calendarRepository
+            .getGoogleCalendarEvents()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
 
 
     val todayDate

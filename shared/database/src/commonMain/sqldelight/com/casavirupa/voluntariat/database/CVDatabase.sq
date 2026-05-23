@@ -1,5 +1,6 @@
 CREATE TABLE GoogleCalendarEventDb (
-    id TEXT PRIMARY KEY NOT NULL,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    googleId TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     start INTEGER NOT NULL,
@@ -7,4 +8,8 @@ CREATE TABLE GoogleCalendarEventDb (
 );
 
 insertGoogleCalendarEvent:
-INSERT INTO GoogleCalendarEventDb VALUES ?;
+INSERT INTO GoogleCalendarEventDb VALUES (?, ?, ?, ?, ?, ?);
+
+getGoogleCalendarEvents:
+SELECT *
+FROM GoogleCalendarEventDb;

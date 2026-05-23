@@ -60,6 +60,7 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android" }
 ktor-client-darwin = { group = "io.ktor", name = "ktor-client-darwin" }
 sqldelight-android = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = { group = "app.cash.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }
 sqldelight-native = { group = "app.cash.sqldelight", name = "native-driver", version.ref = "sqldelight" }
 
 [plugins]

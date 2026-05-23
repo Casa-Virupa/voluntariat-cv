@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.responses.GoogleCalendarEventResponse
 import com.casavirupa.voluntariat.database.GoogleCalendarEventDb
 import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
@@ -10,8 +11,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.collections.map
 import kotlin.time.Instant
 
 class GoogleCalendarRepository(
@@ -37,16 +40,27 @@ class GoogleCalendarRepository(
         googleCalendarEventsDataSource.insertGoogleCalendarEvent(events)
     }
 
-    override fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEvent>> {
-        TODO("Not yet implemented")
-    }
+    override fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEvent>> =
+        googleCalendarEventsDataSource
+            .getGoogleCalendarEvents()
+            .map { it.map(GoogleCalendarEventDb::toDomainModel) }
 }
 
 private fun GoogleCalendarEventResponse.toDatabaseModel() =
     GoogleCalendarEventDb(
-        id = id,
+        id = 0L,
+        googleId = id,
         title = title,
         description = description,
         start = Instant.parse(start).toEpochMilliseconds(),
         end = Instant.parse(end).toEpochMilliseconds(),
+    )
+
+private fun GoogleCalendarEventDb.toDomainModel() =
+    GoogleCalendarEvent(
+        id = googleId,
+        title = title,
+        description = description,
+        start = Instant.fromEpochMilliseconds(start).toLocalDateTime(TimeZone.currentSystemDefault()),
+        end = Instant.fromEpochMilliseconds(end).toLocalDateTime(TimeZone.currentSystemDefault()),
     )

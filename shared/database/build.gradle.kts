@@ -12,6 +12,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.sqldelight.android)
         }
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.sqldelight.coroutines)
+        }
         iosMain.dependencies {
             implementation(libs.sqldelight.native)
         }
