@@ -129,17 +129,17 @@ private fun String.toVolunteerShiftModel(types: List<String>): Shift {
     val modelTypes = types.map(String::toVolunteerTypeModel)
     return when (this) {
         "morning" -> Shift.Morning(
-            type = modelTypes.first(),
+            type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
             timeRange = TimeRange.DefaultMorning,
         )
         "afternoon" -> Shift.Afternoon(
-            type = modelTypes.first(),
+            type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
             timeRange = TimeRange.DefaultMorning,
         )
         "all_day" -> Shift.AllDay(
-            morningType = modelTypes.first(),
+            morningType = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
             morningTimeRange = TimeRange.DefaultMorning,
-            afternoonType = modelTypes.last(),
+            afternoonType = modelTypes.lastOrNull() ?: VolunteerType.Unknown,
             afternoonTimeRange = TimeRange.DefaultMorning,
         )
         else -> Shift.Unknown

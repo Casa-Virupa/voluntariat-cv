@@ -48,6 +48,17 @@ class GoogleCalendarRepository(
             .getGoogleCalendarEvents()
             .map { it.map(GoogleCalendarEventDb::toDomainModel) }
 
+    override fun getGoogleCalendarEventsByRange(
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<GoogleCalendarEvent>> =
+        googleCalendarEventsDataSource
+            .getGoogleCalendarEventsByRange(
+                startDate.toEpochMilliseconds(),
+                endDate.toEpochMilliseconds()
+            )
+            .map { it.map(GoogleCalendarEventDb::toDomainModel) }
+
     override fun getGoogleCalendarEventsByDate(date: LocalDate): Flow<List<GoogleCalendarEvent>> =
         googleCalendarEventsDataSource
             .getGoogleCalendarEventsByDate(date.toEpochMilliseconds())
