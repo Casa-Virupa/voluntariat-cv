@@ -52,6 +52,7 @@ class CalendarViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyMap(),
             )
+    @OptIn(ExperimentalCoroutinesApi::class)
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
         calendarRepository
             .getGoogleCalendarEvents()

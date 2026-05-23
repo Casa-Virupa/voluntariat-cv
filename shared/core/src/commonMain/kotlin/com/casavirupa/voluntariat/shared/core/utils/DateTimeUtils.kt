@@ -28,7 +28,7 @@ fun Long.toDate(timeZone: TimeZone = TimeZone.UTC) =
 fun Instant.toDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate =
     toLocalDateTime(timeZone).date
 
-fun LocalDate.toMilliseconds() =
+fun LocalDate.toEpochMilliseconds() =
     this
         .atStartOfDayIn(TimeZone.currentSystemDefault())
         .toEpochMilliseconds()

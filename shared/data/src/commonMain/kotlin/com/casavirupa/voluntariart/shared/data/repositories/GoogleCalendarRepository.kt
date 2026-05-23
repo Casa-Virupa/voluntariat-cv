@@ -1,9 +1,9 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
-import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.responses.GoogleCalendarEventResponse
 import com.casavirupa.voluntariat.database.GoogleCalendarEventDb
 import com.casavirupa.voluntariat.shared.core.constants.CalendarConstants
+import com.casavirupa.voluntariat.shared.core.utils.toEpochMilliseconds
 import com.casavirupa.voluntariat.shared.database.GoogleCalendarEventsDataSource
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
@@ -12,9 +12,9 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.collections.map
 import kotlin.time.Instant
 
 class GoogleCalendarRepository(
@@ -58,7 +58,8 @@ private fun GoogleCalendarEventResponse.toDatabaseModel() =
 
 private fun GoogleCalendarEventDb.toDomainModel() =
     GoogleCalendarEvent(
-        id = googleId,
+        id = id,
+        googleId = googleId,
         title = title,
         description = description,
         start = Instant.fromEpochMilliseconds(start).toLocalDateTime(TimeZone.currentSystemDefault()),

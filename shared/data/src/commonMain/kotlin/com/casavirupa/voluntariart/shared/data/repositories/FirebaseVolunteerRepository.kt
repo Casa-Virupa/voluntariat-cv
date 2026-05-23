@@ -1,9 +1,8 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
-import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
-import com.casavirupa.voluntariat.shared.core.utils.toMilliseconds
+import com.casavirupa.voluntariat.shared.core.utils.toEpochMilliseconds
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -30,7 +29,7 @@ class FirebaseVolunteerRepository(
         monthNumber: Int,
         currentDate: LocalDate,
     ): Flow<List<Volunteer>> {
-        val timestamp = Timestamp.fromMilliseconds(currentDate.toMilliseconds().toDouble())
+        val timestamp = Timestamp.fromMilliseconds(currentDate.toEpochMilliseconds().toDouble())
         return firestore
             .collection("volunteers")
             .where { "timestamp" greaterThanOrEqualTo timestamp }
@@ -44,7 +43,7 @@ class FirebaseVolunteerRepository(
 
     override suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>> =
         runCatching {
-            val timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble())
+            val timestamp = Timestamp.fromMilliseconds(date.toEpochMilliseconds().toDouble())
             firestore
                 .collection("volunteers")
                 .where { "timestamp" equalTo timestamp }
@@ -73,12 +72,12 @@ class FirebaseVolunteerRepository(
         year: Int,
     ): Flow<List<Volunteer>> {
         val startTimestamp = Timestamp.fromMilliseconds(
-            LocalDate(year, monthNumber, 1).toMilliseconds().toDouble()
+            LocalDate(year, monthNumber, 1).toEpochMilliseconds().toDouble()
         )
         val nextMonth = if (monthNumber == 12) 1 else monthNumber + 1
         val nextYear = if (monthNumber == 12) year + 1 else year
         val endTimestamp = Timestamp.fromMilliseconds(
-            LocalDate(nextYear, nextMonth, 1).toMilliseconds().toDouble()
+            LocalDate(nextYear, nextMonth, 1).toEpochMilliseconds().toDouble()
         )
         return firestore
             .collection("volunteers")
@@ -164,7 +163,7 @@ private fun String.toMealTypeModel() =
 private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
         userId = userId.value,
-        timestamp = Timestamp.fromMilliseconds(date.toMilliseconds().toDouble()),
+        timestamp = Timestamp.fromMilliseconds(date.toEpochMilliseconds().toDouble()),
         shift = shift.toFirebaseValue(),
         types = shift.getTypes(),
         timeRanges = shift.getTimeRanges(),
