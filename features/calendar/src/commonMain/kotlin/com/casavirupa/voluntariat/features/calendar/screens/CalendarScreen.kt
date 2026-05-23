@@ -313,8 +313,10 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEvents = googleCalendarEvents.filter { event ->
-                            date in event.start.date..event.end.date
+                        val googleCalendarEvents = remember(googleCalendarEvents) {
+                            googleCalendarEvents.filter { event ->
+                                date in event.start.date..event.end.date
+                            }
                         }
                         DayCell(
                             date = date,
