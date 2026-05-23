@@ -8,6 +8,7 @@ import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -16,8 +17,10 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.collections.emptyList
@@ -27,6 +30,7 @@ class DayDetailViewModel(
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
+    private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
     private val date = navKey.date
 
@@ -34,6 +38,16 @@ class DayDetailViewModel(
         DayDetailUiState(headerUi = DetailHeaderUi(date = date.format("dd MMMM"))),
     )
     val uiState: StateFlow<DayDetailUiState> = _uiState.asStateFlow()
+
+    val events: StateFlow<List<GoogleCalendarEvent>> =
+        calendarRepository
+            .getGoogleCalendarEventsByDate(date)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
+
 
     private val _showDeleteDialog = MutableStateFlow(false)
     val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()

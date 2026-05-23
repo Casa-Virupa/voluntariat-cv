@@ -52,24 +52,21 @@ class CalendarViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyMap(),
             )
-
-    private val _googleCalendarEvents = MutableStateFlow<List<GoogleCalendarEvent>>(emptyList())
+    @OptIn(ExperimentalCoroutinesApi::class)
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
-        _googleCalendarEvents.asStateFlow()
+        calendarRepository
+            .getGoogleCalendarEvents()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
 
 
     val todayDate
         get() = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
-
-    init {
-        viewModelScope.launch {
-            yearMonth.collectLatest { yearMonth ->
-                loadGoogleCalendarEvents(yearMonth)
-            }
-        }
-    }
 
     fun onNextMonth() {
         _yearMonth.update { current ->
@@ -91,20 +88,5 @@ class CalendarViewModel(
 
     fun onYearMonthChanged(newYearMonth: YearMonth) {
         _yearMonth.update { newYearMonth }
-    }
-
-    private fun loadGoogleCalendarEvents(yearMonth: YearMonth) {
-        viewModelScope.launch {
-            calendarRepository
-                .getGoogleCalendarEvents(
-                    year = yearMonth.year,
-                    monthNumber = yearMonth.month.number,
-                ).onSuccess { events ->
-                    _googleCalendarEvents.update { events }
-                }.onFailure {
-                    Logger.d("GoogleCalendarEvents") { it.message.toString() }
-                    // TODO: Handle error
-                }
-        }
     }
 }

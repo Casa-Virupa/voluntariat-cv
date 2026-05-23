@@ -14,6 +14,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(projects.shared.core)
+            implementation(projects.shared.database)
             implementation(projects.shared.domain)
             implementation(libs.gitlive.firebase.auth)
             implementation(libs.gitlive.firebase.firestore)

@@ -56,4 +56,5 @@
     <string name="existing_volunteer_dialog_title">Voluntariado ya registrado</string>
     <string name="existing_volunteer_dialog_description">Ya tienes un voluntariado en este día. Si quieres añadir uno nuevo, debes eliminar el existente primero.</string>
     <string name="accept">Aceptar</string>
+    <string name="special_activities">Actividades especiales</string>
 </resources>

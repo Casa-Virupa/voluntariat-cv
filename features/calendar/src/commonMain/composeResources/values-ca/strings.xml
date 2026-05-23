@@ -56,4 +56,5 @@
     <string name="existing_volunteer_dialog_title">Voluntariat ja registrat</string>
     <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l\'existent primerament.</string>
     <string name="accept">Acceptar</string>
+    <string name="special_activities">Activitats especials</string>
 </resources>

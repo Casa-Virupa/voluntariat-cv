@@ -8,7 +8,7 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 
 fun getCurrentYear(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
     Clock.System.now()
@@ -28,10 +28,15 @@ fun Long.toDate(timeZone: TimeZone = TimeZone.UTC) =
 fun Instant.toDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate =
     toLocalDateTime(timeZone).date
 
-fun LocalDate.toMilliseconds() =
+fun LocalDate.toEpochMilliseconds() =
     this
         .atStartOfDayIn(TimeZone.currentSystemDefault())
         .toEpochMilliseconds()
+
+fun String.isoToEpochMilliseconds() = Instant.parse(this).toEpochMilliseconds()
+
+fun Long.toLocalDateTime(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
+    Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
 
 expect fun LocalDate.format(pattern: String): String
 

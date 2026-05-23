@@ -1,9 +1,12 @@
 package com.casavirupa.voluntariat.features.calendar.models
 
 import androidx.compose.runtime.Immutable
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
+import kotlinx.datetime.minus
 import kotlinx.datetime.number
+import kotlin.time.Duration.Companion.days
 
 @Immutable
 data class YearMonth(
@@ -11,6 +14,8 @@ data class YearMonth(
     val month: Month
 ) {
     val firstDayOfMonth = LocalDate(year, month, 1)
+
+    val lastDayOfMonth = LocalDate(year, Month(month.number + 1), 1).minus(DatePeriod(days = 1))
 
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.ordinal
 

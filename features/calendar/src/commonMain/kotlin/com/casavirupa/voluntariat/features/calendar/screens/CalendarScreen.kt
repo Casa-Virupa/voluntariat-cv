@@ -46,6 +46,7 @@ import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -313,15 +314,15 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEvent = googleCalendarEvents.firstOrNull {
-                            it.start.day == date.day && it.start.month == date.month
+                        val googleCalendarEventsForDay = googleCalendarEvents.filter {
+                            it.isHappeningOn(date)
                         }
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
                             isPast = date < today,
                             today = today,
-                            googleCalendarEvent = googleCalendarEvent,
+                            googleCalendarEvents = googleCalendarEventsForDay,
                             cellSize = dayCellSize,
                             numOfVolunteers = volunteers[date],
                             onClick = { onDayClick(date) }
@@ -340,21 +341,27 @@ private fun DayCell(
     isPast: Boolean,
     today: LocalDate,
     cellSize: DpSize,
-    googleCalendarEvent: GoogleCalendarEvent?,
+    googleCalendarEvents: List<GoogleCalendarEvent>,
     onClick: () -> Unit,
     numOfVolunteers: Int?,
     modifier: Modifier = Modifier,
 ) {
     val isToday = date == today
+    val isAvailable = googleCalendarEvents.all { it.available }
     Box(
         modifier = modifier
-            .border(
+            .background(
+                color = when {
+                    isAvailable || isPast -> Color.Transparent
+                    else -> Color.Gray.copy(alpha = 0.1f)
+                },
+            ).border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 shape = CutCornerShape(0.dp),
             )
             .size(cellSize)
-            .then(if (isPast) Modifier else Modifier.clickable { onClick() }),
+            .then(if (isPast || !isAvailable) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
@@ -375,6 +382,7 @@ private fun DayCell(
                 style = MaterialTheme.typography.titleSmall,
                 color =
                     when {
+                        !isAvailable -> MaterialTheme.colorScheme.onSurfaceVariant
                         isToday -> MaterialTheme.colorScheme.onPrimary
                         isPast -> MaterialTheme.colorScheme.onSurfaceVariant
                         isCurrentMonth -> MaterialTheme.colorScheme.onSurface
@@ -382,36 +390,46 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (googleCalendarEvent != null && !isPast) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
-                        .height(6.dp)
-                        .background(Color.Blue)
-                )
-            }
-            if (numOfVolunteers != null) {
-                Text(
+            if (numOfVolunteers != null && isAvailable) {
+                CalendarEvent(
                     text = pluralStringResource(
                         Res.plurals.volunteers_count,
                         numOfVolunteers,
                         numOfVolunteers,
-                    ),
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(2.dp)
-                        ).padding(horizontal = 2.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
+                    )
                 )
+            }
+            if (!isPast && isAvailable) {
+                googleCalendarEvents.forEach {
+                    CalendarEvent(
+                        text = it.title,
+                        color = Color(0xFF8FA399),
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun CalendarEvent(
+    text: String,
+    color: Color = MaterialTheme.colorScheme.primary,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        modifier = modifier
+            .padding(horizontal = 4.dp)
+            .background(
+                color = color,
+                shape = RoundedCornerShape(2.dp)
+            ).padding(horizontal = 2.dp),
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+        color = MaterialTheme.colorScheme.onPrimary,
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1,
+    )
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
