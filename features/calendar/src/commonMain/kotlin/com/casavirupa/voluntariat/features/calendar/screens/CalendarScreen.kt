@@ -313,9 +313,8 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEvents = googleCalendarEvents.filter {
-                            (it.start.day >= date.day && it.end.day <= date.day)
-                                    && it.start.month == date.month
+                        val googleCalendarEvents = googleCalendarEvents.filter { event ->
+                            date in event.start.date..event.end.date
                         }
                         DayCell(
                             date = date,
@@ -383,14 +382,6 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (!isPast) {
-                googleCalendarEvents.forEach {
-                    CalendarEvent(
-                        text = it.title,
-                        color = Color(0xFF8FA399),
-                    )
-                }
-            }
             if (numOfVolunteers != null) {
                 CalendarEvent(
                     text = pluralStringResource(
@@ -399,6 +390,14 @@ private fun DayCell(
                         numOfVolunteers,
                     )
                 )
+            }
+            if (!isPast) {
+                googleCalendarEvents.forEach {
+                    CalendarEvent(
+                        text = it.title,
+                        color = Color(0xFF8FA399),
+                    )
+                }
             }
         }
     }
