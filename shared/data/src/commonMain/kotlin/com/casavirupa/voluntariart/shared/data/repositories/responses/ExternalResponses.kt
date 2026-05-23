@@ -9,4 +9,5 @@ data class GoogleCalendarEventResponse(
     val description: String,
     val start: String,
     val end: String,
+    val isAllDay: Boolean,
 )

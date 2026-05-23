@@ -58,7 +58,7 @@ class FirebaseVolunteerRepository(
         runCatching {
             firestore
                 .collection("volunteers")
-                .where { "userId" equalTo id }
+                .where { "userId" equalTo id.value }
                 .get()
                 .documents
                 .map { document ->

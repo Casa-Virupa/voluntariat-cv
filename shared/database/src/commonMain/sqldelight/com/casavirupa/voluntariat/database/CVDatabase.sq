@@ -1,18 +1,26 @@
+import kotlin.Boolean;
+
 CREATE TABLE GoogleCalendarEventDb (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     googleId TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     start INTEGER NOT NULL,
-    end INTEGER NOT NULL
+    end INTEGER NOT NULL,
+    isAllDay INTEGER AS Boolean NOT NULL
 );
 
 insertGoogleCalendarEvent:
-INSERT INTO GoogleCalendarEventDb VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO GoogleCalendarEventDb VALUES (?, ?, ?, ?, ?, ?, ?);
 
 deleteAllGoogleCalendarEvents:
 DELETE FROM GoogleCalendarEventDb;
 
 getGoogleCalendarEvents:
-SELECT *
+SELECT DISTINCT *
 FROM GoogleCalendarEventDb;
+
+getGoogleCalendarEventsByDate:
+SELECT DISTINCT *
+FROM GoogleCalendarEventDb
+WHERE start < (:date + 86400000) AND end > :date;

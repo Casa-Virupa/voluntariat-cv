@@ -46,6 +46,7 @@ import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -313,17 +314,15 @@ private fun MonthGrid(
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEvents = remember(googleCalendarEvents) {
-                            googleCalendarEvents.filter { event ->
-                                date in event.start.date..event.end.date
-                            }
+                        val googleCalendarEventsForDay = googleCalendarEvents.filter {
+                            it.isHappeningOn(date)
                         }
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
                             isPast = date < today,
                             today = today,
-                            googleCalendarEvents = googleCalendarEvents,
+                            googleCalendarEvents = googleCalendarEventsForDay,
                             cellSize = dayCellSize,
                             numOfVolunteers = volunteers[date],
                             onClick = { onDayClick(date) }
@@ -348,15 +347,21 @@ private fun DayCell(
     modifier: Modifier = Modifier,
 ) {
     val isToday = date == today
+    val isAvailable = googleCalendarEvents.all { it.available }
     Box(
         modifier = modifier
-            .border(
+            .background(
+                color = when {
+                    isAvailable || isPast -> Color.Transparent
+                    else -> Color.Gray.copy(alpha = 0.1f)
+                },
+            ).border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 shape = CutCornerShape(0.dp),
             )
             .size(cellSize)
-            .then(if (isPast) Modifier else Modifier.clickable { onClick() }),
+            .then(if (isPast || !isAvailable) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
@@ -377,6 +382,7 @@ private fun DayCell(
                 style = MaterialTheme.typography.titleSmall,
                 color =
                     when {
+                        !isAvailable -> MaterialTheme.colorScheme.onSurfaceVariant
                         isToday -> MaterialTheme.colorScheme.onPrimary
                         isPast -> MaterialTheme.colorScheme.onSurfaceVariant
                         isCurrentMonth -> MaterialTheme.colorScheme.onSurface
@@ -384,7 +390,7 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (numOfVolunteers != null) {
+            if (numOfVolunteers != null && isAvailable) {
                 CalendarEvent(
                     text = pluralStringResource(
                         Res.plurals.volunteers_count,
@@ -393,7 +399,7 @@ private fun DayCell(
                     )
                 )
             }
-            if (!isPast) {
+            if (!isPast && isAvailable) {
                 googleCalendarEvents.forEach {
                     CalendarEvent(
                         text = it.title,

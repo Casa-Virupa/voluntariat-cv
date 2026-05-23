@@ -1,7 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -11,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailUiState
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayShifts
@@ -35,9 +33,11 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import com.casavirupa.voluntariat.shared.common.ui.getBackgroundColor
 import com.casavirupa.voluntariat.shared.common.ui.getIcon
 import com.casavirupa.voluntariat.shared.common.ui.displayName
+import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
+import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -55,6 +55,7 @@ import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_morning
+import voluntariatcv.features.calendar.generated.resources.special_activities
 import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,10 +66,14 @@ fun DayDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val events by viewModel.events.collectAsStateWithLifecycle()
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
+
+    Logger.d("asdd") { events.size.toString() }
 
     DayDetailContent(
         uiState = uiState,
+        events = events,
         onClickBack = onNavBack,
         onDeleteVolunteer = viewModel::onDeleteVolunteer,
         modifier = modifier,
@@ -89,6 +94,7 @@ fun DayDetailScreen(
 @Composable
 private fun DayDetailContent(
     uiState: DayDetailUiState,
+    events: List<GoogleCalendarEvent>,
     onClickBack: () -> Unit,
     onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
@@ -115,8 +121,9 @@ private fun DayDetailContent(
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) { innerPadding ->
-        DayShifts(
+        DayShiftsAndEvents(
             dayShifts = uiState.dayShifts,
+            events = events,
             onDeleteVolunteer = onDeleteVolunteer,
             modifier = Modifier
                 .padding(innerPadding)
@@ -126,8 +133,9 @@ private fun DayDetailContent(
 }
 
 @Composable
-private fun DayShifts(
+private fun DayShiftsAndEvents(
     dayShifts: DayShifts,
+    events: List<GoogleCalendarEvent>,
     onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -135,6 +143,17 @@ private fun DayShifts(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (events.isNotEmpty()) {
+            item {
+                ShiftTitle(
+                    text = stringResource(Res.string.special_activities),
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            }
+            items(events) { event ->
+                EventItem(event)
+            }
+        }
         item {
             ShiftTitle(
                 text = stringResource(Res.string.all_day),
@@ -164,6 +183,36 @@ private fun DayShifts(
                 volunteer = volunteer,
                 onClickDelete = { onDeleteVolunteer(volunteer.id) },
             )
+        }
+    }
+}
+
+@Composable
+private fun EventItem(
+    event: GoogleCalendarEvent,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+        ) {
+            Text(
+                text = event.title,
+                style = MaterialTheme.typography.titleLarge,
+            )
+            if (!event.isAllDay) {
+                CVTag(
+                    text = "${event.start.time.format("HH:mm")}-${event.end.time.format("HH:mm")}",
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
         }
     }
 }
@@ -202,7 +251,7 @@ private fun VolunteerShiftItem(
                     text = volunteer.name,
                     modifier = Modifier
                         .weight(1f)
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 8.dp),
                     style = MaterialTheme.typography.titleLarge,
                 )
                 IconButton(onClick = onClickDelete) {

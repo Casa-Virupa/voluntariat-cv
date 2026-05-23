@@ -7,4 +7,6 @@ interface GoogleCalendarEventsDataSource {
     suspend fun insertGoogleCalendarEvent(events: List<GoogleCalendarEventDb>): Result<Unit>
 
     fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEventDb>>
+
+    fun getGoogleCalendarEventsByDate(millis: Long): Flow<List<GoogleCalendarEventDb>>
 }

@@ -27,6 +27,7 @@ internal class LocalGoogleCalendarEventsDataSource(
                         description = description,
                         start = start,
                         end = end,
+                        isAllDay = isAllDay,
                     )
                 }
             }
@@ -36,6 +37,12 @@ internal class LocalGoogleCalendarEventsDataSource(
     override fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEventDb>> =
         dbQueries
             .getGoogleCalendarEvents()
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+
+    override fun getGoogleCalendarEventsByDate(millis: Long): Flow<List<GoogleCalendarEventDb>> =
+        dbQueries
+            .getGoogleCalendarEventsByDate(millis)
             .asFlow()
             .mapToList(Dispatchers.IO)
 }

@@ -12,4 +12,6 @@ interface CalendarRepository {
     ): Result<Unit>
 
     fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEvent>>
+
+    fun getGoogleCalendarEventsByDate(date: LocalDate): Flow<List<GoogleCalendarEvent>>
 }
