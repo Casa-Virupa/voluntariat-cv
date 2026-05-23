@@ -8,7 +8,7 @@ import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.format.byUnicodePattern
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import kotlin.time.Instant
+import kotlinx.datetime.Instant
 
 fun getCurrentYear(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
     Clock.System.now()
