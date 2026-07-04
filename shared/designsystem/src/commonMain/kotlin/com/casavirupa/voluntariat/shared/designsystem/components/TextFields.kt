@@ -157,6 +157,7 @@ fun CVTextField(
 fun DateTextField(
     date: LocalDate?,
     onDateChanged: (LocalDate) -> Unit,
+    notAvailableDays: List<LocalDate>,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     pattern: String = "",
@@ -184,6 +185,7 @@ fun DateTextField(
                 },
                 onDismiss = { showDatePicker = false },
                 minDate = minDate,
+                notAvailableDays = notAvailableDays,
             )
         }
     }

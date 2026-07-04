@@ -27,7 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.window.Dialog
+import android.content.res.Configuration
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.runtime.CompositionLocalProvider
+import java.util.Locale
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.shared.designsystem.generated.resources.Res
 import voluntariatcv.shared.designsystem.generated.resources.cancel
@@ -45,13 +50,17 @@ actual fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
     onDismiss: () -> Unit,
+    notAvailableDays: List<LocalDate>,
     minDate: LocalDate?,
 ) {
     val minDateMillis = minDate?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds()
-    val selectableDates = remember(minDateMillis) {
+    val selectableDates = remember(minDateMillis, notAvailableDays) {
         object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                minDateMillis == null || utcTimeMillis >= minDateMillis
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val isAfterMinDate = minDateMillis == null || utcTimeMillis >= minDateMillis
+                val isNotAvailable = notAvailableDays.contains(utcTimeMillis.toDate(TimeZone.UTC))
+                return isAfterMinDate && !isNotAvailable
+            }
 
             override fun isSelectableYear(year: Int): Boolean =
                 minDate == null || year >= minDate.year
@@ -61,6 +70,10 @@ actual fun NativeDatePicker(
         initialSelectedDateMillis = date?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds(),
         selectableDates = selectableDates,
     )
+
+    val configuration = Configuration(LocalConfiguration.current).apply {
+        setLocale(Locale.forLanguageTag("es-ES"))
+    }
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -85,25 +98,27 @@ actual fun NativeDatePicker(
             navigationContentColor = MaterialTheme.colorScheme.primary,
         )
     ) {
-        DatePicker(
-            state = datePickerState,
-            colors = DatePickerDefaults.colors(
-                titleContentColor = MaterialTheme.colorScheme.primary,
-                headlineContentColor = MaterialTheme.colorScheme.onSurface,
-                weekdayContentColor = MaterialTheme.colorScheme.primary,
-                subheadContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                yearContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                currentYearContentColor = MaterialTheme.colorScheme.primary,
-                selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
-                selectedYearContainerColor = MaterialTheme.colorScheme.primary,
-                dayContentColor = MaterialTheme.colorScheme.onSurface,
-                selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
-                selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                todayContentColor = MaterialTheme.colorScheme.primary,
-                todayDateBorderColor = MaterialTheme.colorScheme.primary,
-                navigationContentColor = MaterialTheme.colorScheme.primary,
+        CompositionLocalProvider(LocalConfiguration provides configuration) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    headlineContentColor = MaterialTheme.colorScheme.onSurface,
+                    weekdayContentColor = MaterialTheme.colorScheme.primary,
+                    subheadContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    yearContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    currentYearContentColor = MaterialTheme.colorScheme.primary,
+                    selectedYearContentColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedYearContainerColor = MaterialTheme.colorScheme.primary,
+                    dayContentColor = MaterialTheme.colorScheme.onSurface,
+                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                    todayContentColor = MaterialTheme.colorScheme.primary,
+                    todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                    navigationContentColor = MaterialTheme.colorScheme.primary,
+                )
             )
-        )
+        }
     }
 }
 
@@ -148,7 +163,7 @@ actual fun NativeTimePicker(
                 )
                 TimePicker(
                     state = timePickerState,
-                    colors = androidx.compose.material3.TimePickerDefaults.colors(
+                    colors = TimePickerDefaults.colors(
                         clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
                         clockDialSelectedContentColor = MaterialTheme.colorScheme.onPrimary,
                         clockDialUnselectedContentColor = MaterialTheme.colorScheme.onSurface,
