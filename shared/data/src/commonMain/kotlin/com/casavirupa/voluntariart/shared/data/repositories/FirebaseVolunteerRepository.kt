@@ -120,27 +120,30 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = shift.toVolunteerShiftModel(types),
+        shift = shift.toVolunteerShiftModel(types, timeRanges),
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
 
-private fun String.toVolunteerShiftModel(types: List<String>): Shift {
+private fun String.toVolunteerShiftModel(
+    types: List<String>,
+    timeRanges: List<FirebaseTimeRange>,
+): Shift {
     val modelTypes = types.map(String::toVolunteerTypeModel)
     return when (this) {
         "morning" -> Shift.Morning(
             type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            timeRange = TimeRange.DefaultMorning,
+            timeRange = timeRanges.first().toDomainModel(),
         )
         "afternoon" -> Shift.Afternoon(
             type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            timeRange = TimeRange.DefaultMorning,
+            timeRange = timeRanges.first().toDomainModel(),
         )
         "all_day" -> Shift.AllDay(
             morningType = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            morningTimeRange = TimeRange.DefaultMorning,
+            morningTimeRange = timeRanges.first().toDomainModel(),
             afternoonType = modelTypes.lastOrNull() ?: VolunteerType.Unknown,
-            afternoonTimeRange = TimeRange.DefaultMorning,
+            afternoonTimeRange = timeRanges.last().toDomainModel(),
         )
         else -> Shift.Unknown
     }
@@ -223,5 +226,11 @@ private fun Timestamp.toDate() =
         .fromEpochSeconds(seconds, nanoseconds)
         .toLocalDateTime(TimeZone.currentSystemDefault())
         .date
+
+private fun FirebaseTimeRange.toDomainModel() =
+    TimeRange(
+        start = start,
+        end = end,
+    )
 
 private const val EMPTY_VALUE = ""

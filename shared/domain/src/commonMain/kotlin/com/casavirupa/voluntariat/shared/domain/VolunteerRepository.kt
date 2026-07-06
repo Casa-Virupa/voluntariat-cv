@@ -5,7 +5,6 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 
 interface VolunteerRepository {
     fun getVolunteersByDateRange(

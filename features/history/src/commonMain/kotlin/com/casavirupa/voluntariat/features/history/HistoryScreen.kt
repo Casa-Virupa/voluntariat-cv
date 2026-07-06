@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.core.utils.format
+import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -182,7 +183,7 @@ private fun InformationSummary(
 private fun SummaryContainer(
     title: String,
     icon: Painter,
-    value: Int,
+    value: Number,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -207,7 +208,10 @@ private fun SummaryContainer(
                 )
             }
             Text(
-                text = value.toString(),
+                text = when (value) {
+                    is Double -> value.formatString(2)
+                    else -> value.toString()
+                },
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             )
         }
