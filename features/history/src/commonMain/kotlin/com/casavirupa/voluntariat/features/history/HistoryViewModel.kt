@@ -9,6 +9,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable.start
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,9 +21,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
+import kotlin.math.abs
 import kotlin.time.Clock
 
 class HistoryViewModel(
@@ -71,7 +74,7 @@ class HistoryViewModel(
         map {
             VolunteerHistoryItem(
                 date = it.date,
-                hours = it.shift.getHour(),
+                hours = it.shift.getHour().toInt(),
                 shift = it.shift,
                 meals = it.meals,
             )
@@ -84,24 +87,22 @@ data class HistoryUiState(
 ) {
     companion object {
         val Empty = HistoryUiState(
-            summary = MonthSummary(0, 0),
+            summary = MonthSummary(0.0, 0),
             volunteers = emptyList(),
         )
     }
 }
 
 data class MonthSummary(
+    val days: Double,
     val hours: Int,
-    val days: Int,
 ) {
     companion object {
         operator fun invoke(volunteers: List<Volunteer>): MonthSummary =
             MonthSummary(
-                days = volunteers.map { it.date }.distinct().count(),
-                hours = volunteers.map { it.shift }.calculateHours(),
+                days = volunteers.sumOf { it.shift.getHour() }.div(ALL_DAY_DIVIDER),
+                hours = volunteers.sumOf { it.shift.getHour() }.toInt(),
             )
-
-        private fun List<Shift>.calculateHours() = this.sumOf { it.getHour() }
     }
 }
 
@@ -114,11 +115,18 @@ data class VolunteerHistoryItem(
 
 private fun Shift.getHour() =
     when (this) {
-        is Shift.Morning -> HALF_JOURNEY
-        is Shift.Afternoon -> HALF_JOURNEY
-        is Shift.AllDay -> ALL_DAY_JOURNEY
-        else -> 0
+        is Shift.Morning -> this.timeRange.start - this.timeRange.end
+        is Shift.Afternoon -> this.timeRange.start - this.timeRange.end
+        is Shift.AllDay -> {
+            (this.morningTimeRange.start - this.morningTimeRange.end) +
+                    (this.afternoonTimeRange.start - this.afternoonTimeRange.end)
+        }
+        else -> 0.0
     }
 
-private const val HALF_JOURNEY = 4
-private const val ALL_DAY_JOURNEY = 8
+private operator fun LocalTime.minus(other: LocalTime): Double {
+    val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()
+    return abs(diffSeconds) / 3600.0
+}
+
+private const val ALL_DAY_DIVIDER = 8.0
