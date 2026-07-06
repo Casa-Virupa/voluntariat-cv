@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.core.utils.Throttler
+import com.casavirupa.voluntariat.shared.core.utils.getFirstDayOfMonth
+import com.casavirupa.voluntariat.shared.core.utils.getLastDayOfMonth
+import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -14,14 +18,20 @@ import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMap
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
+import org.koin.core.context.startKoin
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.afternoon
 import voluntariatcv.features.calendar.generated.resources.dinner
@@ -37,10 +47,12 @@ import voluntariatcv.features.calendar.generated.resources.lunch
 import voluntariatcv.features.calendar.generated.resources.morning
 import voluntariatcv.features.calendar.generated.resources.specific
 import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
+import kotlin.time.Clock
 
 class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
+    private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -78,6 +90,19 @@ class ReservationFormViewModel(
     private val _showExistingVolunteerDialogError = MutableStateFlow(false)
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
         _showExistingVolunteerDialogError.asStateFlow()
+
+    val notAvailableDays = date.flatMapConcat { date ->
+        calendarRepository.getGoogleCalendarEventsByRange(
+            startDate = getStartDate(date),
+            endDate = getLastDate(date)
+        ).map { googleCalendarEvents ->
+            googleCalendarEvents.filter { !it.available }.map { it.start.date }
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000L),
+        initialValue = emptyList(),
+    )
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -338,6 +363,12 @@ class ReservationFormViewModel(
             }
         return result
     }
+
+    private fun getStartDate(date: LocalDate?) =
+        date?.getFirstDayOfMonth() ?: Clock.System.now().toDate().getFirstDayOfMonth()
+
+    private fun getLastDate(date: LocalDate?) =
+        date?.getLastDayOfMonth() ?: Clock.System.now().toDate().getLastDayOfMonth()
 }
 
 data class ReservationFormUiState(

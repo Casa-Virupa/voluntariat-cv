@@ -46,6 +46,7 @@ import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
+import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -93,6 +94,7 @@ internal fun ReservationFormScreen(
     val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
     val showExistingVolunteerDialog by viewModel
         .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
+    val notAvailableDays by viewModel.notAvailableDays.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -110,6 +112,7 @@ internal fun ReservationFormScreen(
             }
         },
         onConfirm = viewModel::onConfirm,
+        notAvailableDays = notAvailableDays,
     )
 
     when (shownModal) {
@@ -168,6 +171,7 @@ private fun ReservationFormContent(
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     onEditShiftInfo: (ShiftUi) -> Unit,
     onConfirm: () -> Unit,
+    notAvailableDays: List<LocalDate>,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -201,6 +205,7 @@ private fun ReservationFormContent(
                 onShiftSelected = onShiftSelected,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
                 onEditShiftInfo = onEditShiftInfo,
+                notAvailableDays = notAvailableDays,
                 modifier = Modifier.fillMaxSize(),
             )
             CVButton(
@@ -225,6 +230,7 @@ private fun ReservationForm(
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     onEditShiftInfo: (ShiftUi) -> Unit,
+    notAvailableDays: List<LocalDate>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -244,6 +250,7 @@ private fun ReservationForm(
                 minDate = Clock.System.now()
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .date,
+                notAvailableDays = notAvailableDays,
             )
         }
         FormSection(
