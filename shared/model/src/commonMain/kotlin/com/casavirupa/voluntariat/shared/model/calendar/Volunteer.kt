@@ -38,6 +38,13 @@ sealed class Shift {
     ) : Shift()
 
     data object Unknown : Shift()
+
+    fun hasVolunteerType(type: VolunteerType) = when (this) {
+        is Morning -> this.type == type
+        is Afternoon -> this .type == type
+        is AllDay -> this.morningType == type || this.afternoonType == type
+        else -> false
+    }
 }
 
 data class TimeRange(

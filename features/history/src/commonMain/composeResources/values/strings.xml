@@ -8,4 +8,6 @@
     <string name="remember_payment">Remember to make the payment for the month</string>
     <string name="volunteerings_history">Volunteerings history</string>
     <string name="hours_format">%1$dh</string>
+    <string name="general">General</string>
+    <string name="specific">Specific</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.casavirupa.voluntariat.shared.core.utils
 
-import platform.Foundation.NSString
 import platform.Foundation.NSNumber
 import platform.Foundation.NSNumberFormatter
 import platform.Foundation.NSNumberFormatterDecimalStyle

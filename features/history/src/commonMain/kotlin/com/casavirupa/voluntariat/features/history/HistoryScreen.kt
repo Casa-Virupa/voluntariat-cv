@@ -39,6 +39,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
 import voluntariatcv.features.history.generated.resources.afternoon
 import voluntariatcv.features.history.generated.resources.days
+import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
 import voluntariatcv.features.history.generated.resources.hours_format
 import voluntariatcv.features.history.generated.resources.ic_afternoon
@@ -47,11 +48,14 @@ import voluntariatcv.features.history.generated.resources.ic_arrow_right
 import voluntariatcv.features.history.generated.resources.ic_calendar_today
 import voluntariatcv.features.history.generated.resources.ic_cancel
 import voluntariatcv.features.history.generated.resources.ic_clock
+import voluntariatcv.features.history.generated.resources.ic_group
 import voluntariatcv.features.history.generated.resources.ic_sun
+import voluntariatcv.features.history.generated.resources.ic_target
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
 import voluntariatcv.features.history.generated.resources.pending_payment
 import voluntariatcv.features.history.generated.resources.remember_payment
+import voluntariatcv.features.history.generated.resources.specific
 import voluntariatcv.features.history.generated.resources.volunteerings_history
 
 @Composable
@@ -183,7 +187,7 @@ private fun InformationSummary(
 private fun SummaryContainer(
     title: String,
     icon: Painter,
-    value: Number,
+    value: DetailedSummary,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -208,13 +212,62 @@ private fun SummaryContainer(
                 )
             }
             Text(
-                text = when (value) {
-                    is Double -> value.formatString(2)
-                    else -> value.toString()
+                text = when (value.total) {
+                    is Double -> value.total.formatString(1)
+                    else -> value.total.toString()
                 },
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             )
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            DetailedSummaryInfo(
+                icon = painterResource(Res.drawable.ic_group),
+                title = stringResource(Res.string.general),
+                total = value.general,
+                iconColor = Color(0xFF8FA399),
+            )
+            DetailedSummaryInfo(
+                icon = painterResource(Res.drawable.ic_target),
+                title = stringResource(Res.string.specific),
+                total = value.specific,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
+    }
+}
+
+@Composable
+private fun DetailedSummaryInfo(
+    icon: Painter,
+    title: String,
+    total: String,
+    modifier: Modifier = Modifier,
+    iconColor: Color = MaterialTheme.colorScheme.primary,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(modifier = Modifier.weight(1f)) {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier
+                    .size(20.dp)
+                    .padding(end = 4.dp),
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            )
+        }
+        Text(
+            text = total,
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 

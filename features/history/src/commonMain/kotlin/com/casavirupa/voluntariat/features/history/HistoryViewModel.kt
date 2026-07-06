@@ -2,12 +2,14 @@ package com.casavirupa.voluntariat.features.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -73,7 +75,7 @@ class HistoryViewModel(
         map {
             VolunteerHistoryItem(
                 date = it.date,
-                hours = it.shift.getHour().toInt(),
+                hours = it.shift.getTotalHour().toInt(),
                 shift = it.shift,
                 meals = it.meals,
             )
@@ -86,21 +88,69 @@ data class HistoryUiState(
 ) {
     companion object {
         val Empty = HistoryUiState(
-            summary = MonthSummary(0.0, 0),
+            summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
             volunteers = emptyList(),
         )
     }
 }
 
 data class MonthSummary(
-    val days: Double,
-    val hours: Int,
+    val days: DetailedSummary,
+    val hours: DetailedSummary,
 ) {
     companion object {
         operator fun invoke(volunteers: List<Volunteer>): MonthSummary =
             MonthSummary(
-                days = volunteers.sumOf { it.shift.getHour() }.div(ALL_DAY_DIVIDER),
-                hours = volunteers.sumOf { it.shift.getHour() }.toInt(),
+                days = DetailedSummary.days(volunteers),
+                hours = DetailedSummary.hours(volunteers),
+            )
+    }
+}
+
+data class DetailedSummary(
+    val total: Number,
+    val general: String,
+    val specific: String,
+) {
+    companion object {
+        val Empty = DetailedSummary(0, "0", "")
+
+        fun days(volunteers: List<Volunteer>) =
+            DetailedSummary(
+                total = volunteers
+                    .sumOf { it.shift.getTotalHour() }
+                    .div(ALL_DAY_DIVIDER),
+                general = volunteers
+                    .filter { it.shift.hasVolunteerType(VolunteerType.General) }
+                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.General) }
+                    .div(ALL_DAY_DIVIDER)
+                    .let { "${it.formatString(1)}d" },
+                specific = volunteers
+                    .filter { it.shift.hasVolunteerType(VolunteerType.Specific) }
+                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.Specific) }
+                    .div(ALL_DAY_DIVIDER)
+                    .let {
+                        if (it % ALL_DAY_DIVIDER == 0.0) {
+                            "${it.toInt()}d"
+                        } else {
+                            "${it.formatString(1)}d"
+                        }
+                    },
+            )
+
+        fun hours(volunteers: List<Volunteer>) =
+            DetailedSummary(
+                total = volunteers
+                    .sumOf { it.shift.getTotalHour() }
+                    .toInt(),
+                general = volunteers
+                    .filter { it.shift.hasVolunteerType(VolunteerType.General) }
+                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.General) }
+                    .let { "${it.toInt()}h" },
+                specific = volunteers
+                    .filter { it.shift.hasVolunteerType(VolunteerType.Specific) }
+                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.Specific) }
+                    .let { "${it.toInt()}h" },
             )
     }
 }
@@ -112,13 +162,45 @@ data class VolunteerHistoryItem(
     val meals: List<Meal>
 )
 
-private fun Shift.getHour() =
+private fun Shift.getTotalHour() =
     when (this) {
         is Shift.Morning -> this.timeRange.start - this.timeRange.end
         is Shift.Afternoon -> this.timeRange.start - this.timeRange.end
         is Shift.AllDay -> {
             (this.morningTimeRange.start - this.morningTimeRange.end) +
                     (this.afternoonTimeRange.start - this.afternoonTimeRange.end)
+        }
+        else -> 0.0
+    }
+
+private fun Shift.getHoursFromVolunteerType(type: VolunteerType) =
+    when (this) {
+        is Shift.Morning -> {
+            if (this.type == type) {
+                this.timeRange.start - this.timeRange.end
+            } else {
+                0.0
+            }
+        }
+        is Shift.Afternoon -> {
+            if (this.type == type) {
+                this.timeRange.start - this.timeRange.end
+            } else {
+                0.0
+            }
+        }
+        is Shift.AllDay -> {
+            when {
+                this.morningType == type && this.afternoonType == type -> {
+                    (this.morningTimeRange.start - this.morningTimeRange.end) +
+                            (this.afternoonTimeRange.start - this.afternoonTimeRange.end)
+                }
+                this.morningType == type -> this.morningTimeRange.start - this.morningTimeRange.end
+                this.afternoonType == type -> {
+                    this.afternoonTimeRange.start - this.afternoonTimeRange.end
+                }
+                else -> 0.0
+            }
         }
         else -> 0.0
     }
