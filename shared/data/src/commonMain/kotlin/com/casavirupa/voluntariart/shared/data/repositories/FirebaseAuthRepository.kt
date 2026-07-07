@@ -2,6 +2,7 @@ package com.casavirupa.voluntariart.shared.data.repositories
 
 import com.casavirupa.voluntariart.shared.data.FirestoreUser
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
@@ -95,6 +96,7 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         email = email,
         role = role.toUserRole(),
         hasOnboardingCompleted = hasOnboardingCompleted,
+        specificAreas = specificAreas.map { it.toSpecificArea() }
     )
 
 fun String.toUserRole() =
@@ -103,4 +105,30 @@ fun String.toUserRole() =
         "area_responsible" -> UserRole.AreaResponsible
         "coordination_team" -> UserRole.CoordinationTeam
         else -> UserRole.Unknown
+    }
+
+fun String.toSpecificArea() =
+    when (this) {
+        "animals" -> SpecificArea.Animals
+        "shop" -> SpecificArea.Shop
+        "communication" -> SpecificArea.Communication
+        "volunteer_coordination" -> SpecificArea.VolunteerCoordination
+        "kitchen" -> SpecificArea.Kitchen
+        "graphical_design" -> SpecificArea.GraphicalDesign
+        "virupa_editions" -> SpecificArea.VirupaEditions
+        "exterior" -> SpecificArea.Exterior
+        "can_bordoi_events" -> SpecificArea.CanBordoiEvents
+        "grove" -> SpecificArea.Grove
+        "registrations" -> SpecificArea.Registrations
+        "gardening" -> SpecificArea.Gardening
+        "labor" -> SpecificArea.Labor
+        "maintenance" -> SpecificArea.Maintenance
+        "pedagogical" -> SpecificArea.Pedagogical
+        "community_health" -> SpecificArea.CommunityHealth
+        "grants" -> SpecificArea.Grants
+        "temple" -> SpecificArea.Temple
+        "transcriptions" -> SpecificArea.Transcriptions
+        "technical_and_audiovisual" -> SpecificArea.TechnicalAndAudiovisual
+        "technical_and_texts" -> SpecificArea.TechnicalAndTexts
+        else -> SpecificArea.Unknown
     }

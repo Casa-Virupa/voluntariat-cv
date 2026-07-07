@@ -8,6 +8,7 @@ data class User(
     val email: String,
     val role: UserRole,
     val hasOnboardingCompleted: Boolean,
+    val specificAreas: List<SpecificArea>,
 )
 
 @JvmInline
