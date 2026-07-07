@@ -28,7 +28,10 @@
     <string name="lunch">Lunch</string>
     <string name="dinner">Dinner</string>
     <string name="shift_morning">Morning shift (10:00 - 14:00)</string>
+    <string name="shift_morning_sunday">Morning shift (9:00 - 14:00)</string>
     <string name="shift_afternoon">Afternoon shift (16:30 - 20:30)</string>
+    <string name="shift_afternoon_sunday_with_puja">Afternoon shift (16:30 - 18:30)</string>
+    <string name="shift_afternoon_sunday_without_puja">Afternoon shift (16:30 - 19:30)</string>
     <string name="general">General</string>
     <string name="specific">Specific</string>
     <plurals name="volunteers_count">

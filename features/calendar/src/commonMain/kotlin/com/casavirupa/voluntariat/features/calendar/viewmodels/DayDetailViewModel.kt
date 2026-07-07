@@ -16,13 +16,17 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalTime
 import kotlin.collections.emptyList
 
@@ -49,9 +53,20 @@ class DayDetailViewModel(
                 initialValue = emptyList(),
             )
 
-
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val thereIsProtectors: StateFlow<Boolean> =
+        events
+            .map { events ->
+                events.any { it.title.contains("puja protectors", ignoreCase = true) }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = false,
+            )
     private val _showDeleteDialog = MutableStateFlow(false)
     val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
+
+    val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
 
     private var selectedVolunteerToDelete: VolunteerId? = null
 
