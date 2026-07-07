@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
@@ -80,7 +82,7 @@ import kotlin.time.Clock
 @Composable
 internal fun ReservationFormScreen(
     onNavBack: () -> Unit,
-    viewModel: ReservationFormViewModel = koinViewModel()
+    viewModel: ReservationFormViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
@@ -95,6 +97,12 @@ internal fun ReservationFormScreen(
     val showExistingVolunteerDialog by viewModel
         .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
     val notAvailableDays by viewModel.notAvailableDays.collectAsStateWithLifecycle()
+    val specificAreas by viewModel.specificAreas.collectAsStateWithLifecycle()
+    val showSpecificAreaSelector by viewModel.showSpecificAreaSelector.collectAsStateWithLifecycle()
+    val selectedMorningSpecificArea by viewModel
+        .selectedMorningSpecificArea.collectAsStateWithLifecycle()
+    val selectedAfternoonSpecificArea by viewModel
+        .selectedAfternoonSpecificArea.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -117,6 +125,7 @@ internal fun ReservationFormScreen(
 
     when (shownModal) {
         ShownModal.MorningShift -> ShiftModal(
+            shownModal = shownModal,
             title = stringResource(Res.string.morning_shift_title),
             type = morningVolunteerType,
             onVolunteerTypeChanged = viewModel::onMorningVolunteerTypeChanged,
@@ -125,8 +134,15 @@ internal fun ReservationFormScreen(
             onStartTimeChanged = viewModel::onMorningStartTimeChanged,
             onEndTimeChanged = viewModel::onMorningEndTimeChanged,
             onConfirm = viewModel::onConfirmShift,
+            specificAreas = specificAreas,
+            showSpecificAreasSelector = showSpecificAreaSelector,
+            selectedMorningSpecificArea = selectedMorningSpecificArea,
+            selectedAfternoonSpecificArea = selectedAfternoonSpecificArea,
+            onMorningSpecificAreaChanged = viewModel::onMorningSpecificAreaChanged,
+            onAfternoonSpecificAreaChanged = viewModel::onAfternoonSpecificAreaChanged,
         )
         ShownModal.AfternoonShift -> ShiftModal(
+            shownModal = shownModal,
             title = stringResource(Res.string.afternoon_shift_title),
             type = afternoonVolunteerType,
             onVolunteerTypeChanged = viewModel::onAfternoonVolunteerTypeChanged,
@@ -135,6 +151,12 @@ internal fun ReservationFormScreen(
             onStartTimeChanged = viewModel::onAfternoonStartTimeChanged,
             onEndTimeChanged = viewModel::onAfternoonEndTimeChanged,
             onConfirm = viewModel::onConfirmShift,
+            specificAreas = specificAreas,
+            showSpecificAreasSelector = showSpecificAreaSelector,
+            selectedMorningSpecificArea = selectedMorningSpecificArea,
+            selectedAfternoonSpecificArea = selectedAfternoonSpecificArea,
+            onMorningSpecificAreaChanged = viewModel::onMorningSpecificAreaChanged,
+            onAfternoonSpecificAreaChanged = viewModel::onAfternoonSpecificAreaChanged,
         )
         else -> {}
     }
@@ -374,8 +396,8 @@ private fun FormChip(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
-    icon: Painter,
     modifier: Modifier = Modifier,
+    icon: Painter? = null,
 ) {
     val backgroundColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
@@ -399,13 +421,15 @@ private fun FormChip(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painter = icon,
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .size(16.dp),
-                contentDescription = null,
-            )
+            if (icon != null) {
+                Icon(
+                    painter = icon,
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .size(16.dp),
+                    contentDescription = null,
+                )
+            }
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium,
@@ -448,6 +472,7 @@ private fun ShiftScheduleInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShiftModal(
+    shownModal: ShownModal,
     title: String,
     type: FormVolunteerTypeUi,
     onVolunteerTypeChanged: (FormVolunteerTypeUi) -> Unit,
@@ -456,6 +481,12 @@ private fun ShiftModal(
     onStartTimeChanged: (LocalTime) -> Unit,
     onEndTimeChanged: (LocalTime) -> Unit,
     onConfirm: () -> Unit,
+    specificAreas: List<SpecificArea>,
+    showSpecificAreasSelector: Boolean,
+    selectedMorningSpecificArea: SpecificArea?,
+    selectedAfternoonSpecificArea: SpecificArea?,
+    onMorningSpecificAreaChanged: (SpecificArea) -> Unit,
+    onAfternoonSpecificAreaChanged: (SpecificArea) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(
@@ -482,6 +513,40 @@ private fun ShiftModal(
                         icon = painterResource(volunteerType.icon),
                         onClick = { onVolunteerTypeChanged(volunteerType) },
                     )
+                }
+            }
+            AnimatedVisibility(visible = showSpecificAreasSelector) {
+                Column {
+                    Text(
+                        text = "Selecciona l'àrea específica".uppercase(),
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    FlowRow(
+                        modifier = modifier,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        specificAreas.forEach { specificArea ->
+                            val isSelected = if (shownModal == ShownModal.MorningShift) {
+                                specificArea == selectedMorningSpecificArea
+                            } else {
+                                specificArea == selectedAfternoonSpecificArea
+                            }
+                            FormChip(
+                                text = specificArea.name,
+                                isSelected = isSelected,
+                                onClick = {
+                                    if (shownModal == ShownModal.MorningShift) {
+                                        onMorningSpecificAreaChanged(specificArea)
+                                    } else {
+                                        onAfternoonSpecificAreaChanged(specificArea)
+                                    }
+                                },
+                            )
+                        }
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {

@@ -1,7 +1,9 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseShift
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
+import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteerType
 import com.casavirupa.voluntariat.shared.core.utils.toEpochMilliseconds
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
@@ -10,6 +12,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
@@ -120,40 +123,28 @@ private fun FirebaseVolunteer.toDomainModel(docId: String) =
         id = VolunteerId(docId),
         userId = UserId(userId),
         date = timestamp.toDate(),
-        shift = shift.toVolunteerShiftModel(types, timeRanges),
+        shifts = shifts.mapNotNull { it.toDomainModelOrNull() },
         meals = mealTypes.map(String::toMealTypeModel),
         sleep = sleep,
     )
 
-private fun String.toVolunteerShiftModel(
-    types: List<String>,
-    timeRanges: List<FirebaseTimeRange>,
-): Shift {
-    val modelTypes = types.map(String::toVolunteerTypeModel)
-    return when (this) {
+private fun FirebaseShift.toDomainModelOrNull() =
+    when (shift) {
         "morning" -> Shift.Morning(
-            type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            timeRange = timeRanges.first().toDomainModel(),
+            type = type.toDomainModel(),
+            timeRange = timeRange.toDomainModel(),
         )
         "afternoon" -> Shift.Afternoon(
-            type = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            timeRange = timeRanges.first().toDomainModel(),
+            type = type.toDomainModel(),
+            timeRange = timeRange.toDomainModel(),
         )
-        "all_day" -> Shift.AllDay(
-            morningType = modelTypes.firstOrNull() ?: VolunteerType.Unknown,
-            morningTimeRange = timeRanges.first().toDomainModel(),
-            afternoonType = modelTypes.lastOrNull() ?: VolunteerType.Unknown,
-            afternoonTimeRange = timeRanges.last().toDomainModel(),
-        )
-        else -> Shift.Unknown
+        else -> null
     }
-}
 
-private fun String.toVolunteerTypeModel() =
-    when (this) {
+private fun FirebaseVolunteerType.toDomainModel() =
+    when (type) {
         "general" -> VolunteerType.General
-        "specific" -> VolunteerType.Specific
-        else -> VolunteerType.Unknown
+        else -> VolunteerType.Specific(specificAreas!!.toSpecificArea())
     }
 
 private fun String.toMealTypeModel() =
@@ -167,54 +158,43 @@ private fun Volunteer.toFirebaseModel(userId: UserId) =
     FirebaseVolunteer(
         userId = userId.value,
         timestamp = Timestamp.fromMilliseconds(date.toEpochMilliseconds().toDouble()),
-        shift = shift.toFirebaseValue(),
-        types = shift.getTypes(),
-        timeRanges = shift.getTimeRanges(),
-        mealTypes = meals.map(Meal::toFirebaseValue),
+        shifts = shifts.map { it.toFirebaseModel() },
+        mealTypes = meals.map(Meal::toFirebaseModel),
         sleep = sleep,
     )
 
-private fun Shift.toFirebaseValue() =
+private fun Shift.toFirebaseModel() =
     when (this) {
-        is Shift.Morning -> "morning"
-        is Shift.Afternoon -> "afternoon"
-        is Shift.AllDay -> "all_day"
-        else -> EMPTY_VALUE
-    }
-
-private fun Shift.getTypes() =
-    when (this) {
-        is Shift.Morning -> listOf(type.toFirebaseValue())
-        is Shift.Afternoon -> listOf(type.toFirebaseValue())
-        is Shift.AllDay -> listOf(morningType.toFirebaseValue(), afternoonType.toFirebaseValue())
-        else -> emptyList()
-    }
-
-private fun VolunteerType.toFirebaseValue() =
-    when (this) {
-        VolunteerType.General -> "general"
-        VolunteerType.Specific -> "specific"
-        else -> EMPTY_VALUE
-    }
-
-private fun Shift.getTimeRanges() =
-    when (this) {
-        is Shift.Morning -> listOf(timeRange.toFirebaseTimeRange())
-        is Shift.Afternoon -> listOf(timeRange.toFirebaseTimeRange())
-        is Shift.AllDay -> listOf(
-            morningTimeRange.toFirebaseTimeRange(),
-            afternoonTimeRange.toFirebaseTimeRange()
+        is Shift.Morning -> FirebaseShift(
+            shift = "morning",
+            timeRange = timeRange.toFirebaseTimeRange(),
+            type = type.toFirebaseModel(),
         )
-        else -> listOf()
+        is Shift.Afternoon -> FirebaseShift(
+            shift = "afternoon",
+            timeRange = timeRange.toFirebaseTimeRange(),
+            type = type.toFirebaseModel(),
+        )
     }
 
+private fun VolunteerType.toFirebaseModel() =
+    FirebaseVolunteerType(
+        type = when (this) {
+            VolunteerType.General -> "general"
+            is VolunteerType.Specific -> "specific"
+        },
+        specificAreas = when (this) {
+            VolunteerType.General -> null
+            is VolunteerType.Specific -> specificArea.toFirebaseValue()
+        }
+    )
 private fun TimeRange.toFirebaseTimeRange() =
     FirebaseTimeRange(
         start = start,
         end = end,
     )
 
-private fun Meal.toFirebaseValue() =
+private fun Meal.toFirebaseModel() =
     when (this) {
         Meal.Lunch -> "lunch"
         Meal.Dinner -> "dinner"
@@ -232,5 +212,31 @@ private fun FirebaseTimeRange.toDomainModel() =
         start = start,
         end = end,
     )
+
+private fun SpecificArea.toFirebaseValue() =
+    when (this) {
+        SpecificArea.Animals -> "animals"
+        SpecificArea.Shop -> "shop"
+        SpecificArea.Communication -> "communication"
+        SpecificArea.VolunteerCoordination -> "volunteer_coordination"
+        SpecificArea.Kitchen -> "kitchen"
+        SpecificArea.GraphicalDesign -> "graphical_design"
+        SpecificArea.VirupaEditions -> "virupa_editions"
+        SpecificArea.Exterior -> "exterior"
+        SpecificArea.CanBordoiEvents -> "can_bordoi_events"
+        SpecificArea.Grove -> "grove"
+        SpecificArea.Registrations -> "registrations"
+        SpecificArea.Gardening -> "gardening"
+        SpecificArea.Labor -> "labor"
+        SpecificArea.Maintenance -> "maintenance"
+        SpecificArea.Pedagogical -> "pedagogical"
+        SpecificArea.CommunityHealth -> "community_health"
+        SpecificArea.Grants -> "grants"
+        SpecificArea.Temple -> "temple"
+        SpecificArea.Transcriptions -> "transcriptions"
+        SpecificArea.TechnicalAndAudiovisual -> "technical_and_audiovisual"
+        SpecificArea.TechnicalAndTexts -> "technical_and_texts"
+        SpecificArea.Unknown -> ""
+    }
 
 private const val EMPTY_VALUE = ""

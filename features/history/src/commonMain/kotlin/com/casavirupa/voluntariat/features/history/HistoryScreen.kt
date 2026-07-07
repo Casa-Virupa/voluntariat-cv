@@ -397,7 +397,7 @@ private fun HistoryItem(
                 )
             }
             Column {
-                ShiftTags(shift = volunteer.shift)
+                ShiftTags(shifts = volunteer.shifts)
             }
         }
     }
@@ -405,37 +405,26 @@ private fun HistoryItem(
 
 @Composable
 private fun ShiftTags(
-    shift: Shift,
+    shifts: List<Shift>,
     modifier: Modifier = Modifier,
 ) {
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        when (shift) {
-            is Shift.Morning -> CVTag(
-                text = stringResource(Res.string.morning),
-                icon = painterResource(Res.drawable.ic_sun),
-                backgroundColor = Color(0xFFC2A47D),
-            )
-            is Shift.Afternoon -> CVTag(
-                text = stringResource(Res.string.afternoon),
-                icon = painterResource(Res.drawable.ic_afternoon),
-                backgroundColor = Color(0xFF9E816E),
-            )
-            is Shift.AllDay -> {
-                CVTag(
+        shifts.forEach { shift ->
+            when (shift) {
+                is Shift.Morning -> CVTag(
                     text = stringResource(Res.string.morning),
                     icon = painterResource(Res.drawable.ic_sun),
                     backgroundColor = Color(0xFFC2A47D),
                 )
-                CVTag(
+                is Shift.Afternoon -> CVTag(
                     text = stringResource(Res.string.afternoon),
                     icon = painterResource(Res.drawable.ic_afternoon),
                     backgroundColor = Color(0xFF9E816E),
                 )
             }
-            else -> {}
         }
     }
 }

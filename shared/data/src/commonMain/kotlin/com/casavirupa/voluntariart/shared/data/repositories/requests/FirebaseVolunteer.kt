@@ -8,11 +8,22 @@ import kotlinx.serialization.Serializable
 data class FirebaseVolunteer(
     val userId: String,
     val timestamp: Timestamp,
-    val shift: String,
-    val types: List<String>,
-    val timeRanges: List<FirebaseTimeRange>,
+    val shifts: List<FirebaseShift>,
     val mealTypes: List<String>,
     val sleep: Boolean,
+)
+
+@Serializable
+data class FirebaseShift(
+    val shift: String,
+    val timeRange: FirebaseTimeRange,
+    val type: FirebaseVolunteerType,
+)
+
+@Serializable
+data class FirebaseVolunteerType(
+    val type: String,
+    val specificAreas: String? = null,
 )
 
 @Serializable

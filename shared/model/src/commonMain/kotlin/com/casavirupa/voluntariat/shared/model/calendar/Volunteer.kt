@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.model.calendar
 
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -8,7 +9,7 @@ data class Volunteer(
     val id: VolunteerId,
     val userId: UserId,
     val date: LocalDate,
-    val shift: Shift,
+    val shifts: List<Shift>,
     val meals: List<Meal>,
     val sleep: Boolean,
 )
@@ -20,30 +21,22 @@ data class VolunteerId(val value: String) {
 }
 
 sealed class Shift {
+    abstract val type: VolunteerType
+    abstract val timeRange: TimeRange
+
     data class Morning(
-        val type: VolunteerType,
-        val timeRange: TimeRange,
+        override val type: VolunteerType,
+        override val timeRange: TimeRange,
     ) : Shift()
 
     data class Afternoon(
-        val type: VolunteerType,
-        val timeRange: TimeRange,
+        override val type: VolunteerType,
+        override val timeRange: TimeRange,
     ) : Shift()
-
-    data class AllDay(
-        val morningType: VolunteerType,
-        val afternoonType: VolunteerType,
-        val morningTimeRange: TimeRange,
-        val afternoonTimeRange: TimeRange,
-    ) : Shift()
-
-    data object Unknown : Shift()
 
     fun hasVolunteerType(type: VolunteerType) = when (this) {
         is Morning -> this.type == type
         is Afternoon -> this .type == type
-        is AllDay -> this.morningType == type || this.afternoonType == type
-        else -> false
     }
 }
 
@@ -69,8 +62,8 @@ enum class Meal {
     Unknown,
 }
 
-enum class VolunteerType {
-    General,
-    Specific,
-    Unknown,
+sealed class VolunteerType {
+    data object General : VolunteerType()
+
+    data class Specific(val specificArea: SpecificArea) : VolunteerType()
 }

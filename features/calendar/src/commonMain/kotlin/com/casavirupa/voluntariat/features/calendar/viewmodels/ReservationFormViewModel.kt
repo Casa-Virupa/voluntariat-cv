@@ -17,12 +17,14 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -92,6 +94,44 @@ class ReservationFormViewModel(
     private val _showExistingVolunteerDialogError = MutableStateFlow(false)
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
         _showExistingVolunteerDialogError.asStateFlow()
+
+    val specificAreas: StateFlow<List<SpecificArea>> =
+        authRepository
+            .getCurrentUserFlow()
+            .map { it.specificAreas }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
+
+    val showSpecificAreaSelector: StateFlow<Boolean> =
+        combine(
+            morningVolunteerType,
+            afternoonVolunteerType,
+            specificAreas,
+            shownModal,
+        ) { morningVolunteerType, afternoonVolunteerType, specificAreas, shownModal ->
+            (specificAreas.size > 1) &&
+                    ((morningVolunteerType == FormVolunteerTypeUi.Specific
+                            && shownModal == ShownModal.MorningShift)
+                            ||
+                            (afternoonVolunteerType == FormVolunteerTypeUi.Specific
+                                    && shownModal == ShownModal.AfternoonShift)
+                    )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = false,
+        )
+
+    private val _selectedMorningSpecificArea = MutableStateFlow<SpecificArea?>(null)
+    val selectedMorningSpecificArea: StateFlow<SpecificArea?> =
+        _selectedMorningSpecificArea.asStateFlow()
+
+    private val _selectedAfternoonSpecificArea = MutableStateFlow<SpecificArea?>(null)
+    val selectedAfternoonSpecificArea: StateFlow<SpecificArea?> =
+        _selectedAfternoonSpecificArea.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val notAvailableDays =
@@ -199,6 +239,14 @@ class ReservationFormViewModel(
         _afternoonTimeRange.update { it.copy(end = time) }
     }
 
+    fun onMorningSpecificAreaChanged(specificArea: SpecificArea) {
+        _selectedMorningSpecificArea.update { specificArea }
+    }
+
+    fun onAfternoonSpecificAreaChanged(specificArea: SpecificArea) {
+        _selectedAfternoonSpecificArea.update { specificArea }
+    }
+
     fun onConfirmShift() {
         throttler.throttle {
             when (_shownModal.value) {
@@ -265,7 +313,7 @@ class ReservationFormViewModel(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shift = shifts.value.toDomainModel(),
+            shifts = shifts.value.toDomainModel(),
             meals = additionalOptions.value.getMeals(),
             sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
         )
@@ -279,6 +327,7 @@ class ReservationFormViewModel(
             shift = ShiftUi.Morning,
             timeRange = morningTimeRange.value,
             type = morningVolunteerType.value,
+            specificArea = selectedMorningSpecificArea.value,
         )
         if (shiftsInfo.isEmpty()) {
             return listOf(newShift)
@@ -297,6 +346,7 @@ class ReservationFormViewModel(
             shift = ShiftUi.Afternoon,
             timeRange = afternoonTimeRange.value,
             type = afternoonVolunteerType.value,
+            specificArea = selectedAfternoonSpecificArea.value,
         )
         if (shiftsInfo.isEmpty()) {
             return listOf(newShift)
@@ -331,30 +381,44 @@ class ReservationFormViewModel(
 
     private fun List<ShiftUi>.toDomainModel() =
         when {
-            containsAll(ShiftUi.entries.toList()) -> Shift.AllDay(
-                morningType = morningVolunteerType.value.toDomainModel(),
-                afternoonType = afternoonVolunteerType.value.toDomainModel(),
-                morningTimeRange = morningTimeRange.value,
-                afternoonTimeRange = afternoonTimeRange.value,
-            )
-            else -> {
-                when (this.first()) {
+            containsAll(ShiftUi.entries.toList()) -> this.map {
+                when (it) {
                     ShiftUi.Morning -> Shift.Morning(
-                        type = morningVolunteerType.value.toDomainModel(),
+                        type = morningVolunteerType.value
+                            .toDomainModel(selectedMorningSpecificArea.value),
                         timeRange = morningTimeRange.value,
                     )
                     ShiftUi.Afternoon -> Shift.Afternoon(
-                        type = afternoonVolunteerType.value.toDomainModel(),
+                        type = afternoonVolunteerType.value
+                            .toDomainModel(selectedAfternoonSpecificArea.value),
                         timeRange = afternoonTimeRange.value,
+                    )
+                }
+            }
+            else -> {
+                when (this.first()) {
+                    ShiftUi.Morning -> listOf(
+                        Shift.Morning(
+                            type = morningVolunteerType.value
+                                .toDomainModel(selectedMorningSpecificArea.value),
+                            timeRange = morningTimeRange.value,
+                        )
+                    )
+                    ShiftUi.Afternoon -> listOf(
+                        Shift.Afternoon(
+                            type = afternoonVolunteerType.value
+                                .toDomainModel(selectedAfternoonSpecificArea.value),
+                            timeRange = afternoonTimeRange.value,
+                        )
                     )
                 }
             }
         }
 
-    private fun FormVolunteerTypeUi.toDomainModel() =
+    private fun FormVolunteerTypeUi.toDomainModel(specificArea: SpecificArea? = null) =
         when (this) {
             FormVolunteerTypeUi.General -> VolunteerType.General
-            FormVolunteerTypeUi.Specific -> VolunteerType.Specific
+            FormVolunteerTypeUi.Specific -> VolunteerType.Specific(specificArea!!)
         }
 
     private suspend fun existVolunteerFromUser(): Boolean {
@@ -438,6 +502,7 @@ data class ShiftInfoSummary(
     val shift: ShiftUi,
     val timeRange: TimeRange,
     val type: FormVolunteerTypeUi,
+    val specificArea: SpecificArea? = null,
 )
 
 private fun LocalDate.toYearMonth() =
