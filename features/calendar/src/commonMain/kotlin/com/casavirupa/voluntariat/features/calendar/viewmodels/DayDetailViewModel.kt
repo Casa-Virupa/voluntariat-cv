@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,7 +34,7 @@ class DayDetailViewModel(
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
-    private val calendarRepository: CalendarRepository,
+    calendarRepository: CalendarRepository,
 ) : ViewModel() {
     private val date = navKey.date
 
