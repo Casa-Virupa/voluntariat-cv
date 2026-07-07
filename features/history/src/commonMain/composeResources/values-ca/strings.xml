@@ -14,4 +14,6 @@
     <string name="confirm_payment_description">Si ja has fet el pagament prem "Acceptar"</string>
     <string name="accept_button">Acceptar</string>
     <string name="confirm_pay">Confirmar</string>
+    <string name="no_volunteering_title">Sense voluntariat</string>
+    <string name="no_volunteering_description">Encara has de fer el voluntariat d'aquest mes</string>
 </resources>

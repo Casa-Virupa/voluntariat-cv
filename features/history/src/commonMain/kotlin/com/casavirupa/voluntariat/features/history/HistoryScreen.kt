@@ -59,6 +59,8 @@ import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
+import voluntariatcv.features.history.generated.resources.no_volunteering_description
+import voluntariatcv.features.history.generated.resources.no_volunteering_title
 import voluntariatcv.features.history.generated.resources.pending_payment
 import voluntariatcv.features.history.generated.resources.remember_payment
 import voluntariatcv.features.history.generated.resources.specific
@@ -120,9 +122,16 @@ private fun HistoryContent(
                 modifier = Modifier.padding(top = 16.dp),
             )
             when (uiState.paymentUiState) {
-                PaymentUiState.NotFound -> {}
+                PaymentUiState.NotFound -> PaymentMessage(
+                    title = stringResource(Res.string.no_volunteering_title),
+                    description = stringResource(Res.string.no_volunteering_description),
+                )
                 PaymentUiState.Paid -> {}
-                is PaymentUiState.NotPaid -> PaymentWarning(onClickPay = onPayVolunteer)
+                is PaymentUiState.NotPaid -> PaymentMessage(
+                    title = stringResource(Res.string.pending_payment),
+                    description = stringResource(Res.string.remember_payment),
+                    onClickPay = onPayVolunteer,
+                )
             }
             HistoryList(
                 history = uiState.volunteers,
@@ -274,7 +283,10 @@ private fun DetailedSummaryInfo(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 painter = icon,
                 contentDescription = null,
@@ -296,9 +308,11 @@ private fun DetailedSummaryInfo(
 }
 
 @Composable
-private fun PaymentWarning(
-    onClickPay: () -> Unit,
+private fun PaymentMessage(
+    title: String,
+    description: String,
     modifier: Modifier = Modifier,
+    onClickPay: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
@@ -321,20 +335,22 @@ private fun PaymentWarning(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.pending_payment),
+                    text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
                     ),
                 )
                 Text(
-                    text = stringResource(Res.string.remember_payment),
+                    text = description,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Normal,
                     ),
                 )
             }
-            TextButton(onClick = onClickPay) {
-                Text(text = stringResource(Res.string.confirm_pay))
+            if (onClickPay != null) {
+                TextButton(onClick = onClickPay) {
+                    Text(text = stringResource(Res.string.confirm_pay))
+                }
             }
         }
     }
