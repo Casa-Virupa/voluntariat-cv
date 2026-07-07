@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,13 +32,19 @@ import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.payment.Payment
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
+import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
+import voluntariatcv.features.history.generated.resources.confirm_pay
+import voluntariatcv.features.history.generated.resources.confirm_payment_description
+import voluntariatcv.features.history.generated.resources.confirm_payment_title
 import voluntariatcv.features.history.generated.resources.days
 import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
@@ -62,13 +69,26 @@ import voluntariatcv.features.history.generated.resources.volunteerings_history
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showPaymentDialog by viewModel.showPaymentDialog.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
         onPreviousMonth = viewModel::previousMonth,
         onNextMonth = viewModel::nextMonth,
         uiState = uiState,
+        onPayVolunteer = viewModel::showPaymentDialog,
     )
+
+    if (showPaymentDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closePaymentDialog,
+            title = stringResource(Res.string.confirm_payment_title),
+            description = stringResource(Res.string.confirm_payment_description),
+            onCancel = viewModel::closePaymentDialog,
+            confirmText = stringResource(Res.string.accept_button),
+            onConfirm = viewModel::confirmPayment,
+        )
+    }
 }
 
 @Composable
@@ -77,6 +97,7 @@ private fun HistoryContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     uiState: HistoryUiState,
+    onPayVolunteer: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -99,7 +120,11 @@ private fun HistoryContent(
                 info = uiState.summary,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            PaymentWarning()
+            when (uiState.paymentUiState) {
+                PaymentUiState.NotFound -> {}
+                PaymentUiState.Paid -> {}
+                PaymentUiState.NotPaid -> PaymentWarning(onClickPay = onPayVolunteer)
+            }
             HistoryList(
                 history = uiState.volunteers,
                 modifier = Modifier.padding(bottom = 24.dp),
@@ -273,6 +298,7 @@ private fun DetailedSummaryInfo(
 
 @Composable
 private fun PaymentWarning(
+    onClickPay: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -307,6 +333,9 @@ private fun PaymentWarning(
                         fontWeight = FontWeight.Normal,
                     ),
                 )
+            }
+            TextButton(onClick = onClickPay) {
+                Text(text = stringResource(Res.string.confirm_pay))
             }
         }
     }

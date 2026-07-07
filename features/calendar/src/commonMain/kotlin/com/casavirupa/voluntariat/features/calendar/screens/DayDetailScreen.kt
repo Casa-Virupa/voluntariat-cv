@@ -69,8 +69,6 @@ fun DayDetailScreen(
     val events by viewModel.events.collectAsStateWithLifecycle()
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
 
-    Logger.d("asdd") { events.size.toString() }
-
     DayDetailContent(
         uiState = uiState,
         events = events,

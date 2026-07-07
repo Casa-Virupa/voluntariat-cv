@@ -10,4 +10,8 @@
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
     <string name="specific">Específico</string>
+    <string name="confirm_payment_title">Confirmar pago</string>
+    <string name="confirm_payment_description">Si ya has hecho el pago pulsa "Aceptar"</string>
+    <string name="accept_button">Aceptar</string>
+    <string name="confirm_pay">Confirmar</string>
 </resources>
