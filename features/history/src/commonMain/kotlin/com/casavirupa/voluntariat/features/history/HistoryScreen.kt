@@ -34,7 +34,6 @@ import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
-import com.casavirupa.voluntariat.shared.model.payment.Payment
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -123,7 +122,7 @@ private fun HistoryContent(
             when (uiState.paymentUiState) {
                 PaymentUiState.NotFound -> {}
                 PaymentUiState.Paid -> {}
-                PaymentUiState.NotPaid -> PaymentWarning(onClickPay = onPayVolunteer)
+                is PaymentUiState.NotPaid -> PaymentWarning(onClickPay = onPayVolunteer)
             }
             HistoryList(
                 history = uiState.volunteers,

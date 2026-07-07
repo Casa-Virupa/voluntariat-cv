@@ -11,6 +11,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.payment.PaymentId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,7 +35,7 @@ import kotlin.time.Clock
 
 class HistoryViewModel(
     volunteerRepository: VolunteerRepository,
-    private val authRepository: AuthRepository,
+    authRepository: AuthRepository,
     private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
@@ -65,9 +66,13 @@ class HistoryViewModel(
                 when {
                     payment == null -> PaymentUiState.NotFound
                     payment.paid -> PaymentUiState.Paid
-                    else -> PaymentUiState.NotPaid
+                    else -> PaymentUiState.NotPaid(payment.id)
                 }
-            }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = PaymentUiState.NotFound,
+            )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState =
@@ -103,11 +108,15 @@ class HistoryViewModel(
 
     fun confirmPayment() {
         viewModelScope.launch {
-            val user = authRepository.getCurrentUser().getOrNull() ?: return@launch
+            val paymentState = paymentState.value
+            if (paymentState !is PaymentUiState.NotPaid) {
+                return@launch
+            }
             paymentRepository.pay(
-                userId = user.id,
+                id = paymentState.id,
                 yearMonth = currentDate.value.toYearMonth(),
             )
+            closePaymentDialog()
         }
     }
 
@@ -211,10 +220,10 @@ data class VolunteerHistoryItem(
     val meals: List<Meal>
 )
 
-enum class PaymentUiState {
-    Paid,
-    NotPaid,
-    NotFound
+sealed class PaymentUiState {
+    data object Paid : PaymentUiState()
+    data class NotPaid(val id: PaymentId) : PaymentUiState()
+    data object NotFound : PaymentUiState()
 }
 
 private fun Shift.getTotalHour() =
