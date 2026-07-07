@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalTime
 import kotlin.collections.emptyList
 
 class DayDetailViewModel(
@@ -109,7 +110,7 @@ class DayDetailViewModel(
         currentUserId: UserId?,
     ) = DayShifts(
         allDayVolunteers = volunteers
-            .filter { it.shift is Shift.AllDay }
+            .filter { it.shifts.size > 1 }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -118,7 +119,7 @@ class DayDetailViewModel(
                     }
             },
         morningVolunteers = volunteers
-            .filter { it.shift is Shift.Morning }
+            .filter { it.shifts.all { shift -> shift is Shift.Morning } }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -127,7 +128,7 @@ class DayDetailViewModel(
                     }
             },
         afternoonVolunteers = volunteers
-            .filter { it.shift is Shift.Afternoon }
+            .filter { it.shifts.all { shift -> shift is Shift.Afternoon } }
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
@@ -173,37 +174,24 @@ sealed class VolunteerTypeUi {
 }
 
 private fun Volunteer.toUiModel(name: String, userId: UserId?) =
-    if (shift is Shift.AllDay) {
-        VolunteerItemUi(
-            id = id,
-            name = name,
-            type = buildAllDayVolunteerType(),
-            meals = meals,
-            sleep = sleep,
-            canBeDeleted = this.userId == userId,
-        )
-    } else {
-        VolunteerItemUi(
-            id = id,
-            name = name,
-            type = buildSingleVolunteerType(shift),
-            meals = meals,
-            sleep = sleep,
-            canBeDeleted = this.userId == userId,
-        )
-    }
+    VolunteerItemUi(
+        id = id,
+        name = name,
+        type = if (shifts.size > 1) {
+            buildAllDayVolunteerType(shifts)
+        } else {
+            buildSingleVolunteerType(shifts.first())
+        },
+        meals = meals,
+        sleep = sleep,
+        canBeDeleted = this.userId == userId,
+    )
 
-private fun buildAllDayVolunteerType() =
+private fun buildAllDayVolunteerType(shifts: List<Shift>) =
     VolunteerTypeUi.AllDay(
-        morning = VolunteerType.Specific,
-        afternoon = VolunteerType.General,
+        morning = shifts.first { it.timeRange.end <= LocalTime(14, 0) }.type,
+        afternoon = shifts.first { it.timeRange.end > LocalTime(14, 0) }.type,
     )
 
 private fun buildSingleVolunteerType(volunteerShift: Shift) =
-    VolunteerTypeUi.Single(
-        type = when (volunteerShift) {
-            is Shift.Morning -> VolunteerType.Specific
-            is Shift.Afternoon -> VolunteerType.General
-            else -> VolunteerType.General
-        }
-    )
+    VolunteerTypeUi.Single(type = volunteerShift.type)

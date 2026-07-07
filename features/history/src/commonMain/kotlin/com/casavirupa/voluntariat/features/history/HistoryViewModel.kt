@@ -131,8 +131,8 @@ class HistoryViewModel(
         map {
             VolunteerHistoryItem(
                 date = it.date,
-                hours = it.shift.getTotalHour().toInt(),
-                shift = it.shift,
+                hours = it.shifts.sumOf { it.getTotalHour() }.toInt(),
+                shifts = it.shifts,
                 meals = it.meals,
             )
         }
@@ -176,16 +176,19 @@ data class DetailedSummary(
         fun days(volunteers: List<VolunteerHistoryItem>) =
             DetailedSummary(
                 total = volunteers
-                    .sumOf { it.shift.getTotalHour() }
+                    .flatMap { it.shifts }
+                    .sumOf { it.getTotalHour() }
                     .div(ALL_DAY_DIVIDER),
                 general = volunteers
-                    .filter { it.shift.hasVolunteerType(VolunteerType.General) }
-                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.General) }
+                    .flatMap { it.shifts }
+                    .filter { it.type is VolunteerType.General }
+                    .sumOf { it.getHoursFromVolunteerType(it.type) }
                     .div(ALL_DAY_DIVIDER)
                     .let { "${it.formatString(1)}d" },
                 specific = volunteers
-                    .filter { it.shift.hasVolunteerType(VolunteerType.Specific) }
-                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.Specific) }
+                    .flatMap { it.shifts }
+                    .filter { it.type is VolunteerType.Specific }
+                    .sumOf { it.getHoursFromVolunteerType(it.type) }
                     .div(ALL_DAY_DIVIDER)
                     .let {
                         if (it % ALL_DAY_DIVIDER == 0.0) {
@@ -199,15 +202,18 @@ data class DetailedSummary(
         fun hours(volunteers: List<VolunteerHistoryItem>) =
             DetailedSummary(
                 total = volunteers
-                    .sumOf { it.shift.getTotalHour() }
+                    .flatMap { it.shifts }
+                    .sumOf { it.getTotalHour() }
                     .toInt(),
                 general = volunteers
-                    .filter { it.shift.hasVolunteerType(VolunteerType.General) }
-                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.General) }
+                    .flatMap { it.shifts }
+                    .filter { it.type is VolunteerType.General }
+                    .sumOf { it.getHoursFromVolunteerType(it.type) }
                     .let { "${it.toInt()}h" },
                 specific = volunteers
-                    .filter { it.shift.hasVolunteerType(VolunteerType.Specific) }
-                    .sumOf { it.shift.getHoursFromVolunteerType(VolunteerType.Specific) }
+                    .flatMap { it.shifts }
+                    .filter { it.type is VolunteerType.Specific }
+                    .sumOf { it.getHoursFromVolunteerType(it.type) }
                     .let { "${it.toInt()}h" },
             )
     }
@@ -216,7 +222,7 @@ data class DetailedSummary(
 data class VolunteerHistoryItem(
     val date: LocalDate,
     val hours: Int,
-    val shift: Shift,
+    val shifts: List<Shift>,
     val meals: List<Meal>
 )
 
@@ -230,11 +236,6 @@ private fun Shift.getTotalHour() =
     when (this) {
         is Shift.Morning -> this.timeRange.start - this.timeRange.end
         is Shift.Afternoon -> this.timeRange.start - this.timeRange.end
-        is Shift.AllDay -> {
-            (this.morningTimeRange.start - this.morningTimeRange.end) +
-                    (this.afternoonTimeRange.start - this.afternoonTimeRange.end)
-        }
-        else -> 0.0
     }
 
 private fun Shift.getHoursFromVolunteerType(type: VolunteerType) =
@@ -253,20 +254,6 @@ private fun Shift.getHoursFromVolunteerType(type: VolunteerType) =
                 0.0
             }
         }
-        is Shift.AllDay -> {
-            when {
-                this.morningType == type && this.afternoonType == type -> {
-                    (this.morningTimeRange.start - this.morningTimeRange.end) +
-                            (this.afternoonTimeRange.start - this.afternoonTimeRange.end)
-                }
-                this.morningType == type -> this.morningTimeRange.start - this.morningTimeRange.end
-                this.afternoonType == type -> {
-                    this.afternoonTimeRange.start - this.afternoonTimeRange.end
-                }
-                else -> 0.0
-            }
-        }
-        else -> 0.0
     }
 
 private operator fun LocalTime.minus(other: LocalTime): Double {

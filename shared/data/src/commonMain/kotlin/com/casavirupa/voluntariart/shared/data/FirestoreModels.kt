@@ -10,4 +10,5 @@ data class FirestoreUser(
     val email: String,
     val role: String,
     @SerialName("onboarding_completed") val hasOnboardingCompleted: Boolean,
+    @SerialName("specific_areas") val specificAreas: List<String>,
 )
