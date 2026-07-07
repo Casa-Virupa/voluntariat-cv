@@ -453,8 +453,13 @@ private fun ShiftScheduleInfo(
                 text = shift.displayTime(),
                 style = MaterialTheme.typography.labelSmall,
             )
+            val text = if (shift.type == FormVolunteerTypeUi.General) {
+                stringResource(shift.type.text)
+            } else {
+                "${stringResource(shift.type.text)} · ${shift.specificArea?.displayName().orEmpty()}"
+            }
             CVTag(
-                text = stringResource(shift.type.text),
+                text = text,
                 icon = painterResource(shift.type.icon),
                 modifier = Modifier.padding(top = 8.dp),
                 backgroundColor = shift.type.getBackgroundColor(),
