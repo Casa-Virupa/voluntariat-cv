@@ -9,6 +9,7 @@ import com.casavirupa.voluntariat.shared.core.utils.getLastDayOfMonth
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
+import com.casavirupa.voluntariat.shared.domain.PaymentRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -17,11 +18,11 @@ import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMap
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -29,9 +30,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.YearMonth
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
-import org.koin.core.context.startKoin
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.afternoon
 import voluntariatcv.features.calendar.generated.resources.dinner
@@ -53,6 +54,7 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
+    private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -91,18 +93,21 @@ class ReservationFormViewModel(
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
         _showExistingVolunteerDialogError.asStateFlow()
 
-    val notAvailableDays = date.flatMapConcat { date ->
-        calendarRepository.getGoogleCalendarEventsByRange(
-            startDate = getStartDate(date),
-            endDate = getLastDate(date)
-        ).map { googleCalendarEvents ->
-            googleCalendarEvents.filter { !it.available }.map { it.start.date }
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000L),
-        initialValue = emptyList(),
-    )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val notAvailableDays =
+        date
+            .flatMapConcat { date ->
+                calendarRepository.getGoogleCalendarEventsByRange(
+                    startDate = getStartDate(date),
+                    endDate = getLastDate(date)
+                ).map { googleCalendarEvents ->
+                    googleCalendarEvents.filter { !it.available }.map { it.start.date }
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
 
     fun onDateChanged(date: LocalDate) {
         _date.update { date }
@@ -229,7 +234,9 @@ class ReservationFormViewModel(
                     .onSuccess { user ->
                         volunteerRepository
                             .reserveDay(user.id, buildReservation())
-                            .onSuccess {
+                            .mapCatching {
+                                paymentRepository.addPaymentIfNotExist(user.id, date.value!!.toYearMonth())
+                            }.onSuccess {
                                 navigateBack()
                             }.onFailure {
                                 // TODO: Show error
@@ -432,5 +439,11 @@ data class ShiftInfoSummary(
     val timeRange: TimeRange,
     val type: FormVolunteerTypeUi,
 )
+
+private fun LocalDate.toYearMonth() =
+    YearMonth(
+        year = this.year,
+        month = this.month,
+    )
 
 private const val LOG_TAG = "ReservationFormViewModel"

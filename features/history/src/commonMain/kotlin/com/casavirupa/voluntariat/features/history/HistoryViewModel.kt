@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.PaymentRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.payment.PaymentId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,9 +22,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
@@ -32,15 +36,16 @@ import kotlin.time.Clock
 class HistoryViewModel(
     volunteerRepository: VolunteerRepository,
     authRepository: AuthRepository,
+    private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
     val currentDate: StateFlow<LocalDate> = _currentDate.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState =
+    private val volunteersUiState =
         combine(
             currentDate,
-            authRepository.getCurrentUserFlow()
+            authRepository.getCurrentUserFlow(),
         ) { date, user ->
             date to user
         }.flatMapLatest { (date, user) ->
@@ -50,12 +55,40 @@ class HistoryViewModel(
                 year = date.year
             )
         }.map { volunteers ->
-            volunteers.toUiState()
+            volunteers.toUiModel()
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val paymentState =
+        currentDate
+            .flatMapLatest { date -> paymentRepository.getPaymentByYearMonth(date.toYearMonth()) }
+            .map { payment ->
+                when {
+                    payment == null -> PaymentUiState.NotFound
+                    payment.paid -> PaymentUiState.Paid
+                    else -> PaymentUiState.NotPaid(payment.id)
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = PaymentUiState.NotFound,
+            )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState =
+        combine(
+            volunteersUiState,
+            paymentState,
+        ) { volunteers, payment ->
+            volunteers.toUiState(payment)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = HistoryUiState.Empty,
         )
+
+    private val _showPaymentDialog = MutableStateFlow(false)
+    val showPaymentDialog: StateFlow<Boolean> = _showPaymentDialog.asStateFlow()
 
     fun nextMonth() {
         _currentDate.update { it.plus(DatePeriod(months = 1)) }
@@ -65,10 +98,33 @@ class HistoryViewModel(
         _currentDate.update { it.minus(DatePeriod(months = 1)) }
     }
 
-    private fun List<Volunteer>.toUiState() =
+    fun showPaymentDialog() {
+        _showPaymentDialog.update { true }
+    }
+
+    fun closePaymentDialog() {
+        _showPaymentDialog.update { false }
+    }
+
+    fun confirmPayment() {
+        viewModelScope.launch {
+            val paymentState = paymentState.value
+            if (paymentState !is PaymentUiState.NotPaid) {
+                return@launch
+            }
+            paymentRepository.pay(
+                id = paymentState.id,
+                yearMonth = currentDate.value.toYearMonth(),
+            )
+            closePaymentDialog()
+        }
+    }
+
+    private fun List<VolunteerHistoryItem>.toUiState(paymentUiState: PaymentUiState) =
         HistoryUiState(
             summary = MonthSummary(this),
-            volunteers = toUiModel()
+            volunteers = this,
+            paymentUiState = paymentUiState,
         )
 
     private fun List<Volunteer>.toUiModel() =
@@ -85,11 +141,13 @@ class HistoryViewModel(
 data class HistoryUiState(
     val summary: MonthSummary,
     val volunteers: List<VolunteerHistoryItem>,
+    val paymentUiState: PaymentUiState,
 ) {
     companion object {
         val Empty = HistoryUiState(
             summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
             volunteers = emptyList(),
+            paymentUiState = PaymentUiState.NotFound,
         )
     }
 }
@@ -99,7 +157,7 @@ data class MonthSummary(
     val hours: DetailedSummary,
 ) {
     companion object {
-        operator fun invoke(volunteers: List<Volunteer>): MonthSummary =
+        operator fun invoke(volunteers: List<VolunteerHistoryItem>): MonthSummary =
             MonthSummary(
                 days = DetailedSummary.days(volunteers),
                 hours = DetailedSummary.hours(volunteers),
@@ -115,7 +173,7 @@ data class DetailedSummary(
     companion object {
         val Empty = DetailedSummary(0, "0", "")
 
-        fun days(volunteers: List<Volunteer>) =
+        fun days(volunteers: List<VolunteerHistoryItem>) =
             DetailedSummary(
                 total = volunteers
                     .sumOf { it.shift.getTotalHour() }
@@ -138,7 +196,7 @@ data class DetailedSummary(
                     },
             )
 
-        fun hours(volunteers: List<Volunteer>) =
+        fun hours(volunteers: List<VolunteerHistoryItem>) =
             DetailedSummary(
                 total = volunteers
                     .sumOf { it.shift.getTotalHour() }
@@ -161,6 +219,12 @@ data class VolunteerHistoryItem(
     val shift: Shift,
     val meals: List<Meal>
 )
+
+sealed class PaymentUiState {
+    data object Paid : PaymentUiState()
+    data class NotPaid(val id: PaymentId) : PaymentUiState()
+    data object NotFound : PaymentUiState()
+}
 
 private fun Shift.getTotalHour() =
     when (this) {
@@ -209,5 +273,12 @@ private operator fun LocalTime.minus(other: LocalTime): Double {
     val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()
     return abs(diffSeconds) / 3600.0
 }
+
+private fun LocalDate.toYearMonth() =
+    YearMonth(
+        year = this.year,
+        month = this.month,
+    )
+
 
 private const val ALL_DAY_DIVIDER = 8.0

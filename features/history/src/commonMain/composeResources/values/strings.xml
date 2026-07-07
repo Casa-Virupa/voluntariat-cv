@@ -10,4 +10,10 @@
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
     <string name="specific">Specific</string>
+    <string name="confirm_payment_title">Confirm payment</string>
+    <string name="confirm_payment_description">If you've already made the payment, click “Accept”</string>
+    <string name="accept_button">Accept</string>
+    <string name="confirm_pay">Confirm</string>
+    <string name="no_volunteering_title">No volunteer</string>
+    <string name="no_volunteering_description">You still need to do this month's volunteer work</string>
 </resources>

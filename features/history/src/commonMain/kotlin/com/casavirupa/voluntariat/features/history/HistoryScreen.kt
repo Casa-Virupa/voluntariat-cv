@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -31,13 +32,18 @@ import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
+import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
+import voluntariatcv.features.history.generated.resources.confirm_pay
+import voluntariatcv.features.history.generated.resources.confirm_payment_description
+import voluntariatcv.features.history.generated.resources.confirm_payment_title
 import voluntariatcv.features.history.generated.resources.days
 import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
@@ -53,6 +59,8 @@ import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
+import voluntariatcv.features.history.generated.resources.no_volunteering_description
+import voluntariatcv.features.history.generated.resources.no_volunteering_title
 import voluntariatcv.features.history.generated.resources.pending_payment
 import voluntariatcv.features.history.generated.resources.remember_payment
 import voluntariatcv.features.history.generated.resources.specific
@@ -62,13 +70,26 @@ import voluntariatcv.features.history.generated.resources.volunteerings_history
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showPaymentDialog by viewModel.showPaymentDialog.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
         onPreviousMonth = viewModel::previousMonth,
         onNextMonth = viewModel::nextMonth,
         uiState = uiState,
+        onPayVolunteer = viewModel::showPaymentDialog,
     )
+
+    if (showPaymentDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closePaymentDialog,
+            title = stringResource(Res.string.confirm_payment_title),
+            description = stringResource(Res.string.confirm_payment_description),
+            onCancel = viewModel::closePaymentDialog,
+            confirmText = stringResource(Res.string.accept_button),
+            onConfirm = viewModel::confirmPayment,
+        )
+    }
 }
 
 @Composable
@@ -77,6 +98,7 @@ private fun HistoryContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     uiState: HistoryUiState,
+    onPayVolunteer: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -99,7 +121,18 @@ private fun HistoryContent(
                 info = uiState.summary,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            PaymentWarning()
+            when (uiState.paymentUiState) {
+                PaymentUiState.NotFound -> PaymentMessage(
+                    title = stringResource(Res.string.no_volunteering_title),
+                    description = stringResource(Res.string.no_volunteering_description),
+                )
+                PaymentUiState.Paid -> {}
+                is PaymentUiState.NotPaid -> PaymentMessage(
+                    title = stringResource(Res.string.pending_payment),
+                    description = stringResource(Res.string.remember_payment),
+                    onClickPay = onPayVolunteer,
+                )
+            }
             HistoryList(
                 history = uiState.volunteers,
                 modifier = Modifier.padding(bottom = 24.dp),
@@ -250,7 +283,10 @@ private fun DetailedSummaryInfo(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.weight(1f)) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 painter = icon,
                 contentDescription = null,
@@ -272,8 +308,11 @@ private fun DetailedSummaryInfo(
 }
 
 @Composable
-private fun PaymentWarning(
+private fun PaymentMessage(
+    title: String,
+    description: String,
     modifier: Modifier = Modifier,
+    onClickPay: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
@@ -296,17 +335,22 @@ private fun PaymentWarning(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(Res.string.pending_payment),
+                    text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Medium,
                     ),
                 )
                 Text(
-                    text = stringResource(Res.string.remember_payment),
+                    text = description,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Normal,
                     ),
                 )
+            }
+            if (onClickPay != null) {
+                TextButton(onClick = onClickPay) {
+                    Text(text = stringResource(Res.string.confirm_pay))
+                }
             }
         }
     }
