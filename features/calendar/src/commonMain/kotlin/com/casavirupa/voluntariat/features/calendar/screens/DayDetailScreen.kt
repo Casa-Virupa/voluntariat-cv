@@ -55,7 +55,10 @@ import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.morning_shift_tag
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
+import voluntariatcv.features.calendar.generated.resources.shift_afternoon_sunday_with_puja
+import voluntariatcv.features.calendar.generated.resources.shift_afternoon_sunday_without_puja
 import voluntariatcv.features.calendar.generated.resources.shift_morning
+import voluntariatcv.features.calendar.generated.resources.shift_morning_sunday
 import voluntariatcv.features.calendar.generated.resources.special_activities
 import voluntariatcv.features.calendar.generated.resources.volunteers_count
 
@@ -69,12 +72,15 @@ fun DayDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
+    val thereIsProtectors by viewModel.thereIsProtectors.collectAsStateWithLifecycle()
 
     DayDetailContent(
         uiState = uiState,
         events = events,
         onClickBack = onNavBack,
         onDeleteVolunteer = viewModel::onDeleteVolunteer,
+        isSunday = viewModel.isSunday,
+        thereIsProtectors = thereIsProtectors,
         modifier = modifier,
     )
 
@@ -96,6 +102,8 @@ private fun DayDetailContent(
     events: List<GoogleCalendarEvent>,
     onClickBack: () -> Unit,
     onDeleteVolunteer: (VolunteerId) -> Unit,
+    isSunday: Boolean,
+    thereIsProtectors: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -124,6 +132,8 @@ private fun DayDetailContent(
             dayShifts = uiState.dayShifts,
             events = events,
             onDeleteVolunteer = onDeleteVolunteer,
+            isSunday = isSunday,
+            thereIsProtectors = thereIsProtectors,
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
@@ -136,6 +146,8 @@ private fun DayShiftsAndEvents(
     dayShifts: DayShifts,
     events: List<GoogleCalendarEvent>,
     onDeleteVolunteer: (VolunteerId) -> Unit,
+    isSunday: Boolean,
+    thereIsProtectors: Boolean,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -166,7 +178,11 @@ private fun DayShiftsAndEvents(
             )
         }
         item {
-            ShiftTitle(text = stringResource(Res.string.shift_morning))
+            if (isSunday) {
+                ShiftTitle(text = stringResource(Res.string.shift_morning_sunday))
+            } else {
+                ShiftTitle(text = stringResource(Res.string.shift_morning))
+            }
         }
         items(dayShifts.morningVolunteers) { volunteer ->
             VolunteerShiftItem(
@@ -175,7 +191,17 @@ private fun DayShiftsAndEvents(
             )
         }
         item {
-            ShiftTitle(text = stringResource(Res.string.shift_afternoon))
+            when {
+                isSunday && thereIsProtectors -> {
+                    ShiftTitle(text = stringResource(Res.string.shift_afternoon_sunday_with_puja))
+                }
+                isSunday -> {
+                    ShiftTitle(
+                        text = stringResource(Res.string.shift_afternoon_sunday_without_puja),
+                    )
+                }
+                else -> ShiftTitle(text = stringResource(Res.string.shift_afternoon))
+            }
         }
         items(dayShifts.afternoonVolunteers) { volunteer ->
             VolunteerShiftItem(
@@ -274,12 +300,18 @@ private fun VolunteerShiftItem(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         CVTag(
-                            text = stringResource(Res.string.morning_shift_tag, volunteerType.morning.displayName()),
+                            text = stringResource(
+                                Res.string.morning_shift_tag,
+                                volunteerType.morning.displayName(),
+                            ),
                             icon = painterResource(Res.drawable.ic_sun),
                             backgroundColor = volunteerType.morning.getBackgroundColor(),
                         )
                         CVTag(
-                            text = stringResource(Res.string.afternoon_shift_tag, volunteerType.afternoon.displayName()),
+                            text = stringResource(
+                                Res.string.afternoon_shift_tag,
+                                volunteerType.afternoon.displayName(),
+                            ),
                             icon = painterResource(Res.drawable.ic_afternoon),
                             backgroundColor = volunteerType.afternoon.getBackgroundColor(),
                         )

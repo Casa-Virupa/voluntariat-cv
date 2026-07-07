@@ -28,7 +28,10 @@
     <string name="lunch">Almuerzo</string>
     <string name="dinner">Cena</string>
     <string name="shift_morning">Turno de mañana (10:00 - 14:00)</string>
+    <string name="shift_morning_sunday">Turno de mañana (9:00 - 14:00)</string>
     <string name="shift_afternoon">Turno de tarde (16:30 - 20:30)</string>
+    <string name="shift_afternoon_sunday_with_puja">Turno de tarde (16:30 - 18:30)</string>
+    <string name="shift_afternoon_sunday_without_puja">Turno de tarde (16:30 - 19:30)</string>
     <string name="general">General</string>
     <string name="specific">Específico</string>
     <plurals name="volunteers_count">
