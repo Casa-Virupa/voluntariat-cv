@@ -53,6 +53,8 @@
     <string name="end_label">Fi</string>
     <string name="morning_label">Matí: %1$s</string>
     <string name="afternoon_label">Tarda: %1$s</string>
+    <string name="morning_shift_tag">Matí · %1$s</string>
+    <string name="afternoon_shift_tag">Tarda · %1$s</string>
     <string name="existing_volunteer_dialog_title">Voluntariat ja registrat</string>
     <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l\'existent primerament.</string>
     <string name="accept">Acceptar</string>

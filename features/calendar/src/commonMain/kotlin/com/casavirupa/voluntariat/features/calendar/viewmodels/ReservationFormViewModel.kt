@@ -307,7 +307,20 @@ class ReservationFormViewModel(
     }
 
     private fun formInputsAreValid() =
-        date.value != null && shifts.value.isNotEmpty()
+        date.value != null &&
+                shifts.value.isNotEmpty() &&
+                (morningVolunteerTypeIsValid() || afternoonVolunteerTypeIsValid())
+
+    private fun morningVolunteerTypeIsValid() =
+       (morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
+                selectedMorningSpecificArea.value == null) ||
+                morningVolunteerType.value == FormVolunteerTypeUi.General
+
+    private fun afternoonVolunteerTypeIsValid() =
+        (afternoonVolunteerType.value == FormVolunteerTypeUi.Specific &&
+                selectedAfternoonSpecificArea.value == null) ||
+                afternoonVolunteerType.value == FormVolunteerTypeUi.General
+
     private fun buildReservation() =
         Volunteer(
             id = VolunteerId.Empty,

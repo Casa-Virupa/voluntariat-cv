@@ -40,6 +40,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormVi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftInfoSummary
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShownModal
+import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
@@ -47,7 +48,6 @@ import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
-import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import kotlinx.datetime.LocalDate
@@ -535,7 +535,7 @@ private fun ShiftModal(
                                 specificArea == selectedAfternoonSpecificArea
                             }
                             FormChip(
-                                text = specificArea.name,
+                                text = specificArea.displayName(),
                                 isSelected = isSelected,
                                 onClick = {
                                     if (shownModal == ShownModal.MorningShift) {

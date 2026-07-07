@@ -24,15 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailUiState
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayShifts
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerItemUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
+import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.common.ui.getBackgroundColor
 import com.casavirupa.voluntariat.shared.common.ui.getIcon
-import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
@@ -43,6 +42,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.afternoon_shift_tag
 import voluntariatcv.features.calendar.generated.resources.all_day
 import voluntariatcv.features.calendar.generated.resources.delete
 import voluntariatcv.features.calendar.generated.resources.delete_volunteering_description
@@ -52,6 +52,7 @@ import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
+import voluntariatcv.features.calendar.generated.resources.morning_shift_tag
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_morning
@@ -262,20 +263,23 @@ private fun VolunteerShiftItem(
             when (val volunteerType = volunteer.type) {
                 is VolunteerTypeUi.Single -> {
                     CVTag(
-                        text = volunteerType.type.displayName().orEmpty(),
+                        text = volunteerType.type.displayName(),
                         icon = volunteerType.type.getIcon(),
                         backgroundColor = volunteerType.type.getBackgroundColor(),
                     )
                 }
                 is VolunteerTypeUi.AllDay -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         CVTag(
-                            text = volunteerType.morning.displayName().orEmpty(),
+                            text = stringResource(Res.string.morning_shift_tag, volunteerType.morning.displayName()),
                             icon = painterResource(Res.drawable.ic_sun),
                             backgroundColor = volunteerType.morning.getBackgroundColor(),
                         )
                         CVTag(
-                            text = volunteerType.afternoon.displayName().orEmpty(),
+                            text = stringResource(Res.string.afternoon_shift_tag, volunteerType.afternoon.displayName()),
                             icon = painterResource(Res.drawable.ic_afternoon),
                             backgroundColor = volunteerType.afternoon.getBackgroundColor(),
                         )

@@ -6,4 +6,25 @@
     <string name="morning">Matí</string>
     <string name="afternoon">Tarda</string>
     <string name="all_day">Tot el dia</string>
+    <string name="area_animals">Animals</string>
+    <string name="area_shop">Botiga</string>
+    <string name="area_communication">Comunicació</string>
+    <string name="area_volunteer_coordination">Coordinació de voluntariat</string>
+    <string name="area_kitchen">Cuina</string>
+    <string name="area_graphical_design">Disseny gràfic</string>
+    <string name="area_virupa_editions">Edicions Virupa</string>
+    <string name="area_exterior">Exterior</string>
+    <string name="area_can_bordoi_events">Esdeveniments Can Bordoi</string>
+    <string name="area_grove">Hort</string>
+    <string name="area_registrations">Inscripcions</string>
+    <string name="area_gardening">Jardineria</string>
+    <string name="area_labor">Laboral</string>
+    <string name="area_maintenance">Manteniment</string>
+    <string name="area_pedagogical">Pedagògic</string>
+    <string name="area_community_health">Salut de la comunitat</string>
+    <string name="area_grants">Subvencions</string>
+    <string name="area_temple">Temple</string>
+    <string name="area_transcriptions">Transcripcions</string>
+    <string name="area_technical_audiovisual">Tècnic i audiovisual</string>
+    <string name="area_technical_texts">Tècnic i textos</string>
 </resources>
