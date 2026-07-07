@@ -8,4 +8,6 @@
     <string name="remember_payment">Recorda fer el pagament del mes</string>
     <string name="volunteerings_history">Historial de voluntariats</string>
     <string name="hours_format">%1$dh</string>
+    <string name="general">General</string>
+    <string name="specific">Específic</string>
 </resources>

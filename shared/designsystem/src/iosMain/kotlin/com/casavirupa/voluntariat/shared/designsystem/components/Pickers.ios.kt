@@ -7,12 +7,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.ObjCSignatureOverride
@@ -38,6 +41,7 @@ import platform.UIKit.UIDevice
 import platform.UIKit.UIFontDescriptorSystemDesignRounded
 import platform.darwin.NSObject
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 actual fun NativeDatePicker(
     date: LocalDate?,
@@ -57,9 +61,9 @@ actual fun NativeDatePicker(
         UICalendarSelectionSingleDate(delegate = coordinator)
     }
 
-    Popup(
+    Dialog(
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -80,8 +84,12 @@ actual fun NativeDatePicker(
                         this.backgroundColor = UIColor.whiteColor
                     }
                 },
+                properties = UIKitInteropProperties(
+                    interactionMode = UIKitInteropInteractionMode.NonCooperative,
+                    placedAsOverlay = true
+                ),
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
+                    .fillMaxWidth()
                     .height(320.dp),
                 update = { view ->
                     val selection = view.selectionBehavior as? UICalendarSelectionSingleDate
@@ -121,7 +129,7 @@ class CalendarCoordinator(
     }
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, ExperimentalComposeUiApi::class)
 @Composable
 actual fun NativeTimePicker(
     initialTime: LocalTime?,
@@ -132,9 +140,9 @@ actual fun NativeTimePicker(
         TimePickerCoordinator(onTimeChange = onTimeSelected)
     }
 
-    Popup(
+    Dialog(
         onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
@@ -164,9 +172,13 @@ actual fun NativeTimePicker(
                         )
                     }
                 },
+                properties = UIKitInteropProperties(
+                    interactionMode = UIKitInteropInteractionMode.NonCooperative,
+                    placedAsOverlay = true
+                ),
                 modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .height(200.dp),
+                    .fillMaxWidth()
+                    .height(216.dp),
                 update = { },
             )
         }
