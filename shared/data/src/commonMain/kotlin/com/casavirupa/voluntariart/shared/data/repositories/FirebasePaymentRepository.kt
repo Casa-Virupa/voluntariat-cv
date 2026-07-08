@@ -14,17 +14,22 @@ import kotlinx.datetime.number
 class FirebasePaymentRepository(
     private val firestore: FirebaseFirestore,
 ) : PaymentRepository {
-    override fun getPaymentByYearMonth(yearMonth: YearMonth): Flow<Payment?> =
-        firestore
-            .collection("payments")
-            .where { ("year" equalTo yearMonth.year) and ("month" equalTo yearMonth.month.number) }
-            .snapshots
-            .map { snapshot ->
-                snapshot
-                    .documents
-                    .map { doc -> doc.data<FirebasePayment>().toDomainModel(doc.id) }
-                    .firstOrNull()
-            }
+    override fun getPaymentByYearMonth(
+        userId: UserId,
+        yearMonth: YearMonth)
+    : Flow<Payment?> = firestore
+        .collection("payments")
+        .where {
+            ("year" equalTo yearMonth.year) and
+                    ("month" equalTo yearMonth.month.number) and
+                    ("user_id" equalTo userId.value)
+        }.snapshots
+        .map { snapshot ->
+            snapshot
+                .documents
+                .map { doc -> doc.data<FirebasePayment>().toDomainModel(doc.id) }
+                .firstOrNull()
+        }
 
     override suspend fun pay(
         id: PaymentId,

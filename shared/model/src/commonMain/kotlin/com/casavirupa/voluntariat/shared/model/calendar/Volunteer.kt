@@ -13,9 +13,17 @@ data class Volunteer(
     val meals: List<Meal>,
     val sleep: Boolean,
 ) {
-    fun calculateTotalToPay() = 2.0
+    fun calculateTotalToPay(): Int {
+        val mealsTotal = meals.filter { it != Meal.Breakfast }.size * MEAL_PRICE
+        val sleepTotal = if (sleep) 20 else 0
+        return mealsTotal + sleepTotal
+    }
 
     fun calculateHours(): Int = shifts.sumOf { it.getHour() }
+
+    companion object {
+        const val MEAL_PRICE = 8
+    }
 }
 
 data class VolunteerId(val value: String) {
@@ -62,6 +70,7 @@ data class TimeRange(
 }
 
 enum class Meal {
+    Breakfast,
     Lunch,
     Dinner,
     Unknown,

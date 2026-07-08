@@ -59,20 +59,22 @@ class HistoryViewModel(
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val paymentUiState =
-        currentDate
-            .flatMapLatest { date -> paymentRepository.getPaymentByYearMonth(date.toYearMonth()) }
-            .map { payment ->
-                when {
-                    payment == null -> PaymentUiState.NotFound
-                    payment.paid -> PaymentUiState.Paid
-                    else -> PaymentUiState.NotPaid(payment.id, payment.amount)
-                }
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = PaymentUiState.NotFound,
-            )
+    private val paymentUiState: StateFlow<PaymentUiState> =
+        combine(currentDate, authRepository.getCurrentUserFlow()) { date, user ->
+            date to user
+        }.flatMapLatest { (date, user) ->
+            paymentRepository.getPaymentByYearMonth(user.id, date.toYearMonth())
+        }.map { payment ->
+            when {
+                payment == null -> PaymentUiState.NotFound
+                payment.paid -> PaymentUiState.Paid
+                else -> PaymentUiState.NotPaid(payment.id, payment.amount)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = PaymentUiState.NotFound,
+        )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<HistoryUiState> =

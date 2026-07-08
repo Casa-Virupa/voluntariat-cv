@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.YearMonth
 
 interface PaymentRepository {
-    fun getPaymentByYearMonth(yearMonth: YearMonth): Flow<Payment?>
+    fun getPaymentByYearMonth(userId: UserId, yearMonth: YearMonth): Flow<Payment?>
 
     suspend fun pay(id: PaymentId, yearMonth: YearMonth): Result<Unit>
 

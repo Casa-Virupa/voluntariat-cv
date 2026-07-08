@@ -318,7 +318,7 @@ class ReservationFormViewModel(
                                 paymentRepository.addPayment(
                                     userId = user.id,
                                     yearMonth = date.value!!.toYearMonth(),
-                                    amount = volunteer.calculateTotalToPay(),
+                                    amount = volunteer.calculateTotalToPay().toDouble(),
                                 )
                             }.onSuccess {
                                 navigateBack()
