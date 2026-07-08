@@ -75,12 +75,16 @@ class HistoryViewModel(
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState =
+    val uiState: StateFlow<HistoryUiState> =
         combine(
             volunteersUiState,
             paymentUiState,
-        ) { volunteers, payment ->
-            volunteers.toUiState(payment)
+        ) { volunteers, paymentState ->
+            HistoryUiState(
+                summary = MonthSummary(volunteers),
+                volunteers = volunteers,
+                paymentUiState = paymentState,
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
@@ -119,13 +123,6 @@ class HistoryViewModel(
             closePaymentDialog()
         }
     }
-
-    private fun List<VolunteerHistoryItem>.toUiState(paymentUiState: PaymentUiState) =
-        HistoryUiState(
-            summary = MonthSummary(this),
-            volunteers = this,
-            paymentUiState = paymentUiState,
-        )
 
     private fun List<Volunteer>.toUiModel() =
         map {

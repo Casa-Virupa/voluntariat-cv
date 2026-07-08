@@ -10,7 +10,30 @@ data class User(
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
     val isMember: Boolean,
-)
+) {
+    val isMitra: Boolean =
+        when (role) {
+            is UserRole.Volunteer -> role.type == UserVolunteerType.Mitra
+            else -> false
+        }
+
+    fun getMonthHours(): Int =
+        when (this.role) {
+            is UserRole.Volunteer -> {
+                if (role.type == UserVolunteerType.Mitra) {
+                    MITRA_HOURS
+                } else {
+                    HABITUAL_HOURS
+                }
+            }
+            else -> 0
+        }
+
+    companion object {
+        private const val MITRA_HOURS = 16
+        private const val HABITUAL_HOURS = 8
+    }
+}
 
 @JvmInline
 value class UserId(val value: String) {

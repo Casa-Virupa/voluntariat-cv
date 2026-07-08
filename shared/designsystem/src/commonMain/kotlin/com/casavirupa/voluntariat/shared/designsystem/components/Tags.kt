@@ -1,6 +1,5 @@
 package com.casavirupa.voluntariat.shared.designsystem.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -25,6 +24,7 @@ fun CVTag(
     icon: Painter? = null,
     extraText: String? = null,
     backgroundColor: Color? = null,
+    contentColor: Color? = null,
 ) {
     val tagText = buildAnnotatedString {
         append(text)
@@ -48,11 +48,13 @@ fun CVTag(
                     painter = icon,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
+                    tint = contentColor ?: Color.White,
                 )
             }
             Text(
                 text = tagText,
                 style = MaterialTheme.typography.labelMedium,
+                color = contentColor ?: Color.White,
             )
         }
     }

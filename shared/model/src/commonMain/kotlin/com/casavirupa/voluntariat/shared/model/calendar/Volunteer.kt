@@ -14,6 +14,8 @@ data class Volunteer(
     val sleep: Boolean,
 ) {
     fun calculateTotalToPay() = 2.0
+
+    fun calculateHours(): Int = shifts.sumOf { it.getHour() }
 }
 
 data class VolunteerId(val value: String) {
@@ -35,6 +37,12 @@ sealed class Shift {
         override val type: VolunteerType,
         override val timeRange: TimeRange,
     ) : Shift()
+
+    fun getHour(): Int = HALF_JOURNEY
+
+    companion object {
+        private const val HALF_JOURNEY = 4
+    }
 }
 
 data class TimeRange(
