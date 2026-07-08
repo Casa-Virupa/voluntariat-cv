@@ -9,6 +9,7 @@ data class User(
     val role: UserRole,
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
+    val isMember: Boolean,
 )
 
 @JvmInline
@@ -18,9 +19,17 @@ value class UserId(val value: String) {
     }
 }
 
-enum class UserRole {
-    Volunteer,
-    AreaResponsible,
-    CoordinationTeam,
-    Unknown,
+sealed class UserRole {
+    data class Volunteer(val type: UserVolunteerType) : UserRole()
+
+    data object AreaResponsible : UserRole()
+
+    data object CoordinationTeam : UserRole()
+
+    data object Unknown : UserRole()
+}
+
+enum class UserVolunteerType {
+    Habitual,
+    Mitra,
 }
