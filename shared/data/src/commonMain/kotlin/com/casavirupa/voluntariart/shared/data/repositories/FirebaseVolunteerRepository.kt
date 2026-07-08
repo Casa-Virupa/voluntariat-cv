@@ -61,7 +61,7 @@ class FirebaseVolunteerRepository(
         runCatching {
             firestore
                 .collection("volunteers")
-                .where { "userId" equalTo id.value }
+                .where { "user_id" equalTo id.value }
                 .get()
                 .documents
                 .map { document ->
@@ -82,13 +82,39 @@ class FirebaseVolunteerRepository(
         val endTimestamp = Timestamp.fromMilliseconds(
             LocalDate(nextYear, nextMonth, 1).toEpochMilliseconds().toDouble()
         )
+        return getVolunteersByUserAndRange(id, startTimestamp, endTimestamp)
+    }
+
+    override fun getVolunteersByUserAndQuarter(
+        id: UserId,
+        quarter: Int,
+        year: Int,
+    ): Flow<List<Volunteer>> {
+        val startMonth = (quarter - 1) * 3 + 1
+        val endMonth = quarter * 3
+        val startTimestamp = Timestamp.fromMilliseconds(
+            LocalDate(year, startMonth, 1).toEpochMilliseconds().toDouble()
+        )
+        val nextMonth = if (endMonth == 12) 1 else endMonth + 1
+        val nextYear = if (endMonth == 12) year + 1 else year
+        val endTimestamp = Timestamp.fromMilliseconds(
+            LocalDate(nextYear, nextMonth, 1).toEpochMilliseconds().toDouble()
+        )
+        return getVolunteersByUserAndRange(id, startTimestamp, endTimestamp)
+    }
+
+    private fun getVolunteersByUserAndRange(
+        id: UserId,
+        startTimestamp: Timestamp,
+        endTimestamp: Timestamp,
+    ): Flow<List<Volunteer>> {
         return firestore
             .collection("volunteers")
             .where {
-                ("userId" equalTo id.value) and (
-                    ("timestamp" greaterThanOrEqualTo startTimestamp) and
-                    ("timestamp" lessThan endTimestamp)
-                )
+                ("user_id" equalTo id.value) and (
+                        ("timestamp" greaterThanOrEqualTo startTimestamp) and
+                                ("timestamp" lessThan endTimestamp)
+                        )
             }
             .snapshots
             .map { snapshot ->

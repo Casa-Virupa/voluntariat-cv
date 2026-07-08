@@ -6,6 +6,7 @@ import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
+import com.casavirupa.voluntariat.shared.model.user.UserVolunteerType
 import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
@@ -94,17 +95,32 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         id = id,
         name = name,
         email = email,
-        role = role.toUserRole(),
+        role = role.toUserRole(volunteerType),
         hasOnboardingCompleted = hasOnboardingCompleted,
-        specificAreas = specificAreas.map { it.toSpecificArea() }
+        specificAreas = specificAreas.map { it.toSpecificArea() },
+        isMember = isMember,
     )
 
-fun String.toUserRole() =
+fun String.toUserRole(volunteerType: String?) =
     when (this) {
-        "volunteer" -> UserRole.Volunteer
+        "volunteer" -> {
+            val type = volunteerType.toVolunteerType()
+            if (type != null) {
+                UserRole.Volunteer(type)
+            } else {
+                UserRole.Unknown
+            }
+        }
         "area_responsible" -> UserRole.AreaResponsible
         "coordination_team" -> UserRole.CoordinationTeam
         else -> UserRole.Unknown
+    }
+
+fun String?.toVolunteerType() =
+    when (this) {
+        "habitual" -> UserVolunteerType.Habitual
+        "mitra" -> UserVolunteerType.Mitra
+        else -> null
     }
 
 fun String.toSpecificArea() =

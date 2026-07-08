@@ -1,0 +1,21 @@
+<resources>
+    <string name="profile_title">Perfil</string>
+    <string name="full_name">Nom complet</string>
+    <string name="email">Correu electrònic</string>
+    <string name="commitment_degree">Grau de compromís</string>
+    <string name="quarterly_hours">Hores trimestrals</string>
+    <string name="monthly_hours">Hores mensuals</string>
+    <string name="no_hours_registered">Sense hores registrades aquest mes</string>
+    <string name="missing_hours">Encara et falten %1$s hores aquest mes</string>
+    <string name="volunteer_type">Tipus de voluntariat</string>
+    <string name="specific_areas">Àrees específiques</string>
+    <string name="casa_virupa">Casa Virupa</string>
+    <string name="member_of_casa_virupa">Membre de Casa Virupa</string>
+    <string name="log_out">Tancar sessió</string>
+    <string name="habitual">Habitual</string>
+    <string name="mitra">Mitra</string>
+    <string name="first_quarter">1r trimestre %1$d</string>
+    <string name="second_quarter">2n trimestre %1$d</string>
+    <string name="third_quarter">3r trimestre %1$d</string>
+    <string name="fourth_quarter">4t trimestre %1$d</string>
+</resources>

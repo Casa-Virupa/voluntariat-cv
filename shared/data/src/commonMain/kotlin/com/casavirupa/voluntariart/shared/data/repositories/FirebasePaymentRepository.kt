@@ -46,7 +46,7 @@ class FirebasePaymentRepository(
         val existingPayment = firestore
             .collection("payments")
             .where {
-                ("userId" equalTo userId.value) and
+                ("user_id" equalTo userId.value) and
                 ("year" equalTo yearMonth.year) and
                 ("month" equalTo yearMonth.month.number)
             }

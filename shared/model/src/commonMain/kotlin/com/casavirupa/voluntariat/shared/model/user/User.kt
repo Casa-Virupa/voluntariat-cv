@@ -9,7 +9,31 @@ data class User(
     val role: UserRole,
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
-)
+    val isMember: Boolean,
+) {
+    val isMitra: Boolean =
+        when (role) {
+            is UserRole.Volunteer -> role.type == UserVolunteerType.Mitra
+            else -> false
+        }
+
+    fun getMonthHours(): Int =
+        when (this.role) {
+            is UserRole.Volunteer -> {
+                if (role.type == UserVolunteerType.Mitra) {
+                    MITRA_HOURS
+                } else {
+                    HABITUAL_HOURS
+                }
+            }
+            else -> 0
+        }
+
+    companion object {
+        private const val MITRA_HOURS = 16
+        private const val HABITUAL_HOURS = 8
+    }
+}
 
 @JvmInline
 value class UserId(val value: String) {
@@ -18,9 +42,17 @@ value class UserId(val value: String) {
     }
 }
 
-enum class UserRole {
-    Volunteer,
-    AreaResponsible,
-    CoordinationTeam,
-    Unknown,
+sealed class UserRole {
+    data class Volunteer(val type: UserVolunteerType) : UserRole()
+
+    data object AreaResponsible : UserRole()
+
+    data object CoordinationTeam : UserRole()
+
+    data object Unknown : UserRole()
+}
+
+enum class UserVolunteerType {
+    Habitual,
+    Mitra,
 }

@@ -2,28 +2,29 @@ package com.casavirupa.voluntariart.shared.data.repositories.requests
 
 import dev.gitlive.firebase.firestore.Timestamp
 import kotlinx.datetime.LocalTime
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class FirebaseVolunteer(
-    val userId: String,
+    @SerialName("user_id") val userId: String,
     val timestamp: Timestamp,
     val shifts: List<FirebaseShift>,
-    val mealTypes: List<String>,
+    @SerialName("meal_types") val mealTypes: List<String>,
     val sleep: Boolean,
 )
 
 @Serializable
 data class FirebaseShift(
     val shift: String,
-    val timeRange: FirebaseTimeRange,
+    @SerialName("time_range") val timeRange: FirebaseTimeRange,
     val type: FirebaseVolunteerType,
 )
 
 @Serializable
 data class FirebaseVolunteerType(
     val type: String,
-    val specificAreas: String? = null,
+    @SerialName("specific_areas") val specificAreas: String? = null,
 )
 
 @Serializable
