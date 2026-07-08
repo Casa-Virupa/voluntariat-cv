@@ -13,4 +13,5 @@ interface AuthRepository {
     fun getCurrentUserFlow(): Flow<User>
 
     suspend fun logOut(): Result<Unit>
+    suspend fun resetPassword(value: String)
 }
