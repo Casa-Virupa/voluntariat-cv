@@ -59,14 +59,14 @@ class HistoryViewModel(
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val paymentState =
+    private val paymentUiState =
         currentDate
             .flatMapLatest { date -> paymentRepository.getPaymentByYearMonth(date.toYearMonth()) }
             .map { payment ->
                 when {
                     payment == null -> PaymentUiState.NotFound
                     payment.paid -> PaymentUiState.Paid
-                    else -> PaymentUiState.NotPaid(payment.id)
+                    else -> PaymentUiState.NotPaid(payment.id, payment.amount)
                 }
             }.stateIn(
                 scope = viewModelScope,
@@ -78,7 +78,7 @@ class HistoryViewModel(
     val uiState =
         combine(
             volunteersUiState,
-            paymentState,
+            paymentUiState,
         ) { volunteers, payment ->
             volunteers.toUiState(payment)
         }.stateIn(
@@ -108,7 +108,7 @@ class HistoryViewModel(
 
     fun confirmPayment() {
         viewModelScope.launch {
-            val paymentState = paymentState.value
+            val paymentState = paymentUiState.value
             if (paymentState !is PaymentUiState.NotPaid) {
                 return@launch
             }
@@ -228,7 +228,10 @@ data class VolunteerHistoryItem(
 
 sealed class PaymentUiState {
     data object Paid : PaymentUiState()
-    data class NotPaid(val id: PaymentId) : PaymentUiState()
+    data class NotPaid(
+        val id: PaymentId,
+        val amount: Double,
+    ) : PaymentUiState()
     data object NotFound : PaymentUiState()
 }
 

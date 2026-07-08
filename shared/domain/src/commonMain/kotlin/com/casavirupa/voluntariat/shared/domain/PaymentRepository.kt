@@ -11,5 +11,9 @@ interface PaymentRepository {
 
     suspend fun pay(id: PaymentId, yearMonth: YearMonth): Result<Unit>
 
-    suspend fun addPaymentIfNotExist(userId: UserId, yearMonth: YearMonth): Result<Unit>
+    suspend fun addPaymentIfNotExist(
+        userId: UserId,
+        yearMonth: YearMonth,
+        amount: Double,
+    ): Result<Unit>
 }

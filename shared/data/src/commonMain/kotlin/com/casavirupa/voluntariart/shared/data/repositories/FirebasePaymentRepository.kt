@@ -40,7 +40,8 @@ class FirebasePaymentRepository(
 
     override suspend fun addPaymentIfNotExist(
         userId: UserId,
-        yearMonth: YearMonth
+        yearMonth: YearMonth,
+        amount: Double,
     ): Result<Unit> = runCatching {
         val existingPayments = firestore
             .collection("payments")
@@ -60,6 +61,7 @@ class FirebasePaymentRepository(
                         year = yearMonth.year,
                         month = yearMonth.month.number,
                         paid = false,
+                        amount = amount,
                     )
                 )
         }
@@ -71,4 +73,5 @@ private fun FirebasePayment.toDomainModel(id: String) =
         id = PaymentId(id),
         yearMonth = YearMonth(year, month),
         paid = paid,
+        amount = amount,
     )

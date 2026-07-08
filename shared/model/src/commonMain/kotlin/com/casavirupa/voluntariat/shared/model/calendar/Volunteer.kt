@@ -4,6 +4,7 @@ import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlin.random.Random
 
 data class Volunteer(
     val id: VolunteerId,
@@ -12,7 +13,9 @@ data class Volunteer(
     val shifts: List<Shift>,
     val meals: List<Meal>,
     val sleep: Boolean,
-)
+) {
+    fun calculateTotalToPay() = Random.nextDouble()
+}
 
 data class VolunteerId(val value: String) {
     companion object {
@@ -33,11 +36,6 @@ sealed class Shift {
         override val type: VolunteerType,
         override val timeRange: TimeRange,
     ) : Shift()
-
-    fun hasVolunteerType(type: VolunteerType) = when (this) {
-        is Morning -> this.type == type
-        is Afternoon -> this .type == type
-    }
 }
 
 data class TimeRange(

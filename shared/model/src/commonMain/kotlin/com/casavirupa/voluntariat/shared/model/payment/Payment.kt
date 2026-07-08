@@ -7,6 +7,7 @@ data class Payment(
     val id: PaymentId,
     val yearMonth: YearMonth,
     val paid: Boolean,
+    val amount: Double,
 )
 
 @JvmInline

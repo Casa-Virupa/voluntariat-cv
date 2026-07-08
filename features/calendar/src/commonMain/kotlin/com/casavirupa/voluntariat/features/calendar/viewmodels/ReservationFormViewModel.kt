@@ -277,13 +277,18 @@ class ReservationFormViewModel(
                     _showExistingVolunteerDialogError.update { true }
                     return@launch
                 }
+                val volunteer = buildReservation()
                 authRepository
                     .getCurrentUser()
                     .onSuccess { user ->
                         volunteerRepository
-                            .reserveDay(user.id, buildReservation())
+                            .reserveDay(user.id, volunteer)
                             .mapCatching {
-                                paymentRepository.addPaymentIfNotExist(user.id, date.value!!.toYearMonth())
+                                paymentRepository.addPaymentIfNotExist(
+                                    userId = user.id,
+                                    yearMonth = date.value!!.toYearMonth(),
+                                    amount = volunteer.calculateTotalToPay(),
+                                )
                             }.onSuccess {
                                 navigateBack()
                             }.onFailure {
