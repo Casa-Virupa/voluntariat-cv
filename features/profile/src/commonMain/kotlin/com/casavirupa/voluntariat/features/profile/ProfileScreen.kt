@@ -133,9 +133,7 @@ private fun ProfileContent(
     onLogOut: () -> Unit,
 ) {
     Scaffold(
-        topBar = {
-            Header(name = user.name)
-        },
+        topBar = { Header(name = user.name) },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) { innerPadding ->
         Column(
