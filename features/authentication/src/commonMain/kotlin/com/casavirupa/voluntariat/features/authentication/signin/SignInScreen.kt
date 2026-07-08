@@ -1,6 +1,7 @@
 package com.casavirupa.voluntariat.features.authentication.signin
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +46,7 @@ import voluntariatcv.features.authentication.generated.resources.app_name_volunt
 import voluntariatcv.features.authentication.generated.resources.cv_logo
 import voluntariatcv.features.authentication.generated.resources.email_label
 import voluntariatcv.features.authentication.generated.resources.email_placeholder
+import voluntariatcv.features.authentication.generated.resources.forgot_password
 import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
 import voluntariatcv.features.authentication.generated.resources.ic_lock
 import voluntariatcv.features.authentication.generated.resources.ic_mail
@@ -70,6 +72,7 @@ internal fun SignInScreen(
         onEmailChanged = viewModel::onEmailChanged,
         onPasswordChanged = viewModel::onPasswordChanged,
         onClickLogIn = viewModel::onSignIn,
+        onNavigateToForgotPassword = onNavigateToForgotPassword,
     )
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -95,6 +98,7 @@ private fun SignInContent(
     onEmailChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
     onClickLogIn: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPassword by remember { mutableStateOf(false) }
@@ -115,6 +119,7 @@ private fun SignInContent(
             onPasswordChanged = onPasswordChanged,
             showPassword = showPassword,
             onTogglePasswordVisibility = { showPassword = !showPassword },
+            onNavigateToForgotPassword = onNavigateToForgotPassword,
             modifier = Modifier.padding(top = 32.dp),
         )
         CVButton(
@@ -155,6 +160,7 @@ private fun SignInInputs(
     onPasswordChanged: (String) -> Unit,
     showPassword: Boolean,
     onTogglePasswordVisibility: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val visualTransformation = if (showPassword) {
@@ -216,6 +222,14 @@ private fun SignInInputs(
                     )
                 }
             }
+        )
+        Text(
+            text = stringResource(Res.string.forgot_password),
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .align(Alignment.End)
+                .clickable { onNavigateToForgotPassword() }
         )
     }
 }

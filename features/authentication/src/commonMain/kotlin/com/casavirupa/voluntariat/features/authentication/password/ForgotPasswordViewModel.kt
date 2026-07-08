@@ -2,6 +2,7 @@ package com.casavirupa.voluntariat.features.authentication.password
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,9 @@ class ForgotPasswordViewModel(
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
+    private val _showInformationDialog = MutableStateFlow(false)
+    val showInformationDialog: StateFlow<Boolean> = _showInformationDialog.asStateFlow()
+
     fun onEmailChanged(email: String) {
         _email.update { email }
     }
@@ -24,10 +28,23 @@ class ForgotPasswordViewModel(
             authRepository
                 .resetPassword(email.value)
                 .onSuccess {
-
-                }.onFailure {
-
+                    showInformationDialog()
+                }.onFailure { error ->
+                    Logger.e(error, LOG_TAG) { "Error on reset password: ${error.message}" }
                 }
         }
+    }
+
+    fun closeInformationDialog() {
+        _showInformationDialog.update { false }
+    }
+
+    private fun showInformationDialog() {
+        _showInformationDialog.update { true }
+    }
+
+
+    companion object {
+        private const val LOG_TAG = "ForgotPasswordViewModel"
     }
 }

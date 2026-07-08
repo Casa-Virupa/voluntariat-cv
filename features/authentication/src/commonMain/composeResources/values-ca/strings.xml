@@ -17,4 +17,5 @@
     <string name="requirement_8_characters">Mínim 8 caràcters</string>
     <string name="requirement_uppercase_lowercase">Una majúscula i una minúscula</string>
     <string name="requirement_number_symbol">Un número o símbol especial</string>
+    <string name="forgot_password">He oblidat la contrasenya</string>
 </resources>

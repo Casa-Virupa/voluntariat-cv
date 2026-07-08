@@ -47,6 +47,8 @@ fun EntryProviderScope<NavKey>.authEntry(navigator: AuthNavigator) {
         )
     }
     entry<ForgotPasswordNavKey> {
-        ForgotPasswordScreen()
+        ForgotPasswordScreen(
+            onNavBack = { navigator.goBack() }
+        )
     }
 }

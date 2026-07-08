@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -29,24 +31,43 @@ import voluntariatcv.features.authentication.generated.resources.create_password
 import voluntariatcv.features.authentication.generated.resources.email_label
 import voluntariatcv.features.authentication.generated.resources.email_placeholder
 import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
+import voluntariatcv.features.authentication.generated.resources.ic_close
 import voluntariatcv.features.authentication.generated.resources.ic_mail
 
 @Composable
 fun ForgotPasswordScreen(
+    onNavBack: () -> Unit,
     viewModel: ForgotPasswordViewModel = koinViewModel(),
 ) {
     val email by viewModel.email.collectAsStateWithLifecycle()
+    val showInformationDialog by viewModel.showInformationDialog.collectAsStateWithLifecycle()
 
     ForgotPasswordContent(
         email = email,
+        onNavBack = onNavBack,
         onEmailChanged = viewModel::onEmailChanged,
         onClickReset = viewModel::resetPassword,
     )
+
+    if (showInformationDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closeInformationDialog,
+            title = "Correu enviat",
+            description = "Revisa el correu per restaurar la contrasenya. Pot arribar a correu brossa",
+            onCancel = viewModel::closeInformationDialog,
+            confirmText = "Acceptar",
+            onConfirm = {
+                viewModel.closeInformationDialog()
+                onNavBack()
+            },
+        )
+    }
 }
 
 @Composable
 private fun ForgotPasswordContent(
     email: String,
+    onNavBack: () -> Unit,
     onEmailChanged: (String) -> Unit,
     onClickReset: () -> Unit,
     modifier: Modifier = Modifier,
@@ -54,11 +75,16 @@ private fun ForgotPasswordContent(
     Column(
         modifier = modifier
             .padding(16.dp)
-            .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
     ) {
-        Header(modifier = Modifier.padding(bottom = 24.dp))
+        IconButton(onClick = onNavBack) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_close),
+                contentDescription = null,
+            )
+        }
+        Header(modifier = Modifier.padding(vertical = 24.dp))
         CVTextField(
             value = email,
             onValueChanged = onEmailChanged,
@@ -78,7 +104,7 @@ private fun ForgotPasswordContent(
             },
         )
         CVButton(
-            text = "Restaurar contrasenya",
+            text = "Restaurar",
             onClick = onClickReset,
             modifier = Modifier
                 .padding(top = 32.dp)
@@ -92,11 +118,11 @@ private fun ForgotPasswordContent(
 private fun Header(modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Text(
-            text = stringResource(Res.string.create_new_password_title),
+            text = "Restaurar contrasenya",
             style = MaterialTheme.typography.headlineLarge,
         )
         Text(
-            text = stringResource(Res.string.create_password_description),
+            text = "Introdueix el teu correu i t'enviarem els passos per restaurar la nova contrasenya",
             modifier = Modifier.padding(top = 8.dp, start = 4.dp),
             style = MaterialTheme.typography.bodyMedium,
         )

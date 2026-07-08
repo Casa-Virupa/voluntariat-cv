@@ -17,4 +17,5 @@
     <string name="requirement_8_characters">Mínimo 8 caracteres</string>
     <string name="requirement_uppercase_lowercase">Una mayúscula y una minúscula</string>
     <string name="requirement_number_symbol">Un número o símbolo especial</string>
+    <string name="forgot_password">He olvidado la contraseña</string>
 </resources>
