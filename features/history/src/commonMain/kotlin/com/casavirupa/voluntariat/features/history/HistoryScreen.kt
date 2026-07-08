@@ -121,7 +121,7 @@ private fun HistoryContent(
                 info = uiState.summary,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            when (uiState.paymentUiState) {
+            when (val state = uiState.paymentUiState) {
                 PaymentUiState.NotFound -> PaymentMessage(
                     title = stringResource(Res.string.no_volunteering_title),
                     description = stringResource(Res.string.no_volunteering_description),
@@ -129,7 +129,7 @@ private fun HistoryContent(
                 PaymentUiState.Paid -> {}
                 is PaymentUiState.NotPaid -> PaymentMessage(
                     title = stringResource(Res.string.pending_payment),
-                    description = stringResource(Res.string.remember_payment),
+                    description = stringResource(Res.string.remember_payment, state.amount),
                     onClickPay = onPayVolunteer,
                 )
             }

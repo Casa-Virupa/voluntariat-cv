@@ -73,8 +73,11 @@ import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_edit
 import voluntariatcv.features.calendar.generated.resources.morning_label
 import voluntariatcv.features.calendar.generated.resources.morning_shift_title
+import voluntariatcv.features.calendar.generated.resources.not_available_volunteering_description
+import voluntariatcv.features.calendar.generated.resources.not_available_volunteering_title
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.select_date
+import voluntariatcv.features.calendar.generated.resources.select_specific_area
 import voluntariatcv.features.calendar.generated.resources.shift_label
 import voluntariatcv.features.calendar.generated.resources.start_label
 import kotlin.time.Clock
@@ -96,13 +99,13 @@ internal fun ReservationFormScreen(
     val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
     val showExistingVolunteerDialog by viewModel
         .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
-    val notAvailableDays by viewModel.notAvailableDays.collectAsStateWithLifecycle()
     val specificAreas by viewModel.specificAreas.collectAsStateWithLifecycle()
     val showSpecificAreaSelector by viewModel.showSpecificAreaSelector.collectAsStateWithLifecycle()
     val selectedMorningSpecificArea by viewModel
         .selectedMorningSpecificArea.collectAsStateWithLifecycle()
     val selectedAfternoonSpecificArea by viewModel
         .selectedAfternoonSpecificArea.collectAsStateWithLifecycle()
+    val showRemoteWorkDialog by viewModel.showRemoteWorkDialog.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -120,7 +123,6 @@ internal fun ReservationFormScreen(
             }
         },
         onConfirm = viewModel::onConfirm,
-        notAvailableDays = notAvailableDays,
     )
 
     when (shownModal) {
@@ -172,6 +174,17 @@ internal fun ReservationFormScreen(
         )
     }
 
+    if (showRemoteWorkDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closeRemoteWorkDialog,
+            title = stringResource(Res.string.not_available_volunteering_title),
+            description = stringResource(Res.string.not_available_volunteering_description),
+            onCancel = viewModel::closeRemoteWorkDialog,
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::workOnRemoteOnDate,
+        )
+    }
+
     val currentOnNavBack by rememberUpdatedState(onNavBack)
     LaunchedEffect(uiState.isFormSavedSuccessfully) {
         if (uiState.isFormSavedSuccessfully) {
@@ -193,7 +206,6 @@ private fun ReservationFormContent(
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     onEditShiftInfo: (ShiftUi) -> Unit,
     onConfirm: () -> Unit,
-    notAvailableDays: List<LocalDate>,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -227,7 +239,6 @@ private fun ReservationFormContent(
                 onShiftSelected = onShiftSelected,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
                 onEditShiftInfo = onEditShiftInfo,
-                notAvailableDays = notAvailableDays,
                 modifier = Modifier.fillMaxSize(),
             )
             CVButton(
@@ -252,7 +263,6 @@ private fun ReservationForm(
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
     onEditShiftInfo: (ShiftUi) -> Unit,
-    notAvailableDays: List<LocalDate>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -272,7 +282,6 @@ private fun ReservationForm(
                 minDate = Clock.System.now()
                     .toLocalDateTime(TimeZone.currentSystemDefault())
                     .date,
-                notAvailableDays = notAvailableDays,
             )
         }
         FormSection(
@@ -523,7 +532,7 @@ private fun ShiftModal(
             AnimatedVisibility(visible = showSpecificAreasSelector) {
                 Column {
                     Text(
-                        text = "Selecciona l'àrea específica".uppercase(),
+                        text = stringResource(Res.string.select_specific_area).uppercase(),
                         modifier = Modifier.padding(bottom = 4.dp),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.labelMedium,

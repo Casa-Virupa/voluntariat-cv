@@ -4,7 +4,6 @@ import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlin.random.Random
 
 data class Volunteer(
     val id: VolunteerId,
@@ -14,7 +13,7 @@ data class Volunteer(
     val meals: List<Meal>,
     val sleep: Boolean,
 ) {
-    fun calculateTotalToPay() = Random.nextDouble()
+    fun calculateTotalToPay() = 2.0
 }
 
 data class VolunteerId(val value: String) {

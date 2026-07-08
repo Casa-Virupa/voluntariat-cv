@@ -24,15 +24,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.YearMonth
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -133,8 +137,13 @@ class ReservationFormViewModel(
     val selectedAfternoonSpecificArea: StateFlow<SpecificArea?> =
         _selectedAfternoonSpecificArea.asStateFlow()
 
+    private val _showRemoteWorkDialog = MutableStateFlow(false)
+    val showRemoteWorkDialog: StateFlow<Boolean> = _showRemoteWorkDialog.asStateFlow()
+
+    private var temporalDate: LocalDate? = null
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val notAvailableDays =
+    private val notAvailableDates =
         date
             .flatMapConcat { date ->
                 calendarRepository.getGoogleCalendarEventsByRange(
@@ -145,12 +154,29 @@ class ReservationFormViewModel(
                 }
             }.stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
+                started = SharingStarted.Eagerly,
                 initialValue = emptyList(),
             )
 
+    init {
+        viewModelScope.launch {
+            notAvailableDates.collect()
+        }
+    }
+
     fun onDateChanged(date: LocalDate) {
-        _date.update { date }
+        if (date in notAvailableDates.value) {
+            _showRemoteWorkDialog.update { true }
+            temporalDate = date
+        } else {
+            _date.update { date }
+        }
+    }
+
+    fun workOnRemoteOnDate() {
+        _date.update { temporalDate }
+        temporalDate = null
+        closeRemoteWorkDialog()
     }
 
     fun onShiftSelected(shift: ShiftUi) {
@@ -277,14 +303,19 @@ class ReservationFormViewModel(
                     _showExistingVolunteerDialogError.update { true }
                     return@launch
                 }
-                val volunteer = buildReservation()
+                val specificArea = authRepository
+                    .getCurrentUser()
+                    .getOrNull()
+                    ?.specificAreas
+                    ?.first() ?: return@launch
+                val volunteer = buildReservation(specificArea)
                 authRepository
                     .getCurrentUser()
                     .onSuccess { user ->
                         volunteerRepository
                             .reserveDay(user.id, volunteer)
                             .mapCatching {
-                                paymentRepository.addPaymentIfNotExist(
+                                paymentRepository.addPayment(
                                     userId = user.id,
                                     yearMonth = date.value!!.toYearMonth(),
                                     amount = volunteer.calculateTotalToPay(),
@@ -311,6 +342,11 @@ class ReservationFormViewModel(
         _showExistingVolunteerDialogError.update { false }
     }
 
+    fun closeRemoteWorkDialog() {
+        _showRemoteWorkDialog.update { false }
+        temporalDate = null
+    }
+
     private fun formInputsAreValid() =
         date.value != null &&
                 shifts.value.isNotEmpty() &&
@@ -326,12 +362,12 @@ class ReservationFormViewModel(
                 selectedAfternoonSpecificArea.value == null) ||
                 afternoonVolunteerType.value == FormVolunteerTypeUi.General
 
-    private fun buildReservation() =
+    private fun buildReservation(userSpecificArea: SpecificArea) =
         Volunteer(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shifts = shifts.value.toDomainModel(),
+            shifts = shifts.value.toDomainModel(userSpecificArea),
             meals = additionalOptions.value.getMeals(),
             sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
         )
@@ -397,38 +433,46 @@ class ReservationFormViewModel(
             else -> Meal.Unknown
         }
 
-    private fun List<ShiftUi>.toDomainModel() =
+    private fun List<ShiftUi>.toDomainModel(userSpecificArea: SpecificArea) =
         when {
             containsAll(ShiftUi.entries.toList()) -> this.map {
                 when (it) {
-                    ShiftUi.Morning -> Shift.Morning(
-                        type = morningVolunteerType.value
-                            .toDomainModel(selectedMorningSpecificArea.value),
-                        timeRange = morningTimeRange.value,
-                    )
-                    ShiftUi.Afternoon -> Shift.Afternoon(
-                        type = afternoonVolunteerType.value
-                            .toDomainModel(selectedAfternoonSpecificArea.value),
-                        timeRange = afternoonTimeRange.value,
-                    )
+                    ShiftUi.Morning -> {
+                        val specificArea = selectedMorningSpecificArea.value ?: userSpecificArea
+                        Shift.Morning(
+                            type = morningVolunteerType.value.toDomainModel(specificArea),
+                            timeRange = morningTimeRange.value,
+                        )
+                    }
+                    ShiftUi.Afternoon -> {
+                        val specificArea = selectedAfternoonSpecificArea.value ?: userSpecificArea
+                        Shift.Afternoon(
+                            type = afternoonVolunteerType.value.toDomainModel(specificArea),
+                            timeRange = afternoonTimeRange.value,
+                        )
+                    }
                 }
             }
             else -> {
                 when (this.first()) {
-                    ShiftUi.Morning -> listOf(
-                        Shift.Morning(
-                            type = morningVolunteerType.value
-                                .toDomainModel(selectedMorningSpecificArea.value),
-                            timeRange = morningTimeRange.value,
+                    ShiftUi.Morning -> {
+                        val specificArea = selectedMorningSpecificArea.value ?: userSpecificArea
+                        listOf(
+                            Shift.Morning(
+                                type = morningVolunteerType.value.toDomainModel(specificArea),
+                                timeRange = morningTimeRange.value,
+                            )
                         )
-                    )
-                    ShiftUi.Afternoon -> listOf(
-                        Shift.Afternoon(
-                            type = afternoonVolunteerType.value
-                                .toDomainModel(selectedAfternoonSpecificArea.value),
-                            timeRange = afternoonTimeRange.value,
+                    }
+                    ShiftUi.Afternoon -> {
+                        val specificArea = selectedAfternoonSpecificArea.value ?: userSpecificArea
+                        listOf(
+                            Shift.Afternoon(
+                                type = afternoonVolunteerType.value.toDomainModel(specificArea),
+                                timeRange = afternoonTimeRange.value,
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -454,10 +498,12 @@ class ReservationFormViewModel(
     }
 
     private fun getStartDate(date: LocalDate?) =
-        date?.getFirstDayOfMonth() ?: Clock.System.now().toDate().getFirstDayOfMonth()
+        date?.minus(DatePeriod(months = 2))?.getFirstDayOfMonth()
+            ?: Clock.System.now().toDate().getFirstDayOfMonth()
 
     private fun getLastDate(date: LocalDate?) =
-        date?.getLastDayOfMonth() ?: Clock.System.now().toDate().getLastDayOfMonth()
+        date?.plus(DatePeriod(months = 2))?.getLastDayOfMonth()
+            ?: Clock.System.now().toDate().getLastDayOfMonth()
 }
 
 data class ReservationFormUiState(

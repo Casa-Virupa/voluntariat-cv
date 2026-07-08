@@ -50,17 +50,13 @@ actual fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
     onDismiss: () -> Unit,
-    notAvailableDays: List<LocalDate>,
     minDate: LocalDate?,
 ) {
     val minDateMillis = minDate?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds()
-    val selectableDates = remember(minDateMillis, notAvailableDays) {
+    val selectableDates = remember(minDateMillis) {
         object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val isAfterMinDate = minDateMillis == null || utcTimeMillis >= minDateMillis
-                val isNotAvailable = notAvailableDays.contains(utcTimeMillis.toDate(TimeZone.UTC))
-                return isAfterMinDate && !isNotAvailable
-            }
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                minDateMillis == null || utcTimeMillis >= minDateMillis
 
             override fun isSelectableYear(year: Int): Boolean =
                 minDate == null || year >= minDate.year
