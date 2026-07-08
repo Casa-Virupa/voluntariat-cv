@@ -30,7 +30,7 @@ data class User(
         }
 
     companion object {
-        private const val MITRA_HOURS = 16
+        private const val MITRA_HOURS = 60
         private const val HABITUAL_HOURS = 8
     }
 }
