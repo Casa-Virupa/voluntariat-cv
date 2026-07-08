@@ -90,6 +90,7 @@ internal fun ReservationFormScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
     val shifts by viewModel.shifts.collectAsStateWithLifecycle()
+    val optionsSelected by viewModel.additionalOptionsSelected.collectAsStateWithLifecycle()
     val options by viewModel.additionalOptions.collectAsStateWithLifecycle()
     val shownModal by viewModel.shownModal.collectAsStateWithLifecycle()
     val morningVolunteerType by viewModel.morningVolunteerType.collectAsStateWithLifecycle()
@@ -112,6 +113,7 @@ internal fun ReservationFormScreen(
         date = date,
         shifts = shifts,
         shiftsInfo = shiftsInfo,
+        optionsSelected = optionsSelected,
         options = options,
         onDateChanged = viewModel::onDateChanged,
         onShiftSelected = viewModel::onShiftSelected,
@@ -200,6 +202,7 @@ private fun ReservationFormContent(
     date: LocalDate?,
     shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
+    optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
@@ -234,6 +237,7 @@ private fun ReservationFormContent(
                 date = date,
                 shifts = shifts,
                 shiftsInfo = shiftsInfo,
+                optionsSelected = optionsSelected,
                 options = options,
                 onDateChanged = onDateChanged,
                 onShiftSelected = onShiftSelected,
@@ -258,6 +262,7 @@ private fun ReservationForm(
     date: LocalDate?,
     shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
+    optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
@@ -301,6 +306,7 @@ private fun ReservationForm(
         ) {
             AdditionalOptionsSelector(
                 options = options,
+                optionsSelected = optionsSelected,
                 onSelectOption = onAdditionalOptionSelected,
             )
         }
@@ -380,6 +386,7 @@ private fun ShiftSelector(
 @Composable
 private fun AdditionalOptionsSelector(
     options: List<AdditionalOption>,
+    optionsSelected: List<AdditionalOption>,
     onSelectOption: (AdditionalOption) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -388,8 +395,8 @@ private fun AdditionalOptionsSelector(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AdditionalOption.entries.forEach { option ->
-            val isSelected = option in options
+        options.forEach { option ->
+            val isSelected = option in optionsSelected
             FormChip(
                 text = stringResource(option.text),
                 isSelected = isSelected,

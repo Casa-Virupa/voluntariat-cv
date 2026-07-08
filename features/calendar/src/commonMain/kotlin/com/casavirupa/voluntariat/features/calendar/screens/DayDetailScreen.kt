@@ -279,11 +279,13 @@ private fun VolunteerShiftItem(
                         .padding(bottom = 8.dp),
                     style = MaterialTheme.typography.titleLarge,
                 )
-                IconButton(onClick = onClickDelete) {
-                    Icon(
-                        painter = painterResource(Res.drawable.ic_delete),
-                        contentDescription = null,
-                    )
+                if (volunteer.canBeDeleted) {
+                    IconButton(onClick = onClickDelete) {
+                        Icon(
+                            painter = painterResource(Res.drawable.ic_delete),
+                            contentDescription = null,
+                        )
+                    }
                 }
             }
             when (val volunteerType = volunteer.type) {

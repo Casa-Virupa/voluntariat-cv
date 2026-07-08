@@ -15,7 +15,7 @@ data class Volunteer(
 ) {
     fun calculateTotalToPay(): Int {
         val mealsTotal = meals.filter { it != Meal.Breakfast }.size * MEAL_PRICE
-        val sleepTotal = if (sleep) 20 else 0
+        val sleepTotal = if (sleep) SLEEP_PRICE else 0
         return mealsTotal + sleepTotal
     }
 
@@ -23,6 +23,7 @@ data class Volunteer(
 
     companion object {
         const val MEAL_PRICE = 8
+        const val SLEEP_PRICE = 10
     }
 }
 

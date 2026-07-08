@@ -73,8 +73,24 @@ class ReservationFormViewModel(
     private val _shifts = MutableStateFlow<List<ShiftUi>>(emptyList())
     val shifts: StateFlow<List<ShiftUi>> = _shifts.asStateFlow()
 
-    private val _additionalOptions = MutableStateFlow<List<AdditionalOption>>(emptyList())
-    val additionalOptions: StateFlow<List<AdditionalOption>> = _additionalOptions.asStateFlow()
+    private val _additionalOptionsSelected = MutableStateFlow<List<AdditionalOption>>(emptyList())
+    val additionalOptionsSelected: StateFlow<List<AdditionalOption>> =
+        _additionalOptionsSelected.asStateFlow()
+
+    val additionalOptions: StateFlow<List<AdditionalOption>> =
+        authRepository
+            .getCurrentUserFlow()
+            .map { user ->
+                if (user.isMember) {
+                    AdditionalOption.entries.toList()
+                } else {
+                    AdditionalOption.entries.filter { it != AdditionalOption.Sleep }.toList()
+                }
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = emptyList(),
+            )
 
     private val _shownModal = MutableStateFlow(ShownModal.None)
     val shownModal: StateFlow<ShownModal> = _shownModal.asStateFlow()
@@ -199,7 +215,7 @@ class ReservationFormViewModel(
     }
 
     fun onAdditionOptionSelected(option: AdditionalOption) {
-        _additionalOptions.update {
+        _additionalOptionsSelected.update {
             val mutableOptions = it.toMutableList()
             if (mutableOptions.contains(option)) {
                 mutableOptions.remove(option)
@@ -368,8 +384,8 @@ class ReservationFormViewModel(
             userId = UserId.Empty,
             date = date.value!!,
             shifts = shifts.value.toDomainModel(userSpecificArea),
-            meals = additionalOptions.value.getMeals(),
-            sleep = additionalOptions.value.contains(AdditionalOption.Sleep),
+            meals = additionalOptionsSelected.value.getMeals(),
+            sleep = additionalOptionsSelected.value.contains(AdditionalOption.Sleep),
         )
 
     private fun navigateBack() {
