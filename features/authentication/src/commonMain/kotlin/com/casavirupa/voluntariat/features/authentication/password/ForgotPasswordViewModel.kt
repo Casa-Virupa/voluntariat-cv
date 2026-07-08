@@ -6,6 +6,7 @@ import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
@@ -14,9 +15,19 @@ class ForgotPasswordViewModel(
     private val _email = MutableStateFlow("")
     val email: StateFlow<String> = _email.asStateFlow()
 
-    fun onResetPassword() {
+    fun onEmailChanged(email: String) {
+        _email.update { email }
+    }
+
+    fun resetPassword() {
         viewModelScope.launch {
-            authRepository.resetPassword(email.value)
+            authRepository
+                .resetPassword(email.value)
+                .onSuccess {
+
+                }.onFailure {
+
+                }
         }
     }
 }

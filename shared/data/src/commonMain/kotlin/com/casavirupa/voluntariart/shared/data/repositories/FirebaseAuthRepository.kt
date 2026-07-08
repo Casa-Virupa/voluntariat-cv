@@ -76,9 +76,10 @@ class FirebaseAuthRepository(
             auth.signOut()
         }
 
-    override suspend fun resetPassword(value: String) {
-        TODO("Not yet implemented")
-    }
+    override suspend fun resetPassword(email: String): Result<Unit> =
+        runCatching {
+            auth.sendPasswordResetEmail(email)
+        }
 
     private suspend fun findUserFromFirestore(user: FirebaseUser): Result<User> {
         val email = user.email

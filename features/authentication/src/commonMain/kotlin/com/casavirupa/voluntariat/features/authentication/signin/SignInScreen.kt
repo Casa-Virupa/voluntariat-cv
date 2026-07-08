@@ -58,6 +58,7 @@ import voluntariatcv.features.authentication.generated.resources.sign_in
 internal fun SignInScreen(
     onNavigateToCreatePassword: () -> Unit,
     onNavigateToSchedule: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     viewModel: SignInViewModel = koinViewModel()
 ) {
     val email by viewModel.email.collectAsStateWithLifecycle()
