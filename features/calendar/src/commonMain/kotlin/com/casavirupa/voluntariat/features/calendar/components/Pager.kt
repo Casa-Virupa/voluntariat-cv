@@ -1,7 +1,11 @@
 package com.casavirupa.voluntariat.features.calendar.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,6 +76,10 @@ internal fun <T> CalendarPager(
         verticalAlignment = Alignment.Top,
         pageSpacing = 8.dp,
         beyondViewportPageCount = 0,
+        flingBehavior = PagerDefaults.flingBehavior(
+            state = pagerState,
+            snapPositionalThreshold = 0.2f,
+        ),
     ) { page ->
         val reference = pageConverter(page)
         content(reference)
