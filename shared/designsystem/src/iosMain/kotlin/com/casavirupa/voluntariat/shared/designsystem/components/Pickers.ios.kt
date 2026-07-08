@@ -47,13 +47,11 @@ actual fun NativeDatePicker(
     date: LocalDate?,
     onDateSelected: (LocalDate?) -> Unit,
     onDismiss: () -> Unit,
-    notAvailableDays: List<LocalDate>,
     minDate: LocalDate?,
 ) {
-    val coordinator = remember(minDate, notAvailableDays) {
+    val coordinator = remember(minDate) {
         CalendarCoordinator(
             onDateChange = onDateSelected,
-            notAvailableDays = notAvailableDays,
             minDate = minDate,
         )
     }
@@ -105,7 +103,6 @@ actual fun NativeDatePicker(
 
 class CalendarCoordinator(
     private val onDateChange: (LocalDate?) -> Unit,
-    private val notAvailableDays: List<LocalDate>,
     private val minDate: LocalDate? = null,
 ) : NSObject(),
     UICalendarViewDelegateProtocol,
@@ -124,7 +121,6 @@ class CalendarCoordinator(
         canSelectDate: NSDateComponents?,
     ): Boolean {
         val date = canSelectDate?.toLocalDate() ?: return false
-        if (date in notAvailableDays) return false
         return minDate == null || date >= minDate
     }
 }

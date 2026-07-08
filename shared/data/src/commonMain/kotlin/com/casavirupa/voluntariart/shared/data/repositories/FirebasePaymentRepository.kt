@@ -38,11 +38,12 @@ class FirebasePaymentRepository(
             }
     }
 
-    override suspend fun addPaymentIfNotExist(
+    override suspend fun addPayment(
         userId: UserId,
-        yearMonth: YearMonth
+        yearMonth: YearMonth,
+        amount: Double,
     ): Result<Unit> = runCatching {
-        val existingPayments = firestore
+        val existingPayment = firestore
             .collection("payments")
             .where {
                 ("userId" equalTo userId.value) and
@@ -50,18 +51,30 @@ class FirebasePaymentRepository(
                 ("month" equalTo yearMonth.month.number)
             }
             .get()
+            .documents
+            .firstOrNull()
+            ?.let { doc ->
+                doc.data<FirebasePayment>().toDomainModel(doc.id)
+            }
 
-        if (existingPayments.documents.isEmpty()) {
+        if (existingPayment == null) {
+            val newPayment = FirebasePayment(
+                userId = userId.value,
+                year = yearMonth.year,
+                month = yearMonth.month.number,
+                paid = false,
+                amount = amount,
+            )
             firestore
                 .collection("payments")
-                .add(
-                    FirebasePayment(
-                        userId = userId.value,
-                        year = yearMonth.year,
-                        month = yearMonth.month.number,
-                        paid = false,
-                    )
-                )
+                .add(newPayment)
+        } else {
+            firestore
+                .collection("payments")
+                .document(existingPayment.id.value)
+                .updateFields {
+                    "amount" to (existingPayment.amount + amount)
+                }
         }
     }
 }
@@ -71,4 +84,5 @@ private fun FirebasePayment.toDomainModel(id: String) =
         id = PaymentId(id),
         yearMonth = YearMonth(year, month),
         paid = paid,
+        amount = amount,
     )

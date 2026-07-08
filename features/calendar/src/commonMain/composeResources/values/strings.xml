@@ -62,4 +62,7 @@
     <string name="existing_volunteer_dialog_description">You already have a volunteering on this day. If you want to add a new one, you must delete the existing one first.</string>
     <string name="accept">Accept</string>
     <string name="special_activities">Special activities</string>
+    <string name="not_available_volunteering_title">Volunteering not available</string>
+    <string name="not_available_volunteering_description">If you want to volunteer on this day, you must do it remotely.</string>
+    <string name="select_specific_area">Select the specific area</string>
 </resources>

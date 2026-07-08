@@ -12,7 +12,9 @@ data class Volunteer(
     val shifts: List<Shift>,
     val meals: List<Meal>,
     val sleep: Boolean,
-)
+) {
+    fun calculateTotalToPay() = 2.0
+}
 
 data class VolunteerId(val value: String) {
     companion object {
@@ -33,11 +35,6 @@ sealed class Shift {
         override val type: VolunteerType,
         override val timeRange: TimeRange,
     ) : Shift()
-
-    fun hasVolunteerType(type: VolunteerType) = when (this) {
-        is Morning -> this.type == type
-        is Afternoon -> this .type == type
-    }
 }
 
 data class TimeRange(

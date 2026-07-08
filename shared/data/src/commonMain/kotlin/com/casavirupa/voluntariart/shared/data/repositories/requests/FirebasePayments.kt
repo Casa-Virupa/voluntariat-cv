@@ -8,4 +8,5 @@ data class FirebasePayment(
     val year: Int,
     val month: Int,
     val paid: Boolean,
+    val amount: Double = 0.0,
 )

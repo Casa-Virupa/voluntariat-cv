@@ -62,4 +62,7 @@
     <string name="existing_volunteer_dialog_description">Ya tienes un voluntariado en este día. Si quieres añadir uno nuevo, debes eliminar el existente primero.</string>
     <string name="accept">Aceptar</string>
     <string name="special_activities">Actividades especiales</string>
+    <string name="not_available_volunteering_title">Voluntariado no disponible</string>
+    <string name="not_available_volunteering_description">Si quieres hacer voluntariado este día, tendrás que hacerlo en remoto.</string>
+    <string name="select_specific_area">Selecciona el área específica</string>
 </resources>

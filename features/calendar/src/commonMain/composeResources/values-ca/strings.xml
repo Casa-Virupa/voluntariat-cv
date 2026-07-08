@@ -62,4 +62,7 @@
     <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l\'existent primerament.</string>
     <string name="accept">Acceptar</string>
     <string name="special_activities">Activitats especials</string>
+    <string name="not_available_volunteering_title">Voluntariat no disponible</string>
+    <string name="not_available_volunteering_description">Si vols fer voluntariat aquest dia, l'hauràs de fer en remot.</string>
+    <string name="select_specific_area">Selecciona l'àrea específica</string>
 </resources>

@@ -5,7 +5,7 @@
     <string name="hours">Horas</string>
     <string name="days">Días</string>
     <string name="pending_payment">Pendiente de pago</string>
-    <string name="remember_payment">Recuerda realizar el pago del mes</string>
+    <string name="remember_payment">Recuerda realizar el pago del mes. En total son %1$d€</string>
     <string name="volunteerings_history">Historial de voluntariados</string>
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
