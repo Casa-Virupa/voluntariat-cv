@@ -1,0 +1,28 @@
+# crontab for the `voluntariat` user:  crontab -u voluntariat deploy/crontab
+#
+# TZ here as well as in the systemd unit: cron does not inherit the service environment, and
+# "12:10" has to mean local noon or the twice-daily promise is wrong for half the year.
+TZ=Europe/Madrid
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# Read the shared key without putting it in this file (crontabs are world-readable on some
+# systems). /etc/voluntariat/env is chmod 600.
+# --- sync, twice a day ---------------------------------------------------------
+#
+# 00:10 and 12:10, NOT on the hour. A sync firing exactly at the day rollover races the
+# `service_date <= today` boundary that splits "fets" from "previstos", and the ten-minute
+# offset also keeps it clear of every other cron job on the box.
+10 0,12 * * * set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 600 -X POST -H "X-Sync-Key: $SYNC_KEY" http://127.0.0.1:3000/api/sync >> /srv/voluntariat/data/sync.log 2>&1
+
+# --- nightly backup -----------------------------------------------------------
+#
+# 03:20, well clear of both syncs. `sqlite3 .backup` is the only safe way to copy a live
+# WAL database — `cp` of the .db file alone loses whatever is still in the -wal.
+20 3 * * * /srv/voluntariat/current/deploy/backup.sh >> /srv/voluntariat/data/backup.log 2>&1
+
+# --- weekly full resync -------------------------------------------------------
+#
+# The windowed sync only notices deletions inside the window it read, so a booking deleted
+# a year later would stay in the mirror forever. Sunday 04:10 catches those.
+10 4 * * 0 set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 1800 -X POST -H "X-Sync-Key: $SYNC_KEY" 'http://127.0.0.1:3000/api/sync?full=1' >> /srv/voluntariat/data/sync.log 2>&1

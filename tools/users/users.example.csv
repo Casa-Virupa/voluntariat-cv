@@ -1,0 +1,5 @@
+name,email,role,volunteer_type,specific_areas,is_member,password
+Anna Puig,anna.puig@example.cat,volunteer,habitual,kitchen;temple,no,
+Marc Solé,marc.sole@example.cat,volunteer,mitra,gardening;maintenance;exterior,yes,
+Laia Ferrer,laia.ferrer@example.cat,area_responsible,,communication,yes,
+Jordi Roca,jordi.roca@example.cat,coordination_team,,,yes,TempPass2026

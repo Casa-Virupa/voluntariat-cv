@@ -1,0 +1,13 @@
+{
+  "name": "voluntariat-users-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Admin CLI: create Firebase Auth users + their users/{uid} Firestore doc in one step. Not part of the app build.",
+  "scripts": {
+    "add": "node add-user.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.6.0"
+  }
+}

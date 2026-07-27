@@ -1,0 +1,65 @@
+# /etc/systemd/system/voluntariat.service
+#
+#   systemctl daemon-reload && systemctl enable --now voluntariat
+#
+# ONE PROCESS, DELIBERATELY. SQLite in WAL mode tolerates many readers and one writer in a
+# single process; two Node processes on the same file (a PM2 cluster, a second unit, a stray
+# `npm start` in a shell) can interleave writes during a sync and corrupt the database.
+# There is no clustering to add later — the load is a dozen coordinators.
+
+[Unit]
+Description=Panell de voluntariat (Casa Virupa)
+Documentation=file:///srv/voluntariat/current/deploy/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=voluntariat
+Group=voluntariat
+
+# `current` is a symlink to the active release, so a rollback is one `ln -sfn` + restart.
+WorkingDirectory=/srv/voluntariat/current
+
+# TZ must be Madrid in the process too, not only in the crontab: `service_date`, the
+# done/pending split and every "which month is this" decision are computed here.
+Environment=NODE_ENV=production
+Environment=TZ=Europe/Madrid
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+
+# Secrets live outside the release directory so a deploy cannot overwrite them and a
+# rollback cannot resurrect an old copy. chmod 600, owned by voluntariat.
+EnvironmentFile=/etc/voluntariat/env
+
+# The standalone server. `next start` is NOT used: the standalone build has its own entry
+# point and does not need the full node_modules tree.
+ExecStart=/usr/bin/node server.js
+
+Restart=always
+RestartSec=3
+# The sync can hold a write transaction for a few seconds; never kill mid-transaction.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=voluntariat
+
+# --- hardening ---------------------------------------------------------------
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+# The only writable paths: the database volume and the log/tmp dirs systemd manages.
+ReadWritePaths=/srv/voluntariat/data
+
+[Install]
+WantedBy=multi-user.target
