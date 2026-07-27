@@ -96,8 +96,8 @@ export const SETTLEMENT_LABEL: Record<SettlementState, string> = {
 export const SETTLEMENT_CLASS: Record<SettlementState, string> = {
   settled: 'bg-ok/10 text-ok ring-ok/20',
   owing: 'bg-bad/10 text-bad ring-bad/20',
-  credit: 'bg-brand-50 text-brand-700 ring-brand-200',
-  nothing: 'bg-slate-50 text-slate-400 ring-slate-200',
+  credit: 'bg-brand-100 text-brand-700 ring-brand-200',
+  nothing: 'bg-brand-50 text-ink-faint ring-line',
 }
 
 /**

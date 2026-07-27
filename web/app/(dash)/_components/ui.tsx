@@ -32,8 +32,8 @@ export function CardHeader({
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-3.5">
       <div>
-        <h2 className="text-sm font-semibold text-brand-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+        <h2 className="text-[15px] font-medium text-brand-900">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>}
       </div>
       {actions && <div className="ml-auto flex items-center gap-2">{actions}</div>}
     </div>
@@ -60,16 +60,16 @@ export function Tile({
 
   return (
     <div className="rounded-xl bg-surface px-4 py-3 ring-1 ring-line">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{label}</p>
       <p className={`mt-1 text-xl font-semibold tabular-nums ${toneClass}`}>{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>}
     </div>
   )
 }
 
 export function Badge({
   children,
-  className = 'bg-slate-100 text-slate-600 ring-slate-200',
+  className = 'bg-canvas text-ink-soft ring-line',
   title,
 }: {
   children: React.ReactNode
@@ -104,8 +104,8 @@ export function EmptyState({
 }) {
   return (
     <div className="px-6 py-14 text-center">
-      <p className="text-sm font-medium text-slate-600">{title}</p>
-      {children && <div className="mx-auto mt-2 max-w-md text-xs text-slate-400">{children}</div>}
+      <p className="text-sm font-medium text-ink-soft">{title}</p>
+      {children && <div className="mx-auto mt-2 max-w-md text-xs text-ink-faint">{children}</div>}
     </div>
   )
 }
@@ -134,24 +134,24 @@ export function PeriodNav({
         <Link
           href={prevHref}
           aria-label="Període anterior"
-          className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+          className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
         >
           ‹
         </Link>
-        <span className="min-w-[9rem] bg-surface px-3 py-1.5 text-center text-sm font-semibold text-brand-900">
+        <span className="min-w-[9rem] bg-surface px-3 py-1.5 text-center font-display text-sm font-medium text-brand-900">
           {label}
         </span>
         <Link
           href={nextHref}
           aria-label="Període següent"
-          className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+          className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
         >
           ›
         </Link>
       </div>
       <Link
         href={todayHref}
-        className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-slate-500 ring-1 ring-line transition hover:text-brand-700"
+        className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-ink-soft ring-1 ring-line transition hover:text-brand-700"
       >
         Avui
       </Link>
@@ -211,13 +211,13 @@ function PanelHeader({
   return (
     <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-line bg-surface px-5 py-3.5">
       <div>
-        <h2 className="text-sm font-semibold text-brand-900">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+        <h2 className="text-[15px] font-medium text-brand-900">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-xs text-ink-soft">{subtitle}</p>}
       </div>
       <Link
         href={closeHref}
         aria-label="Tanca"
-        className="ml-auto rounded-md px-2 py-0.5 text-slate-400 transition hover:bg-canvas hover:text-slate-700"
+        className="ml-auto rounded-md px-2 py-0.5 text-ink-faint transition hover:bg-canvas hover:text-ink"
       >
         ✕
       </Link>
@@ -235,8 +235,8 @@ export function DataRow({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5 text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-right font-medium tabular-nums text-slate-800">{children}</span>
+      <span className="text-ink-soft">{label}</span>
+      <span className="text-right font-medium tabular-nums text-ink-strong">{children}</span>
     </div>
   )
 }
@@ -249,9 +249,11 @@ export function Notice({
   children: React.ReactNode
 }) {
   const cls = {
-    info: 'bg-brand-50 text-brand-700 ring-brand-200',
-    warn: 'bg-warn/10 text-amber-800 ring-warn/30',
-    bad: 'bg-bad/10 text-red-800 ring-bad/30',
+    // A notice sits on the cream canvas, not on a card, so the info tone needs a warmer
+    // hairline than `line` to have an edge at all.
+    info: 'bg-brand-100 text-brand-700 ring-brand-500/25',
+    warn: 'bg-warn/10 text-warn-ink ring-warn/30',
+    bad: 'bg-bad/10 text-bad-ink ring-bad/30',
   }[tone]
   return <div className={`rounded-xl px-4 py-3 text-xs ring-1 ring-inset ${cls}`}>{children}</div>
 }

@@ -19,15 +19,15 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-2xl bg-surface p-8 shadow-sm ring-1 ring-line">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-brand-500 text-lg font-semibold text-white">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-brand-500 text-lg font-semibold text-ink-strong">
             CV
           </div>
-          <h1 className="text-xl font-semibold text-brand-900">Voluntariat Casa Virupa</h1>
-          <p className="mt-1 text-sm text-slate-500">Panell de coordinació</p>
+          <h1 className="text-2xl font-medium text-brand-900">Voluntariat Casa Virupa</h1>
+          <p className="mt-1 text-sm text-ink-soft">Panell de coordinació</p>
         </div>
 
         {message && (
-          <p className="mb-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+          <p className="mb-6 rounded-lg bg-bad/5 px-4 py-3 text-sm text-bad-ink ring-1 ring-bad/15">
             {message}
           </p>
         )}
@@ -43,13 +43,13 @@ export default async function LoginPage({
         >
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-3 rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-brand-700"
+            className="flex w-full items-center justify-center gap-3 rounded-lg bg-brand-700 px-4 py-3 text-sm font-medium uppercase tracking-[0.08em] text-white transition hover:bg-brand-600"
           >
             Entra amb Google
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-ink-faint">
           Només els comptes autoritzats hi poden accedir.
         </p>
       </div>

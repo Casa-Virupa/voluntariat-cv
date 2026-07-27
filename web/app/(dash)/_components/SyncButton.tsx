@@ -56,14 +56,14 @@ export function SyncButton({ full = false, label }: { full?: boolean; label?: st
         disabled={working}
         className={
           full
-            ? 'rounded-lg px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-line transition hover:bg-canvas disabled:opacity-50'
-            : 'rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-600 disabled:opacity-50'
+            ? 'rounded-lg px-3 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-line transition hover:bg-canvas disabled:opacity-50'
+            : 'rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.08em] text-white transition hover:bg-brand-600 disabled:opacity-50'
         }
       >
         {working ? 'Sincronitzant…' : (label ?? 'Sincronitza ara')}
       </button>
       {message && (
-        <span className={`text-xs ${failed ? 'text-bad' : 'text-slate-500'}`}>{message}</span>
+        <span className={`text-xs ${failed ? 'text-bad' : 'text-ink-soft'}`}>{message}</span>
       )}
     </span>
   )

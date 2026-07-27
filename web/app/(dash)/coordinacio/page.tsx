@@ -40,12 +40,12 @@ import { addLedgerEntryAction, closePeriodAction, voidLedgerEntryAction } from '
 export const dynamic = 'force-dynamic'
 
 const thClass =
-  'sticky top-0 z-10 bg-surface px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400'
+  'sticky top-0 z-10 bg-surface px-3 py-2 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint'
 const tdClass = 'border-t border-line px-3 py-2 align-middle'
 const inputClass =
-  'rounded-lg border-0 bg-canvas px-2.5 py-1.5 text-xs text-slate-800 ring-1 ring-line focus:ring-2 focus:ring-brand-500'
+  'rounded-lg border-0 bg-canvas px-2.5 py-1.5 text-xs text-ink-strong ring-1 ring-line focus:ring-2 focus:ring-brand-500'
 const buttonClass =
-  'rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-600'
+  'rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.08em] text-white transition hover:bg-brand-600'
 
 export default async function CoordinacioPage({
   searchParams,
@@ -84,8 +84,8 @@ export default async function CoordinacioPage({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-brand-900">Coordinació</h1>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h1 className="text-xl font-medium text-brand-900">Coordinació</h1>
+          <p className="mt-0.5 text-xs text-ink-soft">
             Hores reals per àrea contra el compromís, i els àpats i pernoctes pendents de pagar.
           </p>
         </div>
@@ -95,7 +95,7 @@ export default async function CoordinacioPage({
             <Link
               href={href(periodParams(prev))}
               aria-label="Període anterior"
-              className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+              className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
             >
               ‹
             </Link>
@@ -105,7 +105,7 @@ export default async function CoordinacioPage({
             <Link
               href={href(periodParams(next))}
               aria-label="Període següent"
-              className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+              className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
             >
               ›
             </Link>
@@ -116,8 +116,8 @@ export default async function CoordinacioPage({
               href={href({ p: 'month', m: String(Number(today.slice(5, 7))), t: null, y: today.slice(0, 4) })}
               className={`px-2.5 py-1.5 transition ${
                 filters.period.kind === 'month'
-                  ? 'bg-brand-500 text-white'
-                  : 'bg-surface text-slate-500 hover:bg-canvas'
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface text-ink-soft hover:bg-canvas'
               }`}
             >
               Mes
@@ -131,8 +131,8 @@ export default async function CoordinacioPage({
               })}
               className={`px-2.5 py-1.5 transition ${
                 filters.period.kind === 'quarter'
-                  ? 'bg-brand-500 text-white'
-                  : 'bg-surface text-slate-500 hover:bg-canvas'
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-surface text-ink-soft hover:bg-canvas'
               }`}
             >
               Trimestre
@@ -141,7 +141,7 @@ export default async function CoordinacioPage({
 
           <a
             href={`/api/export${coordinationQuery(filters, { voluntari: null })}`}
-            className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-slate-600 ring-1 ring-line transition hover:text-brand-700"
+            className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-ink-soft ring-1 ring-line transition hover:text-brand-700"
           >
             Excel
           </a>
@@ -224,7 +224,7 @@ export default async function CoordinacioPage({
                     <tr
                       key={row.uid}
                       className={`transition hover:bg-canvas ${
-                        filters.volunteer === row.uid ? 'bg-brand-50' : ''
+                        filters.volunteer === row.uid ? 'bg-brand-100' : ''
                       }`}
                     >
                       <td className={`${tdClass} sticky left-0 z-10 bg-inherit`}>
@@ -233,15 +233,15 @@ export default async function CoordinacioPage({
                           scroll={false}
                           className="block"
                         >
-                          <span className="font-medium text-slate-800">{row.name}</span>
-                          <span className="ml-1.5 text-[11px] text-slate-400">
+                          <span className="font-medium text-ink-strong">{row.name}</span>
+                          <span className="ml-1.5 text-[11px] text-ink-faint">
                             {row.volunteerType
                               ? VOLUNTEER_TYPE_LABEL[row.volunteerType as 'mitra' | 'habitual']
                               : '—'}
                             {row.isMember ? ' · soci' : ''}
                           </span>
                           {row.userMissing && (
-                            <Badge className="ml-1.5 bg-warn/10 text-amber-800 ring-warn/30">
+                            <Badge className="ml-1.5 bg-warn/10 text-warn-ink ring-warn/30">
                               sense fitxa
                             </Badge>
                           )}
@@ -254,7 +254,7 @@ export default async function CoordinacioPage({
                         </td>
                       ))}
 
-                      <td className={`${tdClass} bg-brand-50/40`}>
+                      <td className={`${tdClass} bg-brand-100/50`}>
                         <ProgressCell progress={row.totalProgress} strong />
                       </td>
 
@@ -269,13 +269,13 @@ export default async function CoordinacioPage({
                           <td className={`${tdClass} text-right`}>
                             <span
                               className={`font-medium tabular-nums ${
-                                row.balance.owedTotalCents > 0 ? 'text-bad' : 'text-slate-600'
+                                row.balance.owedTotalCents > 0 ? 'text-bad' : 'text-ink-soft'
                               }`}
                             >
                               {formatCents(row.balance.owedTotalCents)}
                             </span>
                             {row.balance.carryInCents !== 0 && (
-                              <span className="block text-[10px] text-slate-400">
+                              <span className="block text-[10px] text-ink-faint">
                                 anterior {formatCents(row.balance.carryInCents)}
                               </span>
                             )}
@@ -287,7 +287,7 @@ export default async function CoordinacioPage({
                             {row.appPaid !== null &&
                               row.appPaid !== (row.settlement === 'settled') && (
                                 <Badge
-                                  className="ml-1 bg-warn/10 text-amber-800 ring-warn/30"
+                                  className="ml-1 bg-warn/10 text-warn-ink ring-warn/30"
                                   title={`L’app diu ${row.appPaid ? 'pagat' : 'pendent'} amb ${formatCents(
                                     row.appAmountCents ?? 0,
                                   )}`}
@@ -296,7 +296,7 @@ export default async function CoordinacioPage({
                                 </Badge>
                               )}
                             {closed.has(row.uid) && (
-                              <Badge className="ml-1 bg-slate-100 text-slate-500 ring-slate-200">
+                              <Badge className="ml-1 bg-canvas text-ink-soft ring-line">
                                 tancat
                               </Badge>
                             )}
@@ -310,7 +310,7 @@ export default async function CoordinacioPage({
                   <tr className="bg-canvas font-medium">
                     <td className={`${tdClass} sticky left-0 z-10 bg-canvas`}>Total</td>
                     {table.areaColumns.map((area) => (
-                      <td key={area} className={`${tdClass} tabular-nums text-slate-600`}>
+                      <td key={area} className={`${tdClass} tabular-nums text-ink-soft`}>
                         {formatMinutes(table.totals.minutesByArea.get(area) ?? 0)}
                       </td>
                     ))}
@@ -319,14 +319,14 @@ export default async function CoordinacioPage({
                     </td>
                     {table.showPayments && (
                       <>
-                        <td className={`${tdClass} tabular-nums text-slate-600`}>
+                        <td className={`${tdClass} tabular-nums text-ink-soft`}>
                           {(table.totals.items.get('lunch')?.done ?? 0) +
                             (table.totals.items.get('dinner')?.done ?? 0)}
                         </td>
-                        <td className={`${tdClass} tabular-nums text-slate-600`}>
+                        <td className={`${tdClass} tabular-nums text-ink-soft`}>
                           {table.totals.items.get('sleep')?.done ?? 0}
                         </td>
-                        <td className={`${tdClass} text-right tabular-nums text-slate-800`}>
+                        <td className={`${tdClass} text-right tabular-nums text-ink-strong`}>
                           {formatCents(table.totals.owedTotalCents)}
                         </td>
                         <td className={tdClass} />
@@ -359,7 +359,7 @@ export default async function CoordinacioPage({
         )}
       </div>
 
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] text-ink-faint">
         Les hores són reals (fi − inici de cada torn), com a l’historial de l’app. La pantalla de
         perfil de l’app compta 4 h fixes per torn, així que pot no coincidir. Un compromís marcat
         amb ~ està proratejat des d’un període diferent i mai es marca com a no complert.
@@ -385,14 +385,14 @@ function periodParams(p: { kind: string; year: number; index: number }) {
 // --- cells -------------------------------------------------------------------
 
 function ProgressCell({ progress, strong = false }: { progress?: Progress; strong?: boolean }) {
-  if (!progress) return <span className="text-slate-300">—</span>
+  if (!progress) return <span className="text-ink-ghost">—</span>
 
   const { doneMinutes, commitment, ratio, status } = progress
 
   if (!commitment) {
     return (
       <span
-        className={`tabular-nums ${strong ? 'font-semibold text-brand-700' : 'text-slate-600'}`}
+        className={`tabular-nums ${strong ? 'font-semibold text-brand-700' : 'text-ink-soft'}`}
         title="Sense compromís definit per aquesta àrea"
       >
         {doneMinutes === 0 ? '—' : formatMinutes(doneMinutes)}
@@ -406,12 +406,12 @@ function ProgressCell({ progress, strong = false }: { progress?: Progress; stron
       <span className={`tabular-nums ${strong ? 'font-semibold' : ''} ${STATUS_TEXT_CLASS[status]}`}>
         {formatMinutes(doneMinutes)}
       </span>
-      <span className="tabular-nums text-slate-400">
+      <span className="tabular-nums text-ink-faint">
         /{commitment.scaled ? '~' : ''}
         {formatMinutes(commitment.targetMinutes)}
       </span>
       {ratio !== null && (
-        <span className="ml-auto text-[10px] tabular-nums text-slate-400">
+        <span className="ml-auto text-[10px] tabular-nums text-ink-faint">
           {Math.round(ratio * 100)}%
         </span>
       )}
@@ -425,23 +425,23 @@ function MealCell({ row }: { row: VolunteerRow }) {
   const done = (lunch?.done ?? 0) + (dinner?.done ?? 0)
   const upcoming = (lunch?.upcoming ?? 0) + (dinner?.upcoming ?? 0)
 
-  if (done === 0 && upcoming === 0) return <span className="text-slate-300">—</span>
+  if (done === 0 && upcoming === 0) return <span className="text-ink-ghost">—</span>
   return (
-    <span className="tabular-nums text-slate-700" title="Fets · previstos">
+    <span className="tabular-nums text-ink" title="Fets · previstos">
       {done}
-      {upcoming > 0 && <span className="text-slate-400"> + {upcoming}</span>}
+      {upcoming > 0 && <span className="text-ink-faint"> + {upcoming}</span>}
     </span>
   )
 }
 
 function ItemCell({ counts }: { counts?: { done: number; upcoming: number } }) {
   if (!counts || (counts.done === 0 && counts.upcoming === 0)) {
-    return <span className="text-slate-300">—</span>
+    return <span className="text-ink-ghost">—</span>
   }
   return (
-    <span className="tabular-nums text-slate-700">
+    <span className="tabular-nums text-ink">
       {counts.done}
-      {counts.upcoming > 0 && <span className="text-slate-400"> + {counts.upcoming}</span>}
+      {counts.upcoming > 0 && <span className="text-ink-faint"> + {counts.upcoming}</span>}
     </span>
   )
 }
@@ -468,10 +468,10 @@ function VolunteerPanel({
   return (
     <div className="divide-y divide-line text-sm">
       <div className="px-5 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Hores</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">Hores</p>
         <div className="mt-1">
           {[...row.progressByArea.entries()].length === 0 && (
-            <p className="text-xs text-slate-400">Cap hora en aquest període.</p>
+            <p className="text-xs text-ink-faint">Cap hora en aquest període.</p>
           )}
           {[...row.progressByArea.entries()].map(([area, p]) => (
             <DataRow key={area} label={area === AREA_GENERAL ? 'Vol. general' : areaLabel(area)}>
@@ -488,20 +488,20 @@ function VolunteerPanel({
       </div>
 
       <div className="px-5 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
           Dies ({detail.days.length})
         </p>
         <ul className="mt-1.5 space-y-1">
           {detail.days.map((d) => (
             <li key={d.serviceDate} className="flex items-baseline gap-2 text-xs">
-              <span className="tabular-nums text-slate-500">{d.serviceDate.slice(5)}</span>
-              <span className="tabular-nums font-medium text-slate-700">
+              <span className="tabular-nums text-ink-soft">{d.serviceDate.slice(5)}</span>
+              <span className="tabular-nums font-medium text-ink">
                 {formatMinutes(d.minutes)}
               </span>
-              <span className="truncate text-slate-400">
+              <span className="truncate text-ink-faint">
                 {d.areas.map((a) => (a === AREA_GENERAL ? 'general' : areaLabel(a))).join(', ')}
               </span>
-              <span className="ml-auto shrink-0 text-slate-400">
+              <span className="ml-auto shrink-0 text-ink-faint">
                 {d.hasLunch && 'D'}
                 {d.hasDinner && 'S'}
                 {d.sleep && 'P'}
@@ -513,14 +513,14 @@ function VolunteerPanel({
               )}
             </li>
           ))}
-          {detail.days.length === 0 && <li className="text-xs text-slate-400">Cap dia.</li>}
+          {detail.days.length === 0 && <li className="text-xs text-ink-faint">Cap dia.</li>}
         </ul>
       </div>
 
       {showPayments && (
         <>
           <div className="px-5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
               Àpats i pernoctes
             </p>
             <div className="mt-1">
@@ -534,9 +534,9 @@ function VolunteerPanel({
                   <DataRow key={item} label={ITEM_LABEL[item]}>
                     {counts.done}
                     {counts.upcoming > 0 && (
-                      <span className="text-slate-400"> + {counts.upcoming} previstos</span>
+                      <span className="text-ink-faint"> + {counts.upcoming} previstos</span>
                     )}{' '}
-                    <span className="text-slate-400">· {formatCents(cents)}</span>
+                    <span className="text-ink-faint">· {formatCents(cents)}</span>
                   </DataRow>
                 )
               })}
@@ -561,7 +561,7 @@ function VolunteerPanel({
                 </DataRow>
                 {row.appAmountCents !== null && (
                   <DataRow label="A l’app (payments.amount)">
-                    <span className="text-slate-400">
+                    <span className="text-ink-faint">
                       {formatCents(row.appAmountCents)} · {row.appPaid ? 'pagat' : 'pendent'}
                     </span>
                   </DataRow>
@@ -571,7 +571,7 @@ function VolunteerPanel({
           </div>
 
           <div className="px-5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
               Registra un pagament o un ajust
             </p>
             <form action={addLedgerEntryAction} className="mt-2 space-y-2">
@@ -616,7 +616,7 @@ function VolunteerPanel({
 
               <input name="note" placeholder="Nota (opcional)" className={`${inputClass} w-full`} />
 
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-ink-faint">
                 Un import positiu redueix el que deu. Per carregar-li alguna cosa extra, fes servir
                 un ajust negatiu (per exemple −5).
               </p>
@@ -627,17 +627,17 @@ function VolunteerPanel({
           </div>
 
           <div className="px-5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
               Historial de pagaments
             </p>
             <ul className="mt-1.5 space-y-1.5">
               {detail.ledger.length === 0 && (
-                <li className="text-xs text-slate-400">Cap apunt registrat mai.</li>
+                <li className="text-xs text-ink-faint">Cap apunt registrat mai.</li>
               )}
               {detail.ledger.map((entry) => (
                 <li
                   key={entry.id}
-                  className={`text-xs ${entry.voided || entry.voidsId !== null ? 'text-slate-400' : ''}`}
+                  className={`text-xs ${entry.voided || entry.voidsId !== null ? 'text-ink-faint' : ''}`}
                 >
                   <div className="flex items-baseline gap-2">
                     <span className="tabular-nums">{entry.effectiveDate}</span>
@@ -645,7 +645,7 @@ function VolunteerPanel({
                       {LEDGER_KIND_LABEL[entry.kind] ?? entry.kind}
                     </span>
                     {entry.method && (
-                      <span className="text-slate-400">
+                      <span className="text-ink-faint">
                         {LEDGER_METHOD_LABEL[entry.method] ?? entry.method}
                       </span>
                     )}
@@ -657,8 +657,8 @@ function VolunteerPanel({
                       {formatCents(entry.amountCents)}
                     </span>
                   </div>
-                  {entry.note && <p className="text-slate-400">{entry.note}</p>}
-                  <div className="flex items-baseline gap-2 text-[10px] text-slate-400">
+                  {entry.note && <p className="text-ink-faint">{entry.note}</p>}
+                  <div className="flex items-baseline gap-2 text-[10px] text-ink-faint">
                     <span>{entry.createdBy}</span>
                     {entry.voided && <span>· anul·lat</span>}
                     {!entry.voided && entry.voidsId === null && (
@@ -678,18 +678,18 @@ function VolunteerPanel({
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-[11px] text-slate-400">
+            <p className="mt-2 text-[11px] text-ink-faint">
               Els apunts no s’editen ni s’esborren: anul·lar-ne un afegeix el seu contrari, de
               manera que l’historial sempre explica què va passar.
             </p>
           </div>
 
           <div className="px-5 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
               Tancament del període
             </p>
             {closed ? (
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-ink-soft">
                 Tancat amb {formatCents(closed.totalCents)} congelats. Un canvi de preu ja no mou
                 aquest període.
               </p>
@@ -700,13 +700,13 @@ function VolunteerPanel({
                 <input type="hidden" name="year" value={period.year} />
                 <input type="hidden" name="index" value={period.index} />
                 <input type="hidden" name="returnTo" value={returnTo} />
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-ink-faint">
                   Congela els càrrecs de {period.label} ({formatCents(row.balance.chargesCents)}) per
                   si més endavant es corregeix un preu. No es pot desfer des d’aquí.
                 </p>
                 <button
                   type="submit"
-                  className="rounded-lg px-3 py-1.5 text-xs text-slate-600 ring-1 ring-line transition hover:bg-canvas"
+                  className="rounded-lg px-3 py-1.5 text-xs text-ink-soft ring-1 ring-line transition hover:bg-canvas"
                 >
                   Tanca el període
                 </button>
@@ -731,7 +731,7 @@ function FilterBar({
   canFilterOwn: boolean
 }) {
   const selectClass =
-    'rounded-lg border-0 bg-surface px-2.5 py-1.5 text-xs text-slate-700 ring-1 ring-line focus:ring-2 focus:ring-brand-500'
+    'rounded-lg border-0 bg-surface px-2.5 py-1.5 text-xs text-ink ring-1 ring-line focus:ring-2 focus:ring-brand-500'
 
   return (
     <AutoSubmitForm className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface p-3 ring-1 ring-line">
@@ -743,7 +743,7 @@ function FilterBar({
         <input type="hidden" name="t" value={filters.period.index} />
       )}
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         Àrea
         <select name="area" defaultValue={filters.area ?? ''} className={selectClass}>
           <option value="">Totes</option>
@@ -755,7 +755,7 @@ function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         Tipus
         <select name="tipus" defaultValue={filters.types.join(',')} className={selectClass}>
           <option value="">Tots</option>
@@ -764,7 +764,7 @@ function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         <input
           type="checkbox"
           name="tots"
@@ -776,7 +776,7 @@ function FilterBar({
       </label>
 
       {canFilterOwn && (
-        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+        <label className="flex items-center gap-1.5 text-xs text-ink-soft">
           <input
             type="checkbox"
             name="meus"

@@ -60,14 +60,14 @@ const SECTIONS = [
 ] as const
 
 const inputClass =
-  'rounded-lg border-0 bg-canvas px-2.5 py-1.5 text-xs text-slate-800 ring-1 ring-line focus:ring-2 focus:ring-brand-500'
+  'rounded-lg border-0 bg-canvas px-2.5 py-1.5 text-xs text-ink-strong ring-1 ring-line focus:ring-2 focus:ring-brand-500'
 const buttonClass =
-  'rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-600'
+  'rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.08em] text-white transition hover:bg-brand-600'
 const ghostButtonClass =
-  'rounded-lg px-2 py-1 text-xs text-slate-500 ring-1 ring-line transition hover:bg-canvas hover:text-slate-800'
+  'rounded-lg px-2 py-1 text-xs text-ink-soft ring-1 ring-line transition hover:bg-canvas hover:text-ink-strong'
 const thClass =
-  'border-b border-line px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wide text-slate-400'
-const tdClass = 'border-b border-line px-3 py-2 text-slate-700'
+  'border-b border-line px-3 py-2 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint'
+const tdClass = 'border-b border-line px-3 py-2 text-ink'
 
 export default async function ConfiguracioPage({
   searchParams,
@@ -84,8 +84,8 @@ export default async function ConfiguracioPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-semibold text-brand-900">Configuració</h1>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <h1 className="text-xl font-medium text-brand-900">Configuració</h1>
+        <p className="mt-0.5 text-xs text-ink-soft">
           Preus, compromisos i accessos són propietat del panell: no existeixen a l’app i
           sobreviuen a qualsevol resincronització.
         </p>
@@ -98,8 +98,8 @@ export default async function ConfiguracioPage({
             href={`/configuracio?seccio=${s.key}`}
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
               s.key === section
-                ? 'bg-brand-500 text-white'
-                : 'text-slate-600 hover:bg-canvas hover:text-brand-700'
+                ? 'bg-brand-700 text-white'
+                : 'text-ink-soft hover:bg-canvas hover:text-brand-700'
             }`}
           >
             {s.label}
@@ -182,7 +182,7 @@ async function PricesSection({ today }: { today: string }) {
               {rules.map((r) => {
                 const current = r.validFrom <= today && (r.validTo === null || today < r.validTo)
                 return (
-                  <tr key={r.id} className={current ? '' : 'text-slate-400'}>
+                  <tr key={r.id} className={current ? '' : 'text-ink-faint'}>
                     <td className={`${tdClass} font-medium`}>
                       {ITEM_LABEL[r.item as keyof typeof ITEM_LABEL] ?? r.item}
                     </td>
@@ -308,7 +308,7 @@ async function CommitmentsSection({ today }: { today: string }) {
               {rules.map((r) => {
                 const current = r.validFrom <= today && (r.validTo === null || today < r.validTo)
                 return (
-                  <tr key={r.id} className={current ? '' : 'text-slate-400'}>
+                  <tr key={r.id} className={current ? '' : 'text-ink-faint'}>
                     <td className={tdClass}>
                       {r.scopeKind === 'global'
                         ? 'Global'
@@ -449,7 +449,7 @@ async function AdminsSection() {
             </thead>
             <tbody>
               {rows.map((a) => (
-                <tr key={a.email} className={a.disabledAt ? 'text-slate-400' : ''}>
+                <tr key={a.email} className={a.disabledAt ? 'text-ink-faint' : ''}>
                   <td className={`${tdClass} font-medium`}>{a.email}</td>
                   <td className={tdClass}>{a.displayName ?? '—'}</td>
                   <td className={tdClass}>
@@ -457,14 +457,14 @@ async function AdminsSection() {
                   </td>
                   <td className={tdClass}>
                     {a.role === 'coordinator' ? (
-                      <span className="text-slate-400">totes</span>
+                      <span className="text-ink-faint">totes</span>
                     ) : (
                       a.areas.map(areaLabel).join(', ') || '—'
                     )}
                   </td>
                   <td className={tdClass}>
                     {a.disabledAt ? (
-                      <Badge className="bg-slate-100 text-slate-500 ring-slate-200">Retirat</Badge>
+                      <Badge className="bg-canvas text-ink-soft ring-line">Retirat</Badge>
                     ) : (
                       <Badge className="bg-ok/10 text-ok ring-ok/20">Actiu</Badge>
                     )}
@@ -516,12 +516,12 @@ async function AdminsSection() {
           </div>
 
           <fieldset>
-            <legend className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            <legend className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">
               Àrees
             </legend>
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3 lg:grid-cols-4">
               {AREA_CODES.map((a) => (
-                <label key={a} className="flex items-center gap-1.5 text-xs text-slate-600">
+                <label key={a} className="flex items-center gap-1.5 text-xs text-ink-soft">
                   <input
                     type="checkbox"
                     name="areas"
@@ -594,7 +594,7 @@ async function SyncSection() {
                         r.status === 'ok'
                           ? 'bg-ok/10 text-ok ring-ok/20'
                           : r.status === 'running'
-                            ? 'bg-brand-50 text-brand-700 ring-brand-200'
+                            ? 'bg-brand-100 text-brand-700 ring-brand-200'
                             : 'bg-bad/10 text-bad ring-bad/20'
                       }
                     >
@@ -641,16 +641,16 @@ async function SyncSection() {
       <Card>
         <CardHeader title="Últims canvis" subtitle="Qui ha canviat què, i quan." />
         <ul className="divide-y divide-line text-xs">
-          {audit.length === 0 && <li className="px-5 py-3 text-slate-400">Cap canvi registrat.</li>}
+          {audit.length === 0 && <li className="px-5 py-3 text-ink-faint">Cap canvi registrat.</li>}
           {audit.map((a) => (
             <li key={a.id} className="flex items-baseline gap-3 px-5 py-2">
-              <span className="tabular-nums text-slate-400">{formatInstant(a.at)}</span>
-              <span className="font-medium text-slate-700">{a.action}</span>
-              <span className="text-slate-500">
+              <span className="tabular-nums text-ink-faint">{formatInstant(a.at)}</span>
+              <span className="font-medium text-ink">{a.action}</span>
+              <span className="text-ink-soft">
                 {a.entity}
                 {a.entityId ? ` · ${a.entityId}` : ''}
               </span>
-              <span className="ml-auto text-slate-400">{a.actor}</span>
+              <span className="ml-auto text-ink-faint">{a.actor}</span>
             </li>
           ))}
         </ul>
@@ -712,7 +712,7 @@ async function DataQualitySection() {
                 <tr key={a.bit}>
                   <td className={`${tdClass} font-medium`}>{a.label}</td>
                   <td className={`${tdClass} text-right tabular-nums`}>{a.count}</td>
-                  <td className={`${tdClass} text-right tabular-nums text-slate-400`}>
+                  <td className={`${tdClass} text-right tabular-nums text-ink-faint`}>
                     {q.liveBookings === 0 ? '—' : `${Math.round((a.count / q.liveBookings) * 100)} %`}
                   </td>
                 </tr>
@@ -754,7 +754,7 @@ async function DataQualitySection() {
 function QualityTile({ label, value, bad = false }: { label: string; value: number; bad?: boolean }) {
   return (
     <div className="rounded-xl bg-surface px-4 py-3 ring-1 ring-line">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{label}</p>
       <p
         className={`mt-1 text-xl font-semibold tabular-nums ${bad ? 'text-warn' : 'text-brand-900'}`}
       >
@@ -768,10 +768,10 @@ function QualityRow({ label, value, hint }: { label: string; value: number; hint
   return (
     <li className="px-5 py-3">
       <div className="flex items-baseline justify-between gap-4">
-        <span className="font-medium text-slate-700">{label}</span>
-        <span className={`tabular-nums ${value > 0 ? 'text-warn' : 'text-slate-400'}`}>{value}</span>
+        <span className="font-medium text-ink">{label}</span>
+        <span className={`tabular-nums ${value > 0 ? 'text-warn' : 'text-ink-faint'}`}>{value}</span>
       </div>
-      <p className="mt-0.5 text-slate-400">{hint}</p>
+      <p className="mt-0.5 text-ink-faint">{hint}</p>
     </li>
   )
 }
@@ -862,7 +862,7 @@ async function FirebaseSection({
                   <td className={`${tdClass} font-medium`}>
                     {p.name}
                     {p.docCount > 1 && (
-                      <Badge className="ml-2 bg-warn/10 text-amber-800 ring-warn/30">
+                      <Badge className="ml-2 bg-warn/10 text-warn-ink ring-warn/30">
                         {p.docCount} documents
                       </Badge>
                     )}
@@ -873,7 +873,7 @@ async function FirebaseSection({
                   </td>
                   <td
                     className={`${tdClass} text-right tabular-nums ${
-                      p.driftCents === 0 ? 'text-slate-400' : 'text-bad'
+                      p.driftCents === 0 ? 'text-ink-faint' : 'text-bad'
                     }`}
                   >
                     {p.driftCents === 0 ? '—' : formatCents(p.driftCents)}
@@ -910,7 +910,7 @@ async function FirebaseSection({
           <form action={runWritebackAction} className="flex flex-wrap items-end gap-3">
             <input type="hidden" name="year" value={year} />
             <input type="hidden" name="month" value={month} />
-            <label className="flex items-center gap-1.5 text-xs text-slate-500">
+            <label className="flex items-center gap-1.5 text-xs text-ink-soft">
               <input
                 type="checkbox"
                 name="allowCreate"
@@ -996,9 +996,9 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">{label}</span>
       {children}
-      {hint && <span className="max-w-[16rem] text-[11px] text-slate-400">{hint}</span>}
+      {hint && <span className="max-w-[16rem] text-[11px] text-ink-faint">{hint}</span>}
     </label>
   )
 }

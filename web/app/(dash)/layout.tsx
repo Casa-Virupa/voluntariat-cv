@@ -18,10 +18,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-6 gap-y-2 px-6 py-3">
           <Link href="/calendari" className="flex items-center gap-2.5">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-brand-500 text-xs font-bold text-white">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-brand-500 text-xs font-bold text-ink-strong">
               CV
             </span>
-            <span className="text-sm font-semibold text-brand-900">Voluntariat</span>
+            <span className="font-display text-base font-medium text-brand-900">Voluntariat</span>
           </Link>
 
           <nav className="flex items-center gap-1 text-sm">
@@ -40,10 +40,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
               now={now}
             />
             <SyncButton />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-soft">
               {admin.displayName ?? admin.email}
               {admin.role === 'area_responsible' && (
-                <span className="ml-1 text-slate-400">· responsable d’àrea</span>
+                <span className="ml-1 text-ink-faint">· responsable d’àrea</span>
               )}
             </span>
             <form
@@ -54,7 +54,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             >
               <button
                 type="submit"
-                className="rounded-md px-2 py-1 text-xs text-slate-500 transition hover:bg-canvas hover:text-slate-800"
+                className="rounded-md px-2 py-1 text-xs text-ink-soft transition hover:bg-canvas hover:text-ink-strong"
               >
                 Surt
               </button>
@@ -63,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
 
         {status.lastError && freshness !== 'fresh' && (
-          <div className="border-t border-bad/20 bg-bad/5 px-6 py-1.5 text-center text-xs text-red-800">
+          <div className="border-t border-bad/20 bg-bad/5 px-6 py-1.5 text-center text-xs text-bad-ink">
             L’última sincronització va fallar: {status.lastError}
           </div>
         )}
@@ -78,7 +78,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="rounded-md px-3 py-1.5 text-slate-600 transition hover:bg-canvas hover:text-brand-700"
+      className="rounded-md px-3 py-1.5 text-ink-soft transition hover:bg-canvas hover:text-brand-700"
     >
       {children}
     </Link>
@@ -115,7 +115,7 @@ function SyncIndicator({
 
   return (
     <span
-      className="flex items-center gap-1.5 text-xs text-slate-500"
+      className="flex items-center gap-1.5 text-xs text-ink-soft"
       title="Estat del mirall de Firestore"
     >
       <span className={`inline-block size-2 rounded-full ${dot}`} />

@@ -1,30 +1,61 @@
 @import "tailwindcss";
 
 /*
- * Palette taken from the dashboard mockup: indigo chrome, near-white canvas, and the
- * three status colours used by the commitment rings and payment badges.
+ * Casa Virupa's palette, mirrored from the mobile app's design system
+ * (shared/designsystem/.../theme/Colors.kt + Theme.kt) so the dashboard and the app read as
+ * one product. Where a token maps onto an app colour, the Kotlin name is in the comment.
+ *
+ * The app is a warm, light, single-theme design: cream canvas, white cards, gray-brown text,
+ * one orange accent. There is deliberately no dark mode here either.
  */
 @theme {
-  --color-brand-50: #eef0fb;
-  --color-brand-100: #dcdff7;
-  --color-brand-200: #bcc2ef;
-  --color-brand-500: #5b5fc7;
-  --color-brand-600: #4a4eb8;
-  --color-brand-700: #3f4396;
-  --color-brand-900: #2b2e66;
+  /* Both faces are self-hosted by next/font from app/fonts — the same files the app ships. */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-kalice), Georgia, "Times New Roman", serif;
 
-  --color-canvas: #f4f5fa;
+  /* Brand. 500 is the identity orange; 600/700 are darkened so a filled button or a link
+     built from them still clears 4.5:1 — the identity orange on white does not. */
+  --color-brand-50: #fbf8f5; /* LightOrange50 */
+  --color-brand-100: #faf3ec; /* LightOrange200 */
+  --color-brand-200: #e9e0cd; /* LightOrange100 */
+  --color-brand-500: #d29054; /* Orange — the app's primary */
+  --color-brand-600: #b87a3c;
+  --color-brand-700: #9a6129;
+  --color-brand-900: #4a453e; /* DarkGrayBrown — headings */
+
+  --color-canvas: #faf3ec; /* LightOrange200 — surfaceContainerLow */
   --color-surface: #ffffff;
-  --color-line: #e3e5ef;
+  --color-line: #e9e0cd; /* LightOrange100 */
 
-  --color-ok: #16a34a;
-  --color-warn: #f59e0b;
-  --color-bad: #dc2626;
-  --color-muted: #94a3b8;
+  /* Text tones: the app's warm greys, strongest to faintest. */
+  --color-ink-strong: #1c1917; /* DarkGray */
+  --color-ink: #4a453e; /* DarkGrayBrown */
+  --color-ink-soft: #7c756b; /* GrayBrown — the app's body colour */
+  --color-ink-faint: #8c847c;
+  --color-ink-ghost: #c9c7c5; /* LightGrayBrown */
+
+  /* Status. The app only defines Red; ok and warn are picked to sit inside the warm palette
+     and to stay legible as small text, since both are used as `text-*` and not just fills.
+     `*-ink` is the darker variant for text on the matching 10 %-tint background. */
+  --color-ok: #5b7742;
+  --color-warn: #a06c12;
+  --color-warn-ink: #7a5310;
+  --color-bad: #b42222; /* Red */
+  --color-bad-ink: #8a1a1a;
 }
 
 body {
   background: var(--color-canvas);
-  color: #1e2235;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/*
+ * Kalice is a display serif — headings only, as in the app's Typography.kt, where every
+ * display/headline/title style is Kalice and everything body- or label-sized is DM Sans.
+ */
+h1,
+h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }

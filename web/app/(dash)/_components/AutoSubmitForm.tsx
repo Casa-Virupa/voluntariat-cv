@@ -34,7 +34,7 @@ export function AutoSubmitForm({
       <noscript>
         <button
           type="submit"
-          className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-medium text-white"
+          className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium uppercase tracking-[0.08em] text-white"
         >
           Filtra
         </button>

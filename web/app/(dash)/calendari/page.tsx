@@ -64,8 +64,8 @@ export default async function CalendariPage({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-brand-900">Calendari de voluntariat</h1>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h1 className="text-xl font-medium text-brand-900">Calendari de voluntariat</h1>
+          <p className="mt-0.5 text-xs text-ink-soft">
             Hores reals (fi − inici de cada torn), no les 4 h fixes que mostra el perfil de l’app.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default async function CalendariPage({
             <Link
               href={href({ y: String(prev.year), m: String(prev.index), dia: null })}
               aria-label="Mes anterior"
-              className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+              className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
             >
               ‹
             </Link>
@@ -85,14 +85,14 @@ export default async function CalendariPage({
             <Link
               href={href({ y: String(next.year), m: String(next.index), dia: null })}
               aria-label="Mes següent"
-              className="bg-surface px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-canvas hover:text-brand-700"
+              className="bg-surface px-2.5 py-1.5 text-sm text-ink-soft transition hover:bg-canvas hover:text-brand-700"
             >
               ›
             </Link>
           </div>
           <Link
             href={href({ y: today.slice(0, 4), m: String(Number(today.slice(5, 7))), dia: null })}
-            className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-slate-500 ring-1 ring-line transition hover:text-brand-700"
+            className="rounded-lg bg-surface px-2.5 py-1.5 text-xs text-ink-soft ring-1 ring-line transition hover:text-brand-700"
           >
             Avui
           </Link>
@@ -135,7 +135,7 @@ export default async function CalendariPage({
                     {WEEKDAYS_CA.map((d) => (
                       <th
                         key={d}
-                        className="border-b border-line px-2 py-2 text-[11px] font-medium uppercase tracking-wide text-slate-400"
+                        className="border-b border-line px-2 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint"
                       >
                         {d}
                       </th>
@@ -218,13 +218,13 @@ function DayCellView({
       href={href}
       scroll={false}
       className={`flex h-full flex-col gap-1 p-1.5 transition ${
-        selected ? 'bg-brand-50 ring-1 ring-inset ring-brand-200' : 'hover:bg-canvas'
+        selected ? 'bg-brand-100 ring-1 ring-inset ring-brand-200' : 'hover:bg-brand-50'
       }`}
     >
       <div className="flex items-center gap-1.5">
         <span
           className={`flex size-5 items-center justify-center rounded-full text-[11px] font-semibold ${
-            isToday ? 'bg-brand-500 text-white' : 'text-slate-500'
+            isToday ? 'bg-brand-700 text-white' : 'text-ink-soft'
           }`}
         >
           {dayNumber}
@@ -234,7 +234,7 @@ function DayCellView({
             <span className="ml-auto text-[11px] font-semibold tabular-nums text-brand-700">
               {formatMinutes(cell.minutes)}
             </span>
-            <span className="text-[11px] tabular-nums text-slate-400">· {cell.people}p</span>
+            <span className="text-[11px] tabular-nums text-ink-faint">· {cell.people}p</span>
           </>
         )}
       </div>
@@ -242,14 +242,14 @@ function DayCellView({
       {cell && (
         <ul className="min-h-0 flex-1 space-y-0.5 overflow-hidden">
           {cell.persons.slice(0, 3).map((p) => (
-            <li key={p.uid} className="truncate text-[11px] leading-tight text-slate-600">
+            <li key={p.uid} className="truncate text-[11px] leading-tight text-ink-soft">
               {affectsNumbers(p.anomalies) && <span className="text-warn">⚠ </span>}
               {firstName(p.name)}{' '}
-              <span className="tabular-nums text-slate-400">({formatMinutes(p.minutes)})</span>
+              <span className="tabular-nums text-ink-faint">({formatMinutes(p.minutes)})</span>
             </li>
           ))}
           {cell.persons.length > 3 && (
-            <li className="text-[11px] leading-tight text-slate-400">
+            <li className="text-[11px] leading-tight text-ink-faint">
               +{cell.persons.length - 3} més
             </li>
           )}
@@ -300,7 +300,7 @@ function DayPanel({
     <div className="divide-y divide-line">
       {grouped.map((group) => (
         <div key={group.slot} className="px-5 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-faint">
             {SHIFT_SLOT_LABEL[group.slot as keyof typeof SHIFT_SLOT_LABEL] ?? group.slot} ·{' '}
             {formatMinutes(group.items.reduce((s, i) => s + i.minutes, 0))}
           </p>
@@ -308,13 +308,13 @@ function DayPanel({
             {group.items.map((s) => (
               <li key={`${s.docId}-${s.slot}-${s.startSec}`} className="text-sm">
                 <div className="flex items-baseline gap-2">
-                  <span className="font-medium text-slate-800">{s.name}</span>
+                  <span className="font-medium text-ink-strong">{s.name}</span>
                   {s.volunteerType && (
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-ink-faint">
                       {VOLUNTEER_TYPE_LABEL[s.volunteerType as 'mitra' | 'habitual']}
                     </span>
                   )}
-                  <span className="ml-auto tabular-nums text-slate-500">
+                  <span className="ml-auto tabular-nums text-ink-soft">
                     {formatRange(s.startSec, s.endSec)}
                   </span>
                   <span className="w-14 text-right font-medium tabular-nums text-brand-700">
@@ -326,10 +326,10 @@ function DayPanel({
                   <Badge
                     className={
                       s.area === AREA_GENERAL
-                        ? 'bg-brand-50 text-brand-700 ring-brand-200'
+                        ? 'bg-brand-100 text-brand-700 ring-brand-200'
                         : s.area === AREA_UNKNOWN
-                          ? 'bg-warn/10 text-amber-800 ring-warn/30'
-                          : 'bg-slate-100 text-slate-600 ring-slate-200'
+                          ? 'bg-warn/10 text-warn-ink ring-warn/30'
+                          : 'bg-canvas text-ink-soft ring-line'
                     }
                   >
                     {areaLabel(s.area)}
@@ -365,7 +365,7 @@ function FilterBar({
   canFilterOwn: boolean
 }) {
   const selectClass =
-    'rounded-lg border-0 bg-surface px-2.5 py-1.5 text-xs text-slate-700 ring-1 ring-line focus:ring-2 focus:ring-brand-500'
+    'rounded-lg border-0 bg-surface px-2.5 py-1.5 text-xs text-ink ring-1 ring-line focus:ring-2 focus:ring-brand-500'
 
   return (
     <AutoSubmitForm className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface p-3 ring-1 ring-line">
@@ -373,7 +373,7 @@ function FilterBar({
       <input type="hidden" name="y" value={filters.period.year} />
       <input type="hidden" name="m" value={filters.period.index} />
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         Àrea
         <select name="area" defaultValue={filters.area ?? ''} className={selectClass}>
           <option value="">Totes</option>
@@ -385,7 +385,7 @@ function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         Tipus
         <select name="tipus" defaultValue={filters.types.join(',')} className={selectClass}>
           <option value="">Tots</option>
@@ -394,7 +394,7 @@ function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-1.5 text-xs text-slate-500">
+      <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         Torn
         <select name="torn" defaultValue={filters.slot ?? ''} className={selectClass}>
           <option value="">Matí i tarda</option>
@@ -404,7 +404,7 @@ function FilterBar({
       </label>
 
       {canFilterOwn && (
-        <label className="flex items-center gap-1.5 text-xs text-slate-500">
+        <label className="flex items-center gap-1.5 text-xs text-ink-soft">
           <input
             type="checkbox"
             name="meus"
@@ -419,7 +419,7 @@ function FilterBar({
       {(filters.area || filters.types.length > 0 || filters.slot || filters.onlyMine) && (
         <Link
           href={`/calendari?y=${filters.period.year}&m=${filters.period.index}`}
-          className="ml-auto text-xs text-slate-400 underline-offset-2 hover:text-brand-700 hover:underline"
+          className="ml-auto text-xs text-ink-faint underline-offset-2 hover:text-brand-700 hover:underline"
         >
           Neteja els filtres
         </Link>

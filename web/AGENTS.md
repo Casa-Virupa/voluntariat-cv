@@ -30,6 +30,13 @@ views. Self-hosted on a VPS. Catalan UI, no i18n framework.
   and rebuilds it; every filtered view is then bookmarkable, and `/api/export` is the same
   query string with a different path. The only client components are `AutoSubmitForm` (so a
   `<select>` applies without a button) and `SyncButton`.
+- **The palette and the two faces come from the mobile app**, not from Tailwind's defaults:
+  `app/globals.css` mirrors `shared/designsystem/.../theme/Colors.kt`, and Kalice (display) +
+  DM Sans (text) are self-hosted from `app/fonts` — the same files the app ships. Use the
+  semantic tokens (`brand-*`, `canvas`, `surface`, `line`, `ink*`, `ok`/`warn`/`bad`); a raw
+  `slate-*` or `amber-*` utility in a view means a cool grey leaked back in. The identity
+  orange (`brand-500`) is too light to carry white text, so text-bearing fills use
+  `brand-700`.
 - **Server actions carry their outcome in a redirect**, not in component state: they
   authorise, parse, call `lib/mutations.ts`, then redirect back with `?ok=` or `?error=`.
   A `returnTo` field brings the coordinator back to the same period and open panel — it is

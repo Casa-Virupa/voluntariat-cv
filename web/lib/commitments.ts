@@ -201,14 +201,14 @@ export const STATUS_TEXT_CLASS: Record<CommitmentStatus, string> = {
   complete: 'text-ok',
   at_risk: 'text-warn',
   incomplete: 'text-bad',
-  in_progress: 'text-slate-500',
-  none: 'text-slate-400',
+  in_progress: 'text-ink-soft',
+  none: 'text-ink-faint',
 }
 
 export const STATUS_DOT_CLASS: Record<CommitmentStatus, string> = {
   complete: 'bg-ok',
   at_risk: 'bg-warn',
   incomplete: 'bg-bad',
-  in_progress: 'bg-slate-300',
-  none: 'bg-slate-200',
+  in_progress: 'bg-ink-faint',
+  none: 'bg-ink-ghost/60',
 }
