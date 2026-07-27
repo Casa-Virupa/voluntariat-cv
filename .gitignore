@@ -17,3 +17,9 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Admin tooling: never commit service-account keys or real volunteer data
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+tools/users/*.csv
+!tools/users/users.example.csv

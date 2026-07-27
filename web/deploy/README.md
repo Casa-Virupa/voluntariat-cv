@@ -158,6 +158,44 @@ systemctl start voluntariat
 # then run a sync: the mirror will be a day stale, the ledger will not
 ```
 
+## Going live: starting the books at zero
+
+**Do this before showing `/coordinacio` to anyone.** It is the one step that is easy to skip
+and confusing to explain afterwards.
+
+Charges are derived from the mirror, so on day one the dashboard computes every meal and
+overnight stay in the whole mirrored history — while the ledger, which is dashboard-owned
+and brand new, is empty. Everyone therefore appears to owe months of meals they in fact paid
+for in cash long ago. The number is arithmetically correct and factually nonsense.
+
+```bash
+cd /srv/voluntariat/current
+
+# 1. If the database still has demo/test data, clear it. --mirror is always safe: the
+#    mirror is disposable and a sync rebuilds it. --ledger destroys money data that exists
+#    nowhere else. Neither ever touches admin_user.
+node scripts/reset.ts --all              # dry run: prints what it would delete
+node scripts/reset.ts --all --yes
+
+# 2. Rebuild the mirror from Firestore.
+set -a; . /etc/voluntariat/env; set +a
+curl -fsS -m 1800 -X POST -H "X-Sync-Key: $SYNC_KEY" 'http://127.0.0.1:3000/api/sync?full=1'
+
+# 3. Record the historic debt as settled, as of the day the books start.
+node scripts/opening-balance.ts --as-of 2026-09-01                  # dry run: the list
+node scripts/opening-balance.ts --as-of 2026-09-01 --yes --by you@example.cat
+```
+
+Step 3 writes one `opening_balance` ledger entry per volunteer, dated the day *before* the
+cut-off so it lands in the carry-over rather than in the first live period, and signed so
+anyone genuinely in credit stays in credit. `external_ref` is unique, so running it twice is
+a no-op rather than a double correction. Afterwards "Saldo anterior" reads 0 € for everyone
+and the first period starts clean — with the historic figure recorded in the ledger, not
+erased.
+
+Pick the cut-off deliberately: charges from that date onwards are what the dashboard will
+ask volunteers to pay.
+
 ## Enabling the payments write-back
 
 Off by default, and it should stay off until someone has read the report.
