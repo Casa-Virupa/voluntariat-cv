@@ -43,6 +43,18 @@ class FirebasePaymentRepository(
             }
     }
 
+    override suspend fun updateAmount(
+        id: PaymentId,
+        amount: Double,
+    ): Result<Unit> = runCatching {
+        firestore
+            .collection("payments")
+            .document(id.value)
+            .updateFields {
+                "amount" to amount
+            }
+    }
+
     override suspend fun addPayment(
         userId: UserId,
         yearMonth: YearMonth,

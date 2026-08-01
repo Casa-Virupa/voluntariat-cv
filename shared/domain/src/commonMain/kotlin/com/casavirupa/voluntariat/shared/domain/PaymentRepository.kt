@@ -16,4 +16,6 @@ interface PaymentRepository {
         yearMonth: YearMonth,
         amount: Double,
     ): Result<Unit>
+
+    suspend fun updateAmount(id: PaymentId, amount: Double): Result<Unit>
 }

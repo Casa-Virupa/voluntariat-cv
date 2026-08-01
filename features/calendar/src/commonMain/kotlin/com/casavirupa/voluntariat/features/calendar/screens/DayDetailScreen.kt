@@ -272,17 +272,20 @@ private fun VolunteerShiftItem(
                 .fillMaxWidth()
         ) {
             Row {
-                Column(
+                FlowRow(
                     modifier = Modifier
                         .weight(1f)
                         .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = volunteer.name,
+                        modifier = Modifier.alignByBaseline(),
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
                         text = volunteer.schedule,
+                        modifier = Modifier.alignByBaseline(),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

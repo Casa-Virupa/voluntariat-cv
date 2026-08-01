@@ -10,6 +10,7 @@ import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.PaymentRepository
+import com.casavirupa.voluntariat.shared.domain.PriceRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -62,6 +63,7 @@ class ReservationFormViewModel(
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
     private val paymentRepository: PaymentRepository,
+    private val priceRepository: PriceRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -341,6 +343,7 @@ class ReservationFormViewModel(
                     ?.specificAreas
                     ?.first() ?: return@launch
                 val volunteer = buildReservation(specificArea)
+                val prices = priceRepository.getCurrentPrices()
                 authRepository
                     .getCurrentUser()
                     .onSuccess { user ->
@@ -350,7 +353,7 @@ class ReservationFormViewModel(
                                 paymentRepository.addPayment(
                                     userId = user.id,
                                     yearMonth = date.value!!.toYearMonth(),
-                                    amount = volunteer.calculateTotalToPay().toDouble(),
+                                    amount = volunteer.calculateTotalToPay(prices),
                                 )
                             }.onSuccess {
                                 navigateBack()

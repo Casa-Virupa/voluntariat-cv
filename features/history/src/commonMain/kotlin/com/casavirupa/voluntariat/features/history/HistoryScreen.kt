@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -154,7 +155,10 @@ private fun HistoryContent(
                 PaymentUiState.Paid -> {}
                 is PaymentUiState.NotPaid -> PaymentMessage(
                     title = stringResource(Res.string.pending_payment),
-                    description = stringResource(Res.string.remember_payment, state.amount),
+                    description = stringResource(
+                        Res.string.remember_payment,
+                        state.amount.toAmountString(),
+                    ),
                     onClickPay = onPayVolunteer,
                     onClickDetail = onShowPaymentDetail,
                 )
@@ -349,7 +353,7 @@ private fun PaymentMessage(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -377,12 +381,18 @@ private fun PaymentMessage(
             if (onClickPay != null || onClickDetail != null) {
                 Column(horizontalAlignment = Alignment.End) {
                     if (onClickPay != null) {
-                        TextButton(onClick = onClickPay) {
+                        TextButton(
+                            onClick = onClickPay,
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
                             Text(text = stringResource(Res.string.confirm_pay))
                         }
                     }
                     if (onClickDetail != null) {
-                        TextButton(onClick = onClickDetail) {
+                        TextButton(
+                            onClick = onClickDetail,
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
                             Text(text = stringResource(Res.string.payment_detail_button))
                         }
                     }
@@ -498,7 +508,7 @@ private fun PaymentDetailDialog(
                         amount = detail.nightsAmount,
                     )
                 }
-                if (detail.total == 0) {
+                if (detail.total == 0.0) {
                     Text(
                         text = stringResource(Res.string.nothing_to_pay),
                         style = MaterialTheme.typography.bodyMedium,
@@ -526,7 +536,7 @@ private fun PaymentDetailDialog(
 @Composable
 private fun PaymentDetailRow(
     concept: String,
-    amount: Int,
+    amount: Double,
     modifier: Modifier = Modifier,
     emphasized: Boolean = false,
 ) {
@@ -542,11 +552,14 @@ private fun PaymentDetailRow(
             style = style,
         )
         Text(
-            text = "$amount€",
+            text = "${amount.toAmountString()}€",
             style = style,
         )
     }
 }
+
+private fun Double.toAmountString(): String =
+    if (this % 1.0 == 0.0) toInt().toString() else formatString(2)
 
 @Composable
 private fun ShiftTags(

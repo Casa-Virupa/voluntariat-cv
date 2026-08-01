@@ -10,7 +10,9 @@ internal fun Project.configureKotlinMultiplatform(
 ) {
     extension.apply {
         androidLibraryConfiguration()
-        iosLibraryConfiguration()
+        iosLibraryConfiguration(
+            bundleId = "com.casavirupa.voluntariat${path.replace(':', '.')}",
+        )
     }
 }
 
@@ -28,7 +30,7 @@ private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
     }
 }
 
-private fun KotlinMultiplatformExtension.iosLibraryConfiguration() {
+private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: String) {
     listOf(
         iosX64(),
         iosArm64(),
@@ -37,6 +39,7 @@ private fun KotlinMultiplatformExtension.iosLibraryConfiguration() {
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
+            binaryOption("bundleId", bundleId)
         }
     }
 }

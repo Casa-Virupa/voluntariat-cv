@@ -5,7 +5,7 @@
     <string name="hours">Hours</string>
     <string name="days">Days</string>
     <string name="pending_payment">Pending payment</string>
-    <string name="remember_payment">Remember to make the payment for the month. It comes to %1$d€ in total.</string>
+    <string name="remember_payment">Remember to make the payment for the month: %1$s€.</string>
     <string name="volunteerings_history">Volunteerings history</string>
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
