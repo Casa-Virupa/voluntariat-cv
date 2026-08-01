@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.YearMonth
@@ -185,14 +186,29 @@ class ReservationFormViewModel(
             _showRemoteWorkDialog.update { true }
             temporalDate = date
         } else {
-            _date.update { date }
+            applySelectedDate(date)
         }
     }
 
     fun workOnRemoteOnDate() {
-        _date.update { temporalDate }
+        temporalDate?.let { applySelectedDate(it) }
         temporalDate = null
         closeRemoteWorkDialog()
+    }
+
+    private fun applySelectedDate(date: LocalDate) {
+        _date.update { date }
+        applyDefaultTimeRanges(date)
+    }
+
+    private fun applyDefaultTimeRanges(date: LocalDate) {
+        val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
+        if (_shiftsInfo.value.none { it.shift == ShiftUi.Morning }) {
+            _morningTimeRange.update { TimeRange.defaultMorning(isSunday) }
+        }
+        if (_shiftsInfo.value.none { it.shift == ShiftUi.Afternoon }) {
+            _afternoonTimeRange.update { TimeRange.defaultAfternoon(isSunday) }
+        }
     }
 
     fun onShiftSelected(shift: ShiftUi) {

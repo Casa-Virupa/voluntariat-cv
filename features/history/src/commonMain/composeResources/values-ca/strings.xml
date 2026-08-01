@@ -16,4 +16,20 @@
     <string name="confirm_pay">Confirmar</string>
     <string name="no_volunteering_title">Sense voluntariat</string>
     <string name="no_volunteering_description">Encara has de fer el voluntariat d'aquest mes</string>
+    <string name="payment_detail_button">Detall</string>
+    <string name="payment_detail_title">Detall del pagament</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">No hi ha res pendent de pagar aquest mes</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 dinar</item>
+        <item quantity="other">%1$d dinars</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 sopar</item>
+        <item quantity="other">%1$d sopars</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 pernoctació</item>
+        <item quantity="other">%1$d pernoctacions</item>
+    </plurals>
 </resources>

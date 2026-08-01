@@ -86,6 +86,7 @@ class HistoryViewModel(
                 summary = MonthSummary(volunteers),
                 volunteers = volunteers,
                 paymentUiState = paymentState,
+                paymentDetail = PaymentDetail(volunteers),
             )
         }.stateIn(
             scope = viewModelScope,
@@ -95,6 +96,17 @@ class HistoryViewModel(
 
     private val _showPaymentDialog = MutableStateFlow(false)
     val showPaymentDialog: StateFlow<Boolean> = _showPaymentDialog.asStateFlow()
+
+    private val _showPaymentDetailDialog = MutableStateFlow(false)
+    val showPaymentDetailDialog: StateFlow<Boolean> = _showPaymentDetailDialog.asStateFlow()
+
+    fun showPaymentDetailDialog() {
+        _showPaymentDetailDialog.update { true }
+    }
+
+    fun closePaymentDetailDialog() {
+        _showPaymentDetailDialog.update { false }
+    }
 
     fun nextMonth() {
         _currentDate.update { it.plus(DatePeriod(months = 1)) }
@@ -133,6 +145,7 @@ class HistoryViewModel(
                 hours = it.shifts.sumOf { it.getTotalHour() }.toInt(),
                 shifts = it.shifts,
                 meals = it.meals,
+                sleep = it.sleep,
             )
         }
 }
@@ -141,13 +154,37 @@ data class HistoryUiState(
     val summary: MonthSummary,
     val volunteers: List<VolunteerHistoryItem>,
     val paymentUiState: PaymentUiState,
+    val paymentDetail: PaymentDetail,
 ) {
     companion object {
         val Empty = HistoryUiState(
             summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
             volunteers = emptyList(),
             paymentUiState = PaymentUiState.NotFound,
+            paymentDetail = PaymentDetail.Empty,
         )
+    }
+}
+
+data class PaymentDetail(
+    val lunches: Int,
+    val dinners: Int,
+    val nights: Int,
+) {
+    val lunchesAmount: Int get() = lunches * Volunteer.MEAL_PRICE
+    val dinnersAmount: Int get() = dinners * Volunteer.MEAL_PRICE
+    val nightsAmount: Int get() = nights * Volunteer.SLEEP_PRICE
+    val total: Int get() = lunchesAmount + dinnersAmount + nightsAmount
+
+    companion object {
+        val Empty = PaymentDetail(lunches = 0, dinners = 0, nights = 0)
+
+        operator fun invoke(volunteers: List<VolunteerHistoryItem>) =
+            PaymentDetail(
+                lunches = volunteers.sumOf { item -> item.meals.count { it == Meal.Lunch } },
+                dinners = volunteers.sumOf { item -> item.meals.count { it == Meal.Dinner } },
+                nights = volunteers.count { it.sleep },
+            )
     }
 }
 
@@ -222,7 +259,8 @@ data class VolunteerHistoryItem(
     val date: LocalDate,
     val hours: Int,
     val shifts: List<Shift>,
-    val meals: List<Meal>
+    val meals: List<Meal>,
+    val sleep: Boolean,
 )
 
 sealed class PaymentUiState {

@@ -14,5 +14,22 @@
     <string name="confirm_payment_description">Si ya has hecho el pago pulsa "Aceptar"</string>
     <string name="accept_button">Aceptar</string>
     <string name="confirm_pay">Confirmar</string>
+    <string name="no_volunteering_title">Sin voluntariado</string>
     <string name="no_volunteering_description">Todavía tienes que hacer el voluntariado de este mes</string>
+    <string name="payment_detail_button">Detalle</string>
+    <string name="payment_detail_title">Detalle del pago</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">No hay nada pendiente de pagar este mes</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 almuerzo</item>
+        <item quantity="other">%1$d almuerzos</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 cena</item>
+        <item quantity="other">%1$d cenas</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 pernoctación</item>
+        <item quantity="other">%1$d pernoctaciones</item>
+    </plurals>
 </resources>

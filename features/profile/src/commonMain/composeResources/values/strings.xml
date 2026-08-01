@@ -7,6 +7,7 @@
     <string name="monthly_hours">Monthly hours</string>
     <string name="no_hours_registered">No hours registered this month</string>
     <string name="missing_hours">You still have %1$s hours left this month</string>
+    <string name="general_volunteering">General</string>
     <string name="volunteer_type">Type of volunteering</string>
     <string name="specific_areas">Specific areas</string>
     <string name="casa_virupa">Casa Virupa</string>

@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,11 +50,13 @@ class ProfileViewModel(
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val hoursDone: StateFlow<Int> =
+    val hoursDone: StateFlow<HoursBreakdown> =
         combine(user, currentMonth, quarter) { user, month, quarter ->
             Triple(user, month, quarter)
         }.flatMapLatest { (user, month, quarter) ->
-            if (user == null) return@flatMapLatest kotlinx.coroutines.flow.flowOf(0)
+            if (user == null) {
+                return@flatMapLatest kotlinx.coroutines.flow.flowOf(HoursBreakdown())
+            }
 
             if (user.isMitra) {
                 volunteerRepository.getVolunteersByUserAndQuarter(
@@ -66,12 +71,12 @@ class ProfileViewModel(
                     year = month.year
                 )
             }.map { volunteers ->
-                volunteers.sumOf { it.calculateHours() }
+                HoursBreakdown(volunteers)
             }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = 0,
+            initialValue = HoursBreakdown(),
         )
 
     fun logOut() {
@@ -104,6 +109,30 @@ class ProfileViewModel(
 }
 
 data class ProfileUiState(val navigateToSignIn: Boolean = false)
+
+data class HoursBreakdown(
+    val total: Int = 0,
+    val general: Int = 0,
+    val specificByArea: Map<SpecificArea, Int> = emptyMap(),
+) {
+    companion object {
+        operator fun invoke(volunteers: List<Volunteer>): HoursBreakdown {
+            val shifts = volunteers.flatMap { it.shifts }
+            return HoursBreakdown(
+                total = shifts.sumOf { it.getHour() },
+                general = shifts
+                    .filter { it.type is VolunteerType.General }
+                    .sumOf { it.getHour() },
+                specificByArea = shifts
+                    .mapNotNull { shift ->
+                        (shift.type as? VolunteerType.Specific)
+                            ?.let { it.specificArea to shift.getHour() }
+                    }.groupBy({ it.first }, { it.second })
+                    .mapValues { (_, hours) -> hours.sum() },
+            )
+        }
+    }
+}
 
 data class Quarter(
     val number: Int,

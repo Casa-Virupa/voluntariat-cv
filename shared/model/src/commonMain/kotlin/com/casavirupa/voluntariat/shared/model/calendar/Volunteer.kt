@@ -67,6 +67,20 @@ data class TimeRange(
             start = LocalTime(16, 30),
             end = LocalTime(20, 30),
         )
+        val SundayMorning = TimeRange(
+            start = LocalTime(9, 0),
+            end = LocalTime(14, 0),
+        )
+        val SundayAfternoon = TimeRange(
+            start = LocalTime(16, 30),
+            end = LocalTime(19, 30),
+        )
+
+        fun defaultMorning(isSunday: Boolean) =
+            if (isSunday) SundayMorning else DefaultMorning
+
+        fun defaultAfternoon(isSunday: Boolean) =
+            if (isSunday) SundayAfternoon else DefaultAfternoon
     }
 }
 
