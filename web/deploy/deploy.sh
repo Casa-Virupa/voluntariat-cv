@@ -34,9 +34,10 @@ PORT="${VOLUNTARIAT_PORT:-3003}"
 
 # A Next build peaks well over a gigabyte. On a box already holding several resident Next
 # servers the kernel's OOM killer scores by footprint and may pick a NEIGHBOUR rather than
-# the build, so cap the heap and run the build nice'd. Raise only if the build actually
-# runs out of memory, and check `free -h` first.
-BUILD_HEAP_MB="${VOLUNTARIAT_BUILD_HEAP_MB:-1536}"
+# the build, so cap the heap and run the build nice'd. 3072 is measured, not generous:
+# Next 16's TypeScript pass alone OOMs a 1536 MB heap on this project. The box needs swap
+# for this to be safe next to the resident apps — see free -h before lowering it.
+BUILD_HEAP_MB="${VOLUNTARIAT_BUILD_HEAP_MB:-3072}"
 
 # --- preflight ----------------------------------------------------------------------
 #
