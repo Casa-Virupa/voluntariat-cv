@@ -97,7 +97,7 @@ db.prepare('VACUUM').run()
 
 if (doMirror) {
   console.log('\nEl mirall és buit. Executa una sincronització completa per reconstruir-lo:')
-  console.log("  curl -X POST -H \"X-Sync-Key: $SYNC_KEY\" 'http://127.0.0.1:3000/api/sync?full=1'")
+  console.log("  curl -X POST -H \"X-Sync-Key: $SYNC_KEY\" 'http://127.0.0.1:3003/api/sync?full=1'")
 }
 if (doLedger) {
   console.log(

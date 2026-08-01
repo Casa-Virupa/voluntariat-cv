@@ -1,6 +1,6 @@
 # crontab for the `voluntariat` user:  crontab -u voluntariat deploy/crontab
 #
-# TZ here as well as in the systemd unit: cron does not inherit the service environment, and
+# TZ here as well as in ecosystem.config.cjs: cron does not inherit the app environment, and
 # "12:10" has to mean local noon or the twice-daily promise is wrong for half the year.
 TZ=Europe/Madrid
 SHELL=/bin/bash
@@ -13,16 +13,26 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # 00:10 and 12:10, NOT on the hour. A sync firing exactly at the day rollover races the
 # `service_date <= today` boundary that splits "fets" from "previstos", and the ten-minute
 # offset also keeps it clear of every other cron job on the box.
-10 0,12 * * * set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 600 -X POST -H "X-Sync-Key: $SYNC_KEY" http://127.0.0.1:3000/api/sync >> /srv/voluntariat/data/sync.log 2>&1
+10 0,12 * * * set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 600 -X POST -H "X-Sync-Key: $SYNC_KEY" http://127.0.0.1:3003/api/sync >> /srv/voluntariat-dashboard/data/sync.log 2>&1
 
 # --- nightly backup -----------------------------------------------------------
 #
-# 03:20, well clear of both syncs. `sqlite3 .backup` is the only safe way to copy a live
-# WAL database — `cp` of the .db file alone loses whatever is still in the -wal.
-20 3 * * * /srv/voluntariat/current/deploy/backup.sh >> /srv/voluntariat/data/backup.log 2>&1
+# 03:20, well clear of both syncs. `sqlite3 .backup` and NOT `cp`: in WAL mode a plain copy
+# of the .db file silently loses whatever is still in the -wal, which is exactly the recent
+# data you would want back. Keeps 7 days, on this VPS only.
+#
+# This covers a bad migration or a mistaken bulk edit — not the loss of the disk. The mirror
+# (`fs_*`) is disposable, but ledger_entry, price_rule, commitment_rule and admin_user exist
+# nowhere else: if you want to survive losing the machine, copy the .gz offsite or rely on a
+# Hostinger snapshot.
+#
+# The `\%` is not a typo: cron treats an unescaped % as a newline in the command.
+# The redirect wraps the whole chain, not just `find` — otherwise a failing sqlite3 would
+# write to cron's mail instead of the log, i.e. nowhere anyone looks.
+20 3 * * * { d=$(date +\%F); b=/srv/voluntariat-dashboard/data/backups; mkdir -p "$b" && sqlite3 /srv/voluntariat-dashboard/data/voluntariat.db ".backup '$b/db-$d.db'" && gzip -f "$b/db-$d.db" && find "$b" -name 'db-*.db.gz' -mtime +7 -delete && echo "$(date +\%FT\%T) backup ok $b/db-$d.db.gz"; } >> /srv/voluntariat-dashboard/data/backup.log 2>&1
 
 # --- weekly full resync -------------------------------------------------------
 #
 # The windowed sync only notices deletions inside the window it read, so a booking deleted
 # a year later would stay in the mirror forever. Sunday 04:10 catches those.
-10 4 * * 0 set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 1800 -X POST -H "X-Sync-Key: $SYNC_KEY" 'http://127.0.0.1:3000/api/sync?full=1' >> /srv/voluntariat/data/sync.log 2>&1
+10 4 * * 0 set -a; . /etc/voluntariat/env; set +a; curl -fsS -m 1800 -X POST -H "X-Sync-Key: $SYNC_KEY" 'http://127.0.0.1:3003/api/sync?full=1' >> /srv/voluntariat-dashboard/data/sync.log 2>&1

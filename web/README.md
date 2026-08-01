@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Voluntariat — admin dashboard
 
-## Getting Started
+Next.js 16 dashboard for the Casa Virupa coordination team. It mirrors the mobile app's
+Firestore into a local SQLite database and renders the coordination, calendar and
+configuration views on top of that mirror. Catalan UI. Self-hosted on a VPS.
 
-First, run the development server:
+**Agent/contributor rules live in [`AGENTS.md`](./AGENTS.md)** (loaded automatically by
+Claude Code via `CLAUDE.md`) — read it before touching code: it lists the data rules
+(integer cents, half-open ranges, mirror vs. dashboard-owned tables…) that the schema
+depends on. Deployment and operations are documented in
+[`deploy/README.md`](./deploy/README.md).
+
+## Local development
+
+Requires **Node >= 22.18** (`.ts` files are executed directly by `node`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run db:migrate     # migrations + views + seeds (idempotent)
+npm run seed:demo      # fake mirror data — no Firebase credentials needed
+node scripts/add-admin.ts you@example.com --coordinator
+npm run dev            # http://localhost:3000
+npm test               # node --test over lib/**/*.test.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To sync against the real (dev) Firestore instead of demo data, set up gcloud ADC first —
+see "Before anything else" in `deploy/README.md`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run db:generate` | new migration after editing `lib/db/schema.ts` |
+| `npm run db:migrate` | apply migrations + views + seeds |
+| `npm run seed:demo` | fake mirror data (`--force` to wipe) |
+| `npm run reset` | clear mirror and/or ledger (dry run by default) |
+| `npm run opening-balance` | settle historic debt at go-live |
+| `node scripts/add-admin.ts <email> --coordinator` | create/promote a dashboard admin |
