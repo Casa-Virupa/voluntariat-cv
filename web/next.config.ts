@@ -1,4 +1,6 @@
 import type { NextConfig } from 'next'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const nextConfig: NextConfig = {
   /**
@@ -6,6 +8,16 @@ const nextConfig: NextConfig = {
    * only the node_modules actually reached, so the deploy artefact stays small.
    */
   output: 'standalone',
+
+  /**
+   * THIS directory is the project root, full stop. Without it, Next infers the root from
+   * whatever lockfiles it finds above the app — and a stray package-lock.json in a parent
+   * directory silently NESTS the standalone output (.next/standalone/<subpath>/server.js),
+   * which breaks the deploy's assumption that server.js sits at the release root.
+   */
+  turbopack: {
+    root: dirname(fileURLToPath(import.meta.url)),
+  },
 
   /**
    * Native modules must not be bundled — better-sqlite3 loads a .node binary, and

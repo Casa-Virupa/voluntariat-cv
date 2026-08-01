@@ -47,21 +47,20 @@ BUILD_HEAP_MB="${VOLUNTARIAT_BUILD_HEAP_MB:-3072}"
 
 mkdir -p "$ROOT/releases" "$DATA_DIR"
 
-# Node 22.18 is a hard floor, not a recommendation. Everything operational in this project
-# is a .ts file run directly by node — the test suite, the migrations, add-admin.ts,
-# opening-balance.ts — and native type stripping only became unflagged in 22.18. On Node 20
-# they all die with ERR_UNKNOWN_FILE_EXTENSION while Next itself (engines >=20.9) starts
-# happily, so the site looks fine and nothing that matters actually works. better-sqlite3
-# also ships ABI-tagged prebuilds for >=22 and will fail at require time otherwise.
+# Node 24 exactly-this-major, not a recommendation. The runtime is pinned to node 24
+# (NODE_BIN in ecosystem.config.cjs — node 22.23.x crashes importing firebase-admin), and
+# the BUILD must match it: better-sqlite3 picks its native binary at `npm ci` time for the
+# node running the install, so a build under 22 produces a release the runtime under 24
+# refuses to load. Node 20 is doubly out: every operational .ts here (tests, migrations,
+# add-admin.ts) relies on native type stripping, which 20 lacks.
 node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
-node_minor="$(node -p 'process.versions.node.split(".")[1]' 2>/dev/null || echo 0)"
-if (( node_major < 22 || (node_major == 22 && node_minor < 18) )); then
-  echo "!!! node $(node -v 2>/dev/null || echo 'not found') — this app needs >= 22.18."
+if (( node_major != 24 )); then
+  echo "!!! node $(node -v 2>/dev/null || echo 'not found') — this deploy needs node 24,"
+  echo "!!! the same major the app runs on (NODE_BIN in deploy/ecosystem.config.cjs),"
+  echo "!!! or better-sqlite3's native binary will not match the runtime."
   echo "!!! Do NOT upgrade the system node: the other apps on this VPS are spawned by PM2"
-  echo "!!! with whatever node is on PATH. Install it for this user only and pin it:"
-  echo "!!!   nvm install 22 && nvm use 22"
-  echo "!!! then set NODE_BIN in deploy/ecosystem.config.cjs to \`which node\`, so this app"
-  echo "!!! runs on 22 and the neighbours keep whatever they are on today."
+  echo "!!! with whatever node is on PATH. For this shell only:"
+  echo "!!!   nvm install 24 && nvm use 24"
   exit 1
 fi
 

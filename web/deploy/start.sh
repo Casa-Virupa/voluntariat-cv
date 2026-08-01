@@ -17,12 +17,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 # Captured BEFORE the env file is sourced. `set -a` exports everything in that file over the
 # top of PM2's env, so a stray NODE_BIN there must not get to decide which node runs the app.
-# Node >= 22.18 is a hard requirement — see "Node version" in deploy/README.md.
-NODE_BIN="${NODE_BIN:-/usr/local/bin/node22}"
+# Node 24 is required — 22.23.x crashes importing firebase-admin, see ecosystem.config.cjs.
+NODE_BIN="${NODE_BIN:-/usr/local/bin/node24}"
 
 if [[ ! -x "$NODE_BIN" ]]; then
   echo "start.sh: $NODE_BIN is missing or not executable." >&2
-  echo "start.sh:   nvm install 22 && sudo ln -sfn \"\$(nvm which 22)\" /usr/local/bin/node22" >&2
+  echo "start.sh:   nvm install 24 && sudo ln -sfn \"\$(nvm which 24)\" /usr/local/bin/node24" >&2
   exit 1
 fi
 

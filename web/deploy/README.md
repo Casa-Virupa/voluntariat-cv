@@ -72,11 +72,11 @@ sudo apt install -y nginx sqlite3 certbot python3-certbot-nginx
 # The nginx plugin IS wanted: the other vhosts on this box are already certbot-managed
 # (`# managed by Certbot` in their files) and setup-server.sh follows that convention.
 
-# 1b. Node >= 22.18 FOR THIS APP ONLY — see "Node version" below. Do not touch the
+# 1b. Node 24 FOR THIS APP ONLY — see "Node version" below. Do not touch the
 #     system node: PM2 spawns the other apps with whatever `node` is on PATH.
-nvm install 22
-sudo ln -sfn "$(nvm which 22)" /usr/local/bin/node22   # what ecosystem.config.cjs pins
-nvm use 22                                             # for deploy.sh in this shell
+nvm install 24
+sudo ln -sfn "$(nvm which 24)" /usr/local/bin/node24   # what ecosystem.config.cjs pins
+nvm use 24                                             # for deploy.sh in this shell
 
 # 2. secrets
 sudo install -o "$PM2_USER" -g "$PM2_USER" -m 600 /dev/null /etc/voluntariat/env
@@ -187,23 +187,27 @@ restore a backup instead.
 
 ## Node version
 
-**>= 22.18, and it is a hard requirement.** Everything operational in this project is a
-`.ts` file run directly by `node` — the test suite, `lib/db/migrate.ts`,
-`scripts/add-admin.ts`, `scripts/opening-balance.ts` — and Node's native type stripping only
-became unflagged in 22.18. On Node 20 every one of them dies with
-`ERR_UNKNOWN_FILE_EXTENSION`, so migrations never run and the first coordinator can never be
-created, i.e. **nobody can sign in**. `better-sqlite3` compounds it: its prebuilt binaries
-are ABI-tagged for `>=22` and throw *"compiled against a different Node.js version"* at
-require time otherwise.
+**Node 24 (current LTS), build and runtime alike — it is a hard requirement.** Three
+constraints pin it:
 
-The failure mode is nasty because Next itself declares `engines: >=20.9.0` — the site starts
-and looks completely healthy while none of the above works.
+- **Not 20:** everything operational in this project is a `.ts` file run directly by
+  `node` — the test suite, `lib/db/migrate.ts`, `scripts/add-admin.ts` — and native type
+  stripping arrived unflagged in 22.18. On Node 20 every one of them dies with
+  `ERR_UNKNOWN_FILE_EXTENSION`, so migrations never run and the first coordinator can never
+  be created, i.e. **nobody can sign in**.
+- **Not 22 either:** node 22.23.x crashes with `ERR_INTERNAL_ASSERTION` the moment the
+  Turbopack runtime imports `firebase-admin` as an external module (hit in production
+  2026-08-01; the identical standalone build runs cleanly on 24). The failure mode is
+  nasty because the site starts and `/login` works — only pages that touch Firestore 500.
+- **Build major == runtime major:** `better-sqlite3` picks its ABI-tagged native binary
+  when `npm ci` runs, so a build under one major produces a release another major refuses
+  to load. Hence `nvm use 24` before `deploy.sh`, which now enforces exactly 24.
 
-`deploy.sh` refuses to run below 22.18, and `ecosystem.config.cjs` pins `/usr/local/bin/node22`
-rather than resolving `node` from PATH. That pinning is the point on this box: the other apps
-are spawned by the same PM2 daemon with whatever `node` it finds, so upgrading the *system*
-node to satisfy this app could change the runtime under all of them at their next restart.
-Install 22 for this user, symlink it, pin it here, leave the neighbours alone.
+`ecosystem.config.cjs` pins `/usr/local/bin/node24` rather than resolving `node` from PATH.
+That pinning is the point on this box: the other apps are spawned by the same PM2 daemon
+with whatever `node` it finds, so upgrading the *system* node to satisfy this app could
+change the runtime under all of them at their next restart. Install 24 for this user,
+symlink it, pin it here, leave the neighbours alone.
 
 ## Why one process
 

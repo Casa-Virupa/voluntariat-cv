@@ -27,17 +27,24 @@
 // relative to `cwd` BEFORE it looks at `interpreter`, so `interpreter: '/bin/bash'` with
 // `script: '-c'` dies with "Script not found: /srv/voluntariat-dashboard/current/-c".
 
-// THIS APP NEEDS NODE >= 22.18 (native .ts type stripping for the migrations and scripts;
-// ABI-tagged better-sqlite3 prebuilds). The other apps on this VPS may well be on an older
-// node, and PM2 spawns each app with whatever `node` resolves at that moment — so pin an
-// absolute path here rather than upgrading the system node out from under the neighbours.
+// THIS APP NEEDS NODE 24 (current LTS). Node >= 22.18 was the old floor (native .ts type
+// stripping; ABI-tagged better-sqlite3 prebuilds), but 22 is now EXCLUDED outright:
+// node 22.23.x dies with ERR_INTERNAL_ASSERTION when the Turbopack runtime imports
+// firebase-admin as an external module (verified 2026-08-01 — the same standalone build
+// runs fine on 24). The other apps on this VPS may well be on an older node, and PM2
+// spawns each app with whatever `node` resolves at that moment — so pin an absolute path
+// here rather than upgrading the system node out from under the neighbours.
 //
-//   nvm install 22
-//   sudo ln -sfn "$(nvm which 22)" /usr/local/bin/node22    # stable across nvm upgrades
+//   nvm install 24
+//   sudo ln -sfn "$(nvm which 24)" /usr/local/bin/node24    # stable across nvm upgrades
 //
-// An nvm path like /home/user/.nvm/versions/node/v22.x.y/bin/node works too, but bakes in a
+// An nvm path like /home/user/.nvm/versions/node/v24.x.y/bin/node works too, but bakes in a
 // patch version that a later `nvm install` will orphan. Passed to start.sh as NODE_BIN.
-const NODE_BIN = '/usr/local/bin/node22'
+//
+// The BUILD must run under node 24 as well (`nvm use 24` before deploy.sh): better-sqlite3
+// picks its native binary at `npm ci` time for the node that runs the install, and an
+// install under 22 produces a binary the runtime under 24 refuses to load.
+const NODE_BIN = '/usr/local/bin/node24'
 
 module.exports = {
   apps: [
