@@ -59,6 +59,7 @@ import voluntariatcv.features.profile.generated.resources.email
 import voluntariatcv.features.profile.generated.resources.first_quarter
 import voluntariatcv.features.profile.generated.resources.fourth_quarter
 import voluntariatcv.features.profile.generated.resources.full_name
+import voluntariatcv.features.profile.generated.resources.general_volunteering
 import voluntariatcv.features.profile.generated.resources.habitual
 import voluntariatcv.features.profile.generated.resources.ic_arrow_left
 import voluntariatcv.features.profile.generated.resources.ic_arrow_right
@@ -125,7 +126,7 @@ private fun ProfileContent(
     user: User,
     currentMonth: LocalDate,
     quarter: Quarter,
-    hoursDone: Int,
+    hoursDone: HoursBreakdown,
     onNextMonth: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextQuarter: () -> Unit,
@@ -149,7 +150,7 @@ private fun ProfileContent(
                 modifier = Modifier.padding(top = 16.dp)
             )
             DegreeOfCompliance(
-                done = hoursDone.toDouble(),
+                hoursBreakdown = hoursDone,
                 total = user.getMonthHours(),
                 currentMonth = currentMonth,
                 quarter = quarter,
@@ -248,7 +249,7 @@ private fun UserItemInfo(
 @Composable
 private fun DegreeOfCompliance(
     isMitra: Boolean,
-    done: Double,
+    hoursBreakdown: HoursBreakdown,
     total: Int,
     currentMonth: LocalDate,
     quarter: Quarter,
@@ -258,6 +259,7 @@ private fun DegreeOfCompliance(
     onPreviousQuarter: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val done = hoursBreakdown.total.toDouble()
     val percentage = ((done / total) * 100).coerceAtMost(100.0).formatString(1)
 
     Column(
@@ -347,8 +349,67 @@ private fun DegreeOfCompliance(
                         )
                     }
                 }
+                if (hoursBreakdown.total > 0) {
+                    HoursBreakdownDetail(hoursBreakdown = hoursBreakdown)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun HoursBreakdownDetail(
+    hoursBreakdown: HoursBreakdown,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+        HoursBreakdownRow(
+            icon = painterResource(Res.drawable.ic_layers),
+            title = stringResource(Res.string.general_volunteering),
+            hours = hoursBreakdown.general,
+        )
+        hoursBreakdown.specificByArea.forEach { (area, hours) ->
+            HoursBreakdownRow(
+                icon = painterResource(Res.drawable.ic_target),
+                title = area.displayName(),
+                hours = hours,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HoursBreakdownRow(
+    icon: Painter,
+    title: String,
+    hours: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+        )
+        Text(
+            text = "${hours}h",
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }
 

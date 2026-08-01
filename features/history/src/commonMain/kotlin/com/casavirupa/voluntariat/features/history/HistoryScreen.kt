@@ -1,15 +1,19 @@
 package com.casavirupa.voluntariat.features.history
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
@@ -30,12 +35,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
+import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
@@ -45,6 +52,7 @@ import voluntariatcv.features.history.generated.resources.confirm_pay
 import voluntariatcv.features.history.generated.resources.confirm_payment_description
 import voluntariatcv.features.history.generated.resources.confirm_payment_title
 import voluntariatcv.features.history.generated.resources.days
+import voluntariatcv.features.history.generated.resources.dinners_count
 import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
 import voluntariatcv.features.history.generated.resources.hours_format
@@ -57,10 +65,16 @@ import voluntariatcv.features.history.generated.resources.ic_clock
 import voluntariatcv.features.history.generated.resources.ic_group
 import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
+import voluntariatcv.features.history.generated.resources.lunches_count
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
+import voluntariatcv.features.history.generated.resources.nights_count
 import voluntariatcv.features.history.generated.resources.no_volunteering_description
 import voluntariatcv.features.history.generated.resources.no_volunteering_title
+import voluntariatcv.features.history.generated.resources.nothing_to_pay
+import voluntariatcv.features.history.generated.resources.payment_detail_button
+import voluntariatcv.features.history.generated.resources.payment_detail_title
+import voluntariatcv.features.history.generated.resources.payment_detail_total
 import voluntariatcv.features.history.generated.resources.pending_payment
 import voluntariatcv.features.history.generated.resources.remember_payment
 import voluntariatcv.features.history.generated.resources.specific
@@ -71,6 +85,8 @@ internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val showPaymentDialog by viewModel.showPaymentDialog.collectAsStateWithLifecycle()
+    val showPaymentDetailDialog by viewModel
+        .showPaymentDetailDialog.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
@@ -78,6 +94,7 @@ internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
         onNextMonth = viewModel::nextMonth,
         uiState = uiState,
         onPayVolunteer = viewModel::showPaymentDialog,
+        onShowPaymentDetail = viewModel::showPaymentDetailDialog,
     )
 
     if (showPaymentDialog) {
@@ -90,6 +107,13 @@ internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
             onConfirm = viewModel::confirmPayment,
         )
     }
+
+    if (showPaymentDetailDialog) {
+        PaymentDetailDialog(
+            detail = uiState.paymentDetail,
+            onDismiss = viewModel::closePaymentDetailDialog,
+        )
+    }
 }
 
 @Composable
@@ -99,6 +123,7 @@ private fun HistoryContent(
     onNextMonth: () -> Unit,
     uiState: HistoryUiState,
     onPayVolunteer: () -> Unit,
+    onShowPaymentDetail: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -131,6 +156,7 @@ private fun HistoryContent(
                     title = stringResource(Res.string.pending_payment),
                     description = stringResource(Res.string.remember_payment, state.amount),
                     onClickPay = onPayVolunteer,
+                    onClickDetail = onShowPaymentDetail,
                 )
             }
             HistoryList(
@@ -313,6 +339,7 @@ private fun PaymentMessage(
     description: String,
     modifier: Modifier = Modifier,
     onClickPay: (() -> Unit)? = null,
+    onClickDetail: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
@@ -347,9 +374,18 @@ private fun PaymentMessage(
                     ),
                 )
             }
-            if (onClickPay != null) {
-                TextButton(onClick = onClickPay) {
-                    Text(text = stringResource(Res.string.confirm_pay))
+            if (onClickPay != null || onClickDetail != null) {
+                Column(horizontalAlignment = Alignment.End) {
+                    if (onClickPay != null) {
+                        TextButton(onClick = onClickPay) {
+                            Text(text = stringResource(Res.string.confirm_pay))
+                        }
+                    }
+                    if (onClickDetail != null) {
+                        TextButton(onClick = onClickDetail) {
+                            Text(text = stringResource(Res.string.payment_detail_button))
+                        }
+                    }
                 }
             }
         }
@@ -400,6 +436,115 @@ private fun HistoryItem(
                 ShiftTags(shifts = volunteer.shifts)
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PaymentDetailDialog(
+    detail: PaymentDetail,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.clip(RoundedCornerShape(12.dp)),
+    ) {
+        Column(
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+        ) {
+            Text(
+                text = stringResource(Res.string.payment_detail_title),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(24.dp),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (detail.lunches > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.lunches_count,
+                            detail.lunches,
+                            detail.lunches,
+                        ),
+                        amount = detail.lunchesAmount,
+                    )
+                }
+                if (detail.dinners > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.dinners_count,
+                            detail.dinners,
+                            detail.dinners,
+                        ),
+                        amount = detail.dinnersAmount,
+                    )
+                }
+                if (detail.nights > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.nights_count,
+                            detail.nights,
+                            detail.nights,
+                        ),
+                        amount = detail.nightsAmount,
+                    )
+                }
+                if (detail.total == 0) {
+                    Text(
+                        text = stringResource(Res.string.nothing_to_pay),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                } else {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    PaymentDetailRow(
+                        concept = stringResource(Res.string.payment_detail_total),
+                        amount = detail.total,
+                        emphasized = true,
+                    )
+                }
+                CVButton(
+                    text = stringResource(Res.string.accept_button),
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaymentDetailRow(
+    concept: String,
+    amount: Int,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+) {
+    val style = if (emphasized) {
+        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+    } else {
+        MaterialTheme.typography.bodyMedium
+    }
+    Row(modifier = modifier) {
+        Text(
+            text = concept,
+            modifier = Modifier.weight(1f),
+            style = style,
+        )
+        Text(
+            text = "$amount€",
+            style = style,
+        )
     }
 }
 

@@ -172,6 +172,7 @@ data class DayShifts(
 data class VolunteerItemUi(
     val id: VolunteerId,
     val name: String,
+    val schedule: String,
     val type: VolunteerTypeUi,
     val meals: List<Meal>,
     val sleep: Boolean,
@@ -191,6 +192,7 @@ private fun Volunteer.toUiModel(name: String, userId: UserId?) =
     VolunteerItemUi(
         id = id,
         name = name,
+        schedule = shifts.formatSchedule(),
         type = if (shifts.size > 1) {
             buildAllDayVolunteerType(shifts)
         } else {
@@ -209,3 +211,9 @@ private fun buildAllDayVolunteerType(shifts: List<Shift>) =
 
 private fun buildSingleVolunteerType(volunteerShift: Shift) =
     VolunteerTypeUi.Single(type = volunteerShift.type)
+
+private fun List<Shift>.formatSchedule() =
+    sortedBy { it.timeRange.start }
+        .joinToString(" · ") { shift ->
+            "${shift.timeRange.start.format("HH:mm")} - ${shift.timeRange.end.format("HH:mm")}"
+        }

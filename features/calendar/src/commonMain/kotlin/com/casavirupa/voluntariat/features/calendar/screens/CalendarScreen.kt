@@ -379,7 +379,7 @@ private fun DayCell(
                     strokeWidth = strokeWidth
                 )
             }
-            .then(if (isPast || !isAvailable) Modifier else Modifier.clickable { onClick() }),
+            .then(if (isPast) Modifier else Modifier.clickable { onClick() }),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
@@ -408,7 +408,7 @@ private fun DayCell(
                     },
                 textAlign = TextAlign.Center,
             )
-            if (numOfVolunteers != null && isAvailable) {
+            if (numOfVolunteers != null) {
                 CalendarEvent(
                     text = pluralStringResource(
                         Res.plurals.volunteers_count,

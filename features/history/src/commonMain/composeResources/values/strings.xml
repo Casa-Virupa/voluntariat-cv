@@ -16,4 +16,20 @@
     <string name="confirm_pay">Confirm</string>
     <string name="no_volunteering_title">No volunteer</string>
     <string name="no_volunteering_description">You still need to do this month's volunteer work</string>
+    <string name="payment_detail_button">Detail</string>
+    <string name="payment_detail_title">Payment detail</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">There is nothing pending to pay this month</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 lunch</item>
+        <item quantity="other">%1$d lunches</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 dinner</item>
+        <item quantity="other">%1$d dinners</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 overnight stay</item>
+        <item quantity="other">%1$d overnight stays</item>
+    </plurals>
 </resources>
