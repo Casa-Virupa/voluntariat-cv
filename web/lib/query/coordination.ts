@@ -14,7 +14,7 @@
 
 import { raw } from '../db/index.ts'
 import { AREA_GENERAL, AREA_TOTAL, AREA_UNKNOWN } from '../contract.ts'
-import { monthsIn, type Period } from '../dates.ts'
+import { type Period } from '../dates.ts'
 import {
   progressOf,
   resolveCommitment,
@@ -55,9 +55,6 @@ export interface VolunteerRow {
   unpricedItems: number
   balance: Balance
   settlement: SettlementState
-  /** What the phone currently shows for the months in this period, for drift detection. */
-  appPaid: boolean | null
-  appAmountCents: number | null
 }
 
 export interface CoordinationTable {
@@ -74,8 +71,6 @@ export interface CoordinationTable {
   }
   /** False for an area_responsible: meals and money are coordination's business. */
   showPayments: boolean
-  /** (user, year, month) tuples with more than one payment doc in Firestore. */
-  duplicatePayments: Array<{ uid: string; name: string; year: number; month: number; count: number }>
 }
 
 export interface CoordinationScope {
@@ -109,7 +104,6 @@ export function coordinationTable(
   const carryCharges = scope.showPayments ? chargeTotalsBefore(filters.period.from) : new Map<string, number>()
   const credits = scope.showPayments ? creditsInPeriod(filters.period) : new Map<string, { total: number; payments: number }>()
   const carryCredits = scope.showPayments ? creditTotalsBefore(filters.period.from) : new Map<string, number>()
-  const appPayments = scope.showPayments ? appPaymentState(filters.period) : new Map()
 
   // Columns are the areas with actual hours, plus any area a listed volunteer has a
   // commitment for — a target of 8h with 0h done is exactly what a coordinator needs to
@@ -157,8 +151,6 @@ export function coordinationTable(
       carryInCents: (carryCharges.get(u.uid) ?? 0) - (carryCredits.get(u.uid) ?? 0),
     })
 
-    const app = appPayments.get(u.uid) ?? null
-
     rows.push({
       uid: u.uid,
       name: u.name || 'Sense nom',
@@ -175,8 +167,6 @@ export function coordinationTable(
       unpricedItems: unpriced,
       balance,
       settlement: settlementOf(balance),
-      appPaid: app?.paid ?? null,
-      appAmountCents: app?.amountCents ?? null,
     })
   }
 
@@ -227,7 +217,6 @@ export function coordinationTable(
     areaColumns,
     totals,
     showPayments: scope.showPayments,
-    duplicatePayments: scope.showPayments ? duplicatePaymentDocs() : [],
   }
 }
 
@@ -455,50 +444,6 @@ function creditTotalsBefore(date: string): Map<string, number> {
     )
     .all(date) as Array<{ uid: string; cents: number }>
   return new Map(rows.map((r) => [r.uid, r.cents]))
-}
-
-/**
- * What the app itself believes, summed over the months the period covers. Only the
- * canonical doc counts — the one `.firstOrNull()` returns on the phone. Mirrored for
- * drift detection only; `payments.amount` is corrupt by construction and is never input.
- */
-export function appPaymentState(
-  period: Period,
-): Map<string, { paid: boolean; amountCents: number }> {
-  const keys = monthsIn(period).map(([y, m]) => y * 100 + m)
-  if (keys.length === 0) return new Map()
-
-  const rows = raw()
-    .prepare(
-      `SELECT user_id AS uid, paid, amount_cents AS amountCents
-         FROM v_payment_canonical
-        WHERE is_canonical = 1 AND (year * 100 + month) IN ${inList(keys)}`,
-    )
-    .all(...keys) as Array<{ uid: string; paid: number; amountCents: number }>
-
-  const out = new Map<string, { paid: boolean; amountCents: number }>()
-  for (const r of rows) {
-    const cur = out.get(r.uid) ?? { paid: true, amountCents: 0 }
-    // "paid" for a quarter means every month in it is paid.
-    out.set(r.uid, {
-      paid: cur.paid && Boolean(r.paid),
-      amountCents: cur.amountCents + r.amountCents,
-    })
-  }
-  return out
-}
-
-function duplicatePaymentDocs() {
-  return raw()
-    .prepare(
-      `SELECT p.user_id AS uid, COALESCE(u.name, p.user_id) AS name, p.year, p.month, COUNT(*) AS count
-         FROM v_payment_canonical p
-         LEFT JOIN fs_user u ON u.uid = p.user_id
-        GROUP BY p.user_id, p.year, p.month
-       HAVING COUNT(*) > 1
-        ORDER BY p.year DESC, p.month DESC`,
-    )
-    .all() as Array<{ uid: string; name: string; year: number; month: number; count: number }>
 }
 
 /**

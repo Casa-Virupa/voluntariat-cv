@@ -13,7 +13,7 @@
  *      outside it would delete history we simply did not ask Firestore about.
  */
 
-import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNull, like, lt, sql } from 'drizzle-orm'
 import { Timestamp } from 'firebase-admin/firestore'
 
 import { db, raw } from '../db/index.ts'
@@ -21,21 +21,23 @@ import {
   appSetting,
   fsBooking,
   fsBookingShift,
-  fsPayment,
   fsUser,
   fsUserArea,
+  ledgerEntry,
   syncRun,
 } from '../db/schema.ts'
 import { firestore } from '../firebase.ts'
-import { COLLECTION_PAYMENTS, COLLECTION_USERS, COLLECTION_VOLUNTEERS } from '../contract.ts'
+import { COLLECTION_LEDGER, COLLECTION_USERS, COLLECTION_VOLUNTEERS } from '../contract.ts'
+import { insertLedgerEntry } from '../mutations.ts'
+import { FIRESTORE_IMPORT_REF_PREFIX, LEDGER_DOC_PREFIX } from '../publish.ts'
 import { addMonths, epochSecondsAtLocalMidnight, firstOfMonth, firstMonthOfQuarter, localDate, quarterOf } from '../dates.ts'
 import { ANOMALY } from './anomalies.ts'
 import {
   parseBooking,
-  parsePayment,
+  parseLedgerDoc,
   parseUser,
   type ParsedBooking,
-  type ParsedPayment,
+  type ParsedLedgerEntry,
   type ParsedUser,
 } from './parse.ts'
 
@@ -52,7 +54,8 @@ export interface SyncResult {
   windowFrom: string | null
   readUsers: number
   readBookings: number
-  readPayments: number
+  readLedger: number
+  importedLedger: number
   insertedBookings: number
   deletedBookings: number
   anomalies: number
@@ -145,19 +148,19 @@ export async function runSync(opts: {
       }
     }
 
-    // Payments are read LAST on purpose: a booking created between the two reads would
-    // otherwise appear without its amount increment, and write-back would "correct" a
-    // value the app was about to correct itself.
-    const paymentDocs = await fs.collection(COLLECTION_PAYMENTS).get()
-    const payments: ParsedPayment[] = []
-    for (const d of paymentDocs.docs) {
-      const parsed = parsePayment(d.id, d.data() as Record<string, unknown>)
-      if (parsed) payments.push(parsed)
+    // The app's money facts. Docs the dashboard itself published (dash-*) come back here
+    // too; the apply step skips them by ID, and everything else is imported once, keyed
+    // by external_ref.
+    const ledgerDocs = await fs.collection(COLLECTION_LEDGER).get()
+    const ledger: ParsedLedgerEntry[] = []
+    for (const d of ledgerDocs.docs) {
+      const parsed = parseLedgerDoc(d.id, d.data() as Record<string, unknown>)
+      if (parsed) ledger.push(parsed)
       else skipped++
     }
 
     // ---- 2. APPLY (one transaction, nothing partial survives) ---------------
-    const stats = applyAll({ now, windowFrom, users, bookings, payments })
+    const stats = applyAll({ now, windowFrom, users, bookings, ledger })
 
     const result: SyncResult = {
       runId,
@@ -165,7 +168,8 @@ export async function runSync(opts: {
       windowFrom,
       readUsers: users.length,
       readBookings: bookings.length,
-      readPayments: payments.length,
+      readLedger: ledger.length,
+      importedLedger: stats.importedLedger,
       insertedBookings: stats.inserted,
       deletedBookings: stats.deleted,
       anomalies: stats.anomalies,
@@ -180,7 +184,7 @@ export async function runSync(opts: {
         heartbeatAt: Math.floor(Date.now() / 1000),
         readUsers: result.readUsers,
         readBookings: result.readBookings,
-        readPayments: result.readPayments,
+        readLedger: result.readLedger,
         insertedBookings: result.insertedBookings,
         deletedBookings: result.deletedBookings,
         anomalies: result.anomalies,
@@ -257,9 +261,9 @@ export function applyAll(input: {
   windowFrom: string | null
   users: ParsedUser[]
   bookings: ParsedBooking[]
-  payments: ParsedPayment[]
-}): { inserted: number; deleted: number; anomalies: number } {
-  const { now, windowFrom, users, bookings, payments } = input
+  ledger: ParsedLedgerEntry[]
+}): { inserted: number; deleted: number; anomalies: number; importedLedger: number } {
+  const { now, windowFrom, users, bookings, ledger } = input
 
   const knownUsers = new Set(users.map((u) => u.uid))
 
@@ -434,56 +438,44 @@ export function applyAll(input: {
         .run()
     }
 
-    // --- payments -------------------------------------------------------------
-    for (const p of payments) {
-      db.insert(fsPayment)
-        .values({
-          docId: p.docId,
-          userId: p.userId,
-          year: p.year,
-          month: p.month,
-          paid: p.paid,
-          amountCents: p.amountCents,
-          amountRaw: p.amountRaw,
-          rawJson: p.rawJson,
-          docHash: p.docHash,
-          firstSeenAt: now,
-          lastSeenAt: now,
-          deletedAt: null,
-        })
-        .onConflictDoUpdate({
-          target: fsPayment.docId,
-          set: {
-            userId: p.userId,
-            year: p.year,
-            month: p.month,
-            paid: p.paid,
-            amountCents: p.amountCents,
-            amountRaw: p.amountRaw,
-            rawJson: p.rawJson,
-            docHash: p.docHash,
-            lastSeenAt: now,
-            deletedAt: null,
+    // --- the ledger ------------------------------------------------------------
+    // Import money entries written outside the dashboard (app-side bootstrap, the
+    // Firebase console) into `ledger_entry`, exactly once each: the doc ID becomes the
+    // external_ref and ux_ledger_external_ref refuses a second copy. The dashboard's own
+    // publishes (dash-*) are skipped — they ARE ledger_entry rows already. ledger_entry
+    // is insert-only, so a doc later deleted from Firestore stays on the books here.
+    let importedLedger = 0
+    {
+      const existingRefs = new Set(
+        db
+          .select({ ref: ledgerEntry.externalRef })
+          .from(ledgerEntry)
+          .where(like(ledgerEntry.externalRef, `${FIRESTORE_IMPORT_REF_PREFIX}%`))
+          .all()
+          .map((r) => r.ref),
+      )
+      for (const e of ledger) {
+        if (e.docId.startsWith(LEDGER_DOC_PREFIX)) continue
+        const ref = `${FIRESTORE_IMPORT_REF_PREFIX}${e.docId}`
+        if (existingRefs.has(ref)) continue
+        insertLedgerEntry(
+          {
+            userId: e.userId,
+            kind: e.kind,
+            effectiveDate: e.date,
+            amountCents: e.amountCents,
+            method: null,
+            note: e.note,
+            externalRef: ref,
           },
-        })
-        .run()
-    }
-
-    const seenPayments = new Set(payments.map((p) => p.docId))
-    const livePayments = db
-      .select({ docId: fsPayment.docId })
-      .from(fsPayment)
-      .where(isNull(fsPayment.deletedAt))
-      .all()
-    for (const chunk of chunks(
-      livePayments.filter((r) => !seenPayments.has(r.docId)).map((r) => r.docId),
-      500,
-    )) {
-      db.update(fsPayment).set({ deletedAt: now }).where(inArray(fsPayment.docId, chunk)).run()
+          'firestore-sync',
+        )
+        importedLedger++
+      }
     }
 
     const anomalies = bookings.filter((b) => b.anomalyFlags !== 0).length
-    return { inserted, deleted: toDelete.length, anomalies }
+    return { inserted, deleted: toDelete.length, anomalies, importedLedger }
   })
 
   return tx()

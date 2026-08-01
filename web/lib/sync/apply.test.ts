@@ -68,7 +68,7 @@ test('a first sync inserts bookings and their shift rows', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('b1', '2026-05-04'), booking('b2', '2026-05-05')],
-    payments: [],
+    ledger: [],
   })
   assert.equal(stats.inserted, 2)
   assert.equal(stats.deleted, 0)
@@ -82,7 +82,7 @@ test('re-syncing unchanged documents is a no-op, not a rewrite', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('b1', '2026-05-04'), booking('b2', '2026-05-05')],
-    payments: [],
+    ledger: [],
   })
   assert.equal(stats.inserted, 0, 'unchanged hashes must skip the child rewrite')
   assert.equal(live().length, 2)
@@ -94,7 +94,7 @@ test('a booking absent from Firestore is tombstoned', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('b1', '2026-05-04')],
-    payments: [],
+    ledger: [],
   })
   assert.equal(stats.deleted, 1)
   assert.deepEqual(live().map((b) => b.docId), ['b1'])
@@ -106,7 +106,7 @@ test('a tombstoned booking that reappears is resurrected', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('b1', '2026-05-04'), booking('b2', '2026-05-05')],
-    payments: [],
+    ledger: [],
   })
   assert.equal(live().length, 2)
 })
@@ -122,7 +122,7 @@ test('history OUTSIDE the window is never tombstoned', () => {
       booking('b1', '2026-05-04'),
       booking('b2', '2026-05-05'),
     ],
-    payments: [],
+    ledger: [],
   })
   assert.equal(live().length, 3)
 
@@ -132,7 +132,7 @@ test('history OUTSIDE the window is never tombstoned', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('b1', '2026-05-04'), booking('b2', '2026-05-05')],
-    payments: [],
+    ledger: [],
   })
   assert.equal(stats.deleted, 0)
   assert.ok(live().some((b) => b.docId === 'old'), 'the 2024 booking must survive')
@@ -143,7 +143,7 @@ test('the mass-delete guard refuses a truncated fetch and changes nothing', () =
   const many = Array.from({ length: 40 }, (_, i) =>
     booking(`m${i}`, `2026-05-${String((i % 28) + 1).padStart(2, '0')}`),
   )
-  applyAll({ now: NOW + 6, windowFrom: WINDOW, users: [USER], bookings: many, payments: [] })
+  applyAll({ now: NOW + 6, windowFrom: WINDOW, users: [USER], bookings: many, ledger: [] })
   const before = live().length
   assert.ok(before >= 40)
 
@@ -154,7 +154,7 @@ test('the mass-delete guard refuses a truncated fetch and changes nothing', () =
         windowFrom: WINDOW,
         users: [USER],
         bookings: [booking('m0', '2026-05-01')],
-        payments: [],
+        ledger: [],
       }),
     /esborrat massiu/,
   )
@@ -171,7 +171,7 @@ test('orphan and duplicate-day bookings are flagged, not dropped', () => {
     windowFrom: WINDOW,
     users: [], // no users at all -> every booking is an orphan
     bookings: [dup1, dup2],
-    payments: [],
+    ledger: [],
   })
   const rows = db
     .select()
@@ -199,7 +199,7 @@ test('deleting a booking removes its charges automatically', () => {
     windowFrom: WINDOW,
     users: [USER],
     bookings: [booking('charge1', '2026-05-20')],
-    payments: [],
+    ledger: [],
   })
   const withBooking = total()
   assert.ok(withBooking > 0, 'a lunch should be charged')

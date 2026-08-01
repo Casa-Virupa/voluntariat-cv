@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache'
 import { requireCoordinator } from '@/lib/authz'
 import { parseEurosToCents } from '@/lib/ledger'
 import { closePeriodForUser, insertLedgerEntry, ValidationError, voidLedgerEntry } from '@/lib/mutations'
+import { publishLedgerEntry } from '@/lib/publish'
 import { monthPeriod, quarterPeriod } from '@/lib/dates'
 
 function str(form: FormData, key: string): string {
@@ -63,7 +64,7 @@ async function guard(form: FormData, work: () => Promise<string> | string): Prom
 export async function addLedgerEntryAction(form: FormData) {
   const admin = await requireCoordinator()
 
-  return guard(form, () => {
+  return guard(form, async () => {
     const cents = parseEurosToCents(str(form, 'amount'))
     if (cents === null) throw new ValidationError('L’import ha de ser un número com 24 o 24,50.')
 
@@ -74,7 +75,7 @@ export async function addLedgerEntryAction(form: FormData) {
 
     const method = str(form, 'method')
 
-    insertLedgerEntry(
+    const id = insertLedgerEntry(
       {
         userId: str(form, 'uid'),
         kind,
@@ -85,16 +86,28 @@ export async function addLedgerEntryAction(form: FormData) {
       },
       admin.email,
     )
+    // If Firestore is down the SQLite row survives and the retry queue in
+    // /configuracio?seccio=firebase picks it up — better a pending publish than a lost entry.
+    await publishOrQueue(id, admin.email)
 
     return kind === 'payment' ? 'Pagament registrat.' : 'Apunt registrat.'
   })
 }
 
+async function publishOrQueue(id: number, actor: string): Promise<void> {
+  try {
+    await publishLedgerEntry(id, actor)
+  } catch (error) {
+    console.error(`ledger publish failed for entry ${id}; queued for republish`, error)
+  }
+}
+
 export async function voidLedgerEntryAction(form: FormData) {
   const admin = await requireCoordinator()
 
-  return guard(form, () => {
-    voidLedgerEntry(Number(str(form, 'id')), admin.email, str(form, 'reason'))
+  return guard(form, async () => {
+    const negationId = voidLedgerEntry(Number(str(form, 'id')), admin.email, str(form, 'reason'))
+    await publishOrQueue(negationId, admin.email)
     return 'Apunt anul·lat.'
   })
 }

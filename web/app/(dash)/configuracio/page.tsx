@@ -35,10 +35,10 @@ import {
   AUDIT_ACTION_LABEL,
   AUDIT_ENTITY_LABEL,
   getSetting,
-  writebackEnabled,
 } from '@/lib/settings'
 import { readLinks, type LinksConfig } from '@/lib/links'
-import { planWriteback, recentWritebacks } from '@/lib/writeback'
+import { pendingLedgerPublishes, priceRulesPublishState } from '@/lib/publish'
+import { credentialSource } from '@/lib/firebase'
 import type { RawSearch } from '@/lib/query/filters'
 
 import { AutoSubmitForm } from '../_components/AutoSubmitForm'
@@ -49,11 +49,11 @@ import {
   addPriceAction,
   endCommitmentAction,
   endPriceAction,
-  runWritebackAction,
+  publishPricesAction,
+  republishLedgerAction,
   saveLinksAction,
   saveAdminAction,
   saveSettingsAction,
-  setWritebackAction,
   toggleAdminAction,
 } from './actions'
 
@@ -66,7 +66,7 @@ const SECTIONS = [
   { key: 'enllacos', label: 'Enllaços' },
   { key: 'sync', label: 'Sincronització' },
   { key: 'dades', label: 'Qualitat de dades' },
-  { key: 'firebase', label: 'Escriptura a Firebase' },
+  { key: 'firebase', label: 'Firestore (app)' },
 ] as const
 
 const inputClass =
@@ -126,9 +126,7 @@ export default async function ConfiguracioPage({
       {section === 'enllacos' && <LinksSection />}
       {section === 'sync' && <SyncSection auditPageNumber={parsePageNumber(one(search.canvis))} />}
       {section === 'dades' && <DataQualitySection />}
-      {section === 'firebase' && (
-        <FirebaseSection today={today} month={parseMonth(one(search.mes), today)} />
-      )}
+      {section === 'firebase' && <FirebaseSection />}
     </div>
   )
 }
@@ -149,20 +147,6 @@ function parsePageNumber(value: string | null): number {
   return Number.isInteger(n) && n >= 1 ? n : 1
 }
 
-/**
- * Write-back is always about ONE month — the app's payment documents are keyed on
- * (user, year, month), and rule 2 says only that month's charges may ever be written.
- */
-function parseMonth(value: string | null, today: string): { year: number; month: number } {
-  const m = value && /^\d{4}-\d{2}$/.test(value) ? value : today.slice(0, 7)
-  const year = Number(m.slice(0, 4))
-  const month = Number(m.slice(5, 7))
-  if (year < 2000 || year > 2100 || month < 1 || month > 12) {
-    return { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) }
-  }
-  return { year, month }
-}
-
 // --- prices ------------------------------------------------------------------
 
 async function PricesSection({ today }: { today: string }) {
@@ -173,7 +157,9 @@ async function PricesSection({ today }: { today: string }) {
       <Notice>
         Un preu no s’edita mai: se’n crea un de nou amb una data d’inici i el vigent es tanca
         aquell mateix dia. Així cap càrrec ja calculat canvia retroactivament — les reserves de
-        maig conserven el preu de maig.
+        maig conserven el preu de maig. Cada canvi es publica automàticament a l’app
+        (col·lecció <code>price_rules</code>); l’app només veu la línia genèrica
+        («Qualsevol» / «Qualsevol»).
       </Notice>
 
       <Card>
@@ -926,211 +912,88 @@ function QualityRow({ label, value, hint }: { label: string; value: number; hint
   )
 }
 
-// --- write-back --------------------------------------------------------------
+// --- Firestore publishing status ----------------------------------------------
 
-async function FirebaseSection({
-  today,
-  month: selected,
-}: {
-  today: string
-  month: { year: number; month: number }
-}) {
-  const enabled = writebackEnabled()
-  const { year, month } = selected
-  const period = monthPeriod(year, month)
-  const plan = planWriteback(period)
-  const history = recentWritebacks()
-
-  const drifting = plan.filter((p) => p.action === 'update')
-  const missing = plan.filter((p) => p.action === 'skip_no_doc')
-  const duplicates = plan.filter((p) => p.docCount > 1)
+/**
+ * Since 2026-08 the app derives every balance from `price_rules` + `ledger`, which the
+ * dashboard publishes. This section shows whether both are in step and offers the manual
+ * retries; the old `payments` write-back is gone and that collection is a frozen archive.
+ */
+async function FirebaseSection() {
+  let state: Awaited<ReturnType<typeof priceRulesPublishState>> | null = null
+  let pendingLedger: number[] = []
+  let firestoreError = false
+  try {
+    state = await priceRulesPublishState()
+    pendingLedger = await pendingLedgerPublishes()
+  } catch {
+    firestoreError = true
+  }
 
   return (
     <div className="space-y-4">
-      <Notice tone={enabled ? 'warn' : 'info'}>
-        <p>
-          El panell llegeix Firestore i prou, amb una única excepció: escriure{' '}
-          <code>amount</code> i <code>paid</code> als documents de <code>payments</code> perquè
-          el mòbil acabi mostrant les mateixes xifres. Ara mateix està{' '}
-          <strong>{enabled ? 'ACTIVAT' : 'desactivat'}</strong>.
-        </p>
-        <p className="mt-2">
-          Activar-ho canviarà imports que els voluntaris ja han vist, perquè{' '}
-          <code>payments.amount</code> de l’app ja és incorrecte per a tothom que hagi
-          cancel·lat alguna reserva mai: l’app l’incrementa a cada reserva i no el descompta
-          mai. Revisa aquest informe abans d’obrir la porta.
-        </p>
+      <Notice>
+        L’app calcula els saldos a partir de <code>price_rules</code> i <code>ledger</code>,
+        que publica aquest panell: cada preu nou i cada apunt registrat s’hi escriuen al
+        moment, i la sincronització importa cada 15 minuts els apunts creats fora del panell.
+        La col·lecció <code>payments</code> és un arxiu congelat: ningú l’escriu ni la llegeix.
       </Notice>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <QualityTile label={`Diferències (${period.label})`} value={drifting.length} bad={drifting.length > 0} />
-        <QualityTile label="Sense document a l’app" value={missing.length} />
-        <QualityTile label="Documents duplicats" value={duplicates.length} bad={duplicates.length > 0} />
-        <QualityTile label="Ja coincideixen" value={plan.filter((p) => p.action === 'skip_nochange').length} />
-      </div>
+      {firestoreError && (
+        <Notice tone="bad">
+          No s’ha pogut llegir Firestore — segurament falten credencials en aquest entorn
+          (vegeu <code>lib/firebase.ts</code>). Les publicacions fallaran fins que es resolgui.
+        </Notice>
+      )}
+
+      {state && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <QualityTile label="Docs de preus esperats" value={state.expected} />
+          <QualityTile label="Preus fora de línia" value={state.drift} bad={state.drift > 0} />
+          <QualityTile
+            label="Apunts pendents de publicar"
+            value={pendingLedger.length}
+            bad={pendingLedger.length > 0}
+          />
+        </div>
+      )}
+
+      {state?.hasSpecificRules && (
+        <Notice tone="warn">
+          Hi ha preus amb tipus de voluntari o soci específics. L’app només entén un preu pla
+          per concepte, així que a Firestore només es publica la línia genèrica («Qualsevol» /
+          «Qualsevol»); les regles específiques queden com a refinament intern del panell.
+        </Notice>
+      )}
 
       <Card>
         <CardHeader
-          title={`Conciliació de ${period.label}`}
-          subtitle="«Derivat» són només els càrrecs d’aquest mes, sense saldo anterior — l’app fa amount += delta i un saldo acumulat es duplicaria."
-          actions={
-            <AutoSubmitForm className="flex items-center gap-2">
-              <input type="hidden" name="seccio" value="firebase" />
-              <input
-                type="month"
-                name="mes"
-                defaultValue={`${year}-${String(month).padStart(2, '0')}`}
-                max={today.slice(0, 7)}
-                className={inputClass}
-              />
-            </AutoSubmitForm>
-          }
+          title="Republicació manual"
+          subtitle="Només cal si una publicació automàtica va fallar (Firestore inaccessible en aquell moment). Totes dues operacions són idempotents."
         />
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={thClass}>Voluntari</th>
-                <th className={`${thClass} text-right`}>Derivat</th>
-                <th className={`${thClass} text-right`}>A l’app</th>
-                <th className={`${thClass} text-right`}>Diferència</th>
-                <th className={thClass}>Pagat (panell)</th>
-                <th className={thClass}>Pagat (app)</th>
-                <th className={thClass}>Acció</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plan.length === 0 && (
-                <tr>
-                  <td className={tdClass} colSpan={7}>
-                    Cap càrrec ni cap document de pagament aquest mes.
-                  </td>
-                </tr>
-              )}
-              {plan.map((p) => (
-                <tr key={`${p.uid}-${p.month}`}>
-                  <td className={`${tdClass} font-medium`}>
-                    {p.name}
-                    {p.docCount > 1 && (
-                      <Badge className="ml-2 bg-warn/10 text-warn-ink ring-warn/30">
-                        {p.docCount} documents
-                      </Badge>
-                    )}
-                  </td>
-                  <td className={`${tdClass} text-right tabular-nums`}>{formatCents(p.derivedCents)}</td>
-                  <td className={`${tdClass} text-right tabular-nums`}>
-                    {p.appAmountCents === null ? '—' : formatCents(p.appAmountCents)}
-                  </td>
-                  <td
-                    className={`${tdClass} text-right tabular-nums ${
-                      p.driftCents === 0 ? 'text-ink-faint' : 'text-bad'
-                    }`}
-                  >
-                    {p.driftCents === 0 ? '—' : formatCents(p.driftCents)}
-                  </td>
-                  <td className={tdClass}>{p.derivedPaid ? 'Sí' : 'No'}</td>
-                  <td className={`${tdClass} ${p.paidDiffers ? 'text-bad' : ''}`}>
-                    {p.appPaid === null ? '—' : p.appPaid ? 'Sí' : 'No'}
-                  </td>
-                  <td className={tdClass}>{ACTION_LABEL[p.action]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader title="Interruptor" />
         <div className="flex flex-wrap items-end gap-4 p-5">
-          <form action={setWritebackAction}>
-            <input type="hidden" name="enabled" value={enabled ? '0' : '1'} />
-            <button
-              type="submit"
-              className={
-                enabled
-                  ? 'rounded-lg bg-bad px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90'
-                  : buttonClass
-              }
-            >
-              {enabled ? 'Desactiva l’escriptura' : 'Activa l’escriptura'}
+          <form action={publishPricesAction}>
+            <button type="submit" className={buttonClass}>
+              Publica els preus a l’app
             </button>
           </form>
-
-          <form action={runWritebackAction} className="flex flex-wrap items-end gap-3">
-            <input type="hidden" name="year" value={year} />
-            <input type="hidden" name="month" value={month} />
-            <label className="flex items-center gap-1.5 text-xs text-ink-soft">
-              <input
-                type="checkbox"
-                name="allowCreate"
-                value="1"
-                className="size-3.5 rounded border-line text-brand-500 focus:ring-brand-500"
-              />
-              Crea els documents que falten
-            </label>
-            <button
-              type="submit"
-              disabled={!enabled}
-              className={`${ghostButtonClass} disabled:opacity-40`}
-            >
-              Escriu {period.label} a Firebase
+          <form action={republishLedgerAction}>
+            <button type="submit" className={buttonClass}>
+              Publica els apunts pendents ({pendingLedger.length})
             </button>
           </form>
         </div>
       </Card>
 
       <Card>
-        <CardHeader title="Historial d’escriptures" />
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr>
-                <th className={thClass}>Quan</th>
-                <th className={thClass}>Voluntari</th>
-                <th className={thClass}>Mes</th>
-                <th className={`${thClass} text-right`}>Esperat</th>
-                <th className={`${thClass} text-right`}>Escrit</th>
-                <th className={thClass}>Estat</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.length === 0 && (
-                <tr>
-                  <td className={tdClass} colSpan={6}>
-                    Encara no s’ha escrit mai res a Firebase.
-                  </td>
-                </tr>
-              )}
-              {history.map((w) => (
-                <tr key={w.id}>
-                  <td className={`${tdClass} tabular-nums`}>{formatInstant(w.createdAt)}</td>
-                  <td className={tdClass}>{w.name}</td>
-                  <td className={`${tdClass} tabular-nums`}>
-                    {w.year}-{String(w.month).padStart(2, '0')}
-                  </td>
-                  <td className={`${tdClass} text-right tabular-nums`}>
-                    {w.expectedAmountCents === null ? '—' : formatCents(w.expectedAmountCents)}
-                  </td>
-                  <td className={`${tdClass} text-right tabular-nums`}>
-                    {formatCents(w.newAmountCents)}
-                  </td>
-                  <td className={tdClass}>{w.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CardHeader title="Credencials" />
+        <p className="p-5 text-xs text-ink-soft">
+          Firebase Admin SDK: {credentialSource()}. Projecte:{' '}
+          <code>{process.env.FIREBASE_PROJECT_ID ?? '(no definit)'}</code>.
+        </p>
       </Card>
     </div>
   )
-}
-
-const ACTION_LABEL: Record<string, string> = {
-  update: 'Actualitzaria',
-  create: 'Crearia',
-  skip_nochange: 'Cap canvi',
-  skip_no_doc: 'Sense document',
 }
 
 // --- small helpers -----------------------------------------------------------

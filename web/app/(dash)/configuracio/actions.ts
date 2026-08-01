@@ -25,8 +25,7 @@ import {
 } from '@/lib/mutations'
 import { writeLinks } from '@/lib/links'
 import { setSetting } from '@/lib/settings'
-import { monthPeriod } from '@/lib/dates'
-import { applyWriteback } from '@/lib/writeback'
+import { publishLedgerEntry, publishPriceRules, pendingLedgerPublishes } from '@/lib/publish'
 
 function back(section: string, params: Record<string, string>): never {
   const sp = new URLSearchParams({ seccio: section, ...params })
@@ -60,7 +59,7 @@ function str(form: FormData, key: string): string {
 export async function addPriceAction(form: FormData) {
   const admin = await requireCoordinator()
 
-  return guard('preus', () => {
+  return guard('preus', async () => {
     const cents = parseEurosToCents(str(form, 'price'))
     if (cents === null) throw new ValidationError('El preu ha de ser un import com 8 o 8,50.')
 
@@ -78,15 +77,41 @@ export async function addPriceAction(form: FormData) {
       },
       admin.email,
     )
-    return 'Preu afegit.'
+    await publishPriceRules(admin.email)
+    return 'Preu afegit i publicat a l’app.'
   })
 }
 
 export async function endPriceAction(form: FormData) {
   const admin = await requireCoordinator()
-  return guard('preus', () => {
+  return guard('preus', async () => {
     endPriceRule(Number(str(form, 'id')), str(form, 'validTo'), admin.email)
-    return 'Preu tancat.'
+    await publishPriceRules(admin.email)
+    return 'Preu tancat i publicat a l’app.'
+  })
+}
+
+/** Manual re-publish, for when Firestore was unreachable during a price mutation. */
+export async function publishPricesAction() {
+  const admin = await requireCoordinator()
+  return guard('firebase', async () => {
+    const result = await publishPriceRules(admin.email)
+    return `Preus publicats: ${result.written} docs escrits, ${result.deleted} eliminats.`
+  })
+}
+
+/** Retries every SQLite ledger row whose Firestore doc is missing. */
+export async function republishLedgerAction() {
+  const admin = await requireCoordinator()
+  return guard('firebase', async () => {
+    const pending = await pendingLedgerPublishes()
+    let published = 0
+    for (const id of pending) {
+      if (await publishLedgerEntry(id, admin.email)) published++
+    }
+    return published === 0
+      ? 'No hi havia cap apunt pendent de publicar.'
+      : `Publicats ${published} apunts a l’app.`
   })
 }
 
@@ -199,37 +224,3 @@ export async function saveLinksAction(form: FormData) {
   })
 }
 
-/**
- * The write-back gate. Turning it on is the moment volunteers' phones start showing our
- * numbers instead of the app's, so it is a deliberate, audited, single-purpose action.
- */
-export async function setWritebackAction(form: FormData) {
-  const admin = await requireCoordinator()
-  return guard('firebase', () => {
-    const enabled = str(form, 'enabled') === '1'
-    setSetting('writeback_enabled', enabled, admin.email)
-    return enabled
-      ? 'Escriptura cap a Firebase ACTIVADA.'
-      : 'Escriptura cap a Firebase desactivada.'
-  })
-}
-
-export async function runWritebackAction(form: FormData) {
-  const admin = await requireCoordinator()
-
-  return guard('firebase', async () => {
-    const year = Number(str(form, 'year'))
-    const month = Number(str(form, 'month'))
-    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
-      throw new ValidationError('Cal triar un mes vàlid.')
-    }
-
-    const result = await applyWriteback(monthPeriod(year, month), admin.email, {
-      allowCreate: str(form, 'allowCreate') === '1',
-    })
-    return (
-      `Escrits ${result.applied}, creats ${result.created}, sense canvis ` +
-      `${result.skippedNoChange}, conflictes ${result.skippedConflict}, errors ${result.failed}.`
-    )
-  })
-}

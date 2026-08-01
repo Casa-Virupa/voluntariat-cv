@@ -74,9 +74,6 @@ function seed(): void {
   }
 
   const defaults: Record<string, unknown> = {
-    // Write-back stays OFF until a coordinator has reviewed the reconciliation report.
-    // Turning it on rewrites amounts volunteers have already seen on their phones.
-    writeback_enabled: false,
     // How far back a normal sync reads. Full resync ignores it.
     sync_history_quarters: 1,
     // Status thresholds for the commitment columns.

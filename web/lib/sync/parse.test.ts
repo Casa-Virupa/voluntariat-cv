@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { hashDoc, parseBooking, parsePayment, parseUser, toEpochSeconds } from './parse.ts'
+import { hashDoc, parseBooking, parseLedgerDoc, parseUser, toEpochSeconds } from './parse.ts'
 import { ANOMALY } from './anomalies.ts'
 import { AREA_GENERAL, AREA_UNKNOWN } from '../contract.ts'
 
@@ -180,10 +180,20 @@ test('users parse, with unknown roles and types normalised the way the app does'
   assert.equal(odd.isMember, false)
 })
 
-test('payments convert to cents exactly once, with no float drift', () => {
-  const p = parsePayment('p1', { user_id: 'u1', year: 2026, month: 5, paid: false, amount: 26.1 })!
-  assert.equal(p.amountCents, 2610)
-  assert.equal(p.amountRaw, 26.1)
-  assert.equal(parsePayment('p2', { year: 2026, month: 13 }), null)
-  assert.equal(parsePayment('p3', { year: 2026 }), null)
+test('ledger docs convert to cents exactly once, with no float drift', () => {
+  const e = parseLedgerDoc('l1', { user_id: 'u1', date: '2026-08-01', amount: 26.1, kind: 'payment', note: ' efectiu ' })!
+  assert.equal(e.amountCents, 2610)
+  assert.equal(e.kind, 'payment')
+  assert.equal(e.note, 'efectiu')
+})
+
+test('unknown ledger kinds become adjustments; malformed docs are skipped, not guessed', () => {
+  const odd = parseLedgerDoc('l2', { user_id: 'u1', date: '2026-08-01', amount: -5, kind: 'write_off' })!
+  assert.equal(odd.kind, 'adjustment')
+  assert.equal(odd.amountCents, -500)
+
+  assert.equal(parseLedgerDoc('l3', { user_id: 'u1', date: 'not-a-date', amount: 5 }), null)
+  assert.equal(parseLedgerDoc('l4', { date: '2026-08-01', amount: 5 }), null)
+  assert.equal(parseLedgerDoc('l5', { user_id: 'u1', date: '2026-08-01' }), null)
+  assert.equal(parseLedgerDoc('l6', { user_id: 'u1', date: '2026-08-01', amount: 0 }), null)
 })

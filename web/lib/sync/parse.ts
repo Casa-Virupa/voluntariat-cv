@@ -220,41 +220,42 @@ function parseShiftType(value: unknown): { kind: string; area: string; unknownAr
   return { kind: 'unknown', area: AREA_UNKNOWN, unknownArea: true }
 }
 
-// --- payments ----------------------------------------------------------------
+// --- the ledger ----------------------------------------------------------------
 
-export interface ParsedPayment {
+export interface ParsedLedgerEntry {
   docId: string
   userId: string
-  year: number
-  month: number
-  paid: boolean
+  date: string
   amountCents: number
-  amountRaw: number
-  rawJson: string
-  docHash: string
+  kind: 'payment' | 'adjustment'
+  note: string | null
 }
 
-export function parsePayment(
+const LEDGER_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Unlike bookings, a ledger doc we cannot fully understand is SKIPPED, not imported with
+ * flags: importing money wrong is worse than importing it late, and the doc stays in
+ * Firestore to be fixed and picked up by the next run.
+ */
+export function parseLedgerDoc(
   docId: string,
   data: Record<string, unknown>,
-): ParsedPayment | null {
-  const year = num(data.year)
-  const month = num(data.month)
-  if (year === null || month === null || month < 1 || month > 12) return null
-
-  const amountRaw = num(data.amount) ?? 0
+): ParsedLedgerEntry | null {
+  const userId = str(data.user_id)
+  const date = str(data.date)
+  const amount = num(data.amount)
+  if (!userId || !date || !LEDGER_DATE_RE.test(date)) return null
+  if (amount === null || amount === 0) return null
 
   return {
     docId,
-    userId: str(data.user_id) ?? '',
-    year,
-    month,
-    paid: data.paid === true,
+    userId,
+    date,
     // Cents, rounded once here so nothing downstream ever compares floats.
-    amountCents: Math.round(amountRaw * 100),
-    amountRaw,
-    rawJson: stableStringify(data),
-    docHash: hashDoc(data),
+    amountCents: Math.round(amount * 100),
+    kind: str(data.kind) === 'payment' ? 'payment' : 'adjustment',
+    note: str(data.note) || null,
   }
 }
 

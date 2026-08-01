@@ -114,12 +114,24 @@ NODE_OPTIONS="--max-old-space-size=$BUILD_HEAP_MB" nice -n 10 npm run build
 echo "==> assembling $RELEASE"
 mkdir -p "$RELEASE" "$DATA_DIR"
 
-# The standalone output is self-contained apart from the two asset directories Next expects
-# to find next to it.
+# The standalone output bundles the app code into server.js, plus the two asset
+# directories Next expects to find next to it.
 cp -r .next/standalone/. "$RELEASE/"
 mkdir -p "$RELEASE/.next"
 cp -r .next/static "$RELEASE/.next/static"
 [[ -d public ]] && cp -r public "$RELEASE/public"
+
+# The standalone node_modules is NOT trusted: the tracer only copies packages it can see
+# being imported, and the external packages (firebase-admin above all) hide most of their
+# tree behind dynamic requires — in production that surfaced as `Cannot find module
+# 'gcp-metadata'` the first time a Firestore code path ran. Point the release at the
+# repo's full install instead (refreshed by the npm ci above, always lockfile-exact).
+# Trade-off, accepted deliberately: a rollback runs old code against CURRENT dependencies.
+# Dependencies almost never change between releases; when one day they do and a rollback
+# misbehaves, restore the old package-lock.json in the repo, npm ci, and reload.
+rm -rf "$RELEASE/node_modules"
+ln -s "$WEB_DIR/node_modules" "$RELEASE/node_modules"
+cp package.json package-lock.json "$RELEASE/"
 
 # Migrations, the seeds and the deploy scripts are not part of the standalone bundle.
 mkdir -p "$RELEASE/drizzle" "$RELEASE/lib/db" "$RELEASE/deploy"

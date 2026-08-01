@@ -64,6 +64,12 @@ views. Self-hosted on a VPS. Catalan UI, no i18n framework.
   Every dashboard-owned write goes through `lib/mutations.ts` and writes an `audit_log` row.
 - **Positive = credit** in the ledger: it reduces what the volunteer owes. A negative
   adjustment is an extra charge.
+- **Money facts are duplicated to Firestore, deliberately** (see `LEDGER-FIRESTORE.md`).
+  Every `ledger_entry` write is published to `ledger/dash-<id>` and every price mutation
+  republishes `price_rules`; the sync (every 15 min) imports foreign `ledger` docs back
+  into `ledger_entry` keyed by `external_ref = "fs:<docId>"`, so both sides converge. The
+  Firestore `payments` collection is a FROZEN archive — nothing reads or writes it, and
+  the old write-back (`lib/writeback.ts`) is gone.
 - **An area scope is a WHERE clause, not a hidden column.** Same for the payments columns,
   which an `area_responsible` must not receive from the page *or* the export.
 

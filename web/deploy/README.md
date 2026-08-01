@@ -162,17 +162,40 @@ from the SQLite mirror, i.e. they are as fresh as the last sync (cron: 00:10 and
 
 ## Deploying a change
 
+The source reaches the server by **rsync from the development machine** — no git
+credentials live on the VPS. The app does NOT run from `repo/web/`: it runs from the
+built release under `releases/` that `current` points at, so new code is invisible until
+a deploy builds it.
+
 ```bash
-cd /srv/voluntariat-dashboard/repo && git pull
-web/deploy/deploy.sh
+# on the development machine
+rsync -avz --delete \
+  --exclude node_modules --exclude .next --exclude data --exclude '.env*' \
+  web/ root@CVhostinger:/srv/voluntariat-dashboard/repo/web/
+
+# on the VPS (node 24 in this shell — `nvm use 24` if in doubt)
+cd /srv/voluntariat-dashboard/repo && web/deploy/deploy.sh
 ```
+
+Mind that rsync ships the working tree as-is, uncommitted edits included — check
+`git status` before sending. The excludes are not optional: `node_modules`/`.next` are
+rebuilt on the server (shipping Mac-built native binaries breaks better-sqlite3), `data`
+must never travel towards the live database, and `.env*` files must not exist on the
+server at all (secrets live in `/etc/voluntariat/env`).
+
+**When is `pm2 restart voluntariat` enough?** Only when there is no new code: edits to
+`/etc/voluntariat/env` (start.sh re-sources it on every restart) or a wedged process.
+For code, always the rsync + deploy.sh cycle above — a bare restart just reboots the old
+release.
 
 The script refuses to start if the disk is low or if free RAM is under the build's heap cap
 — a Next build is the most memory-hungry thing that happens on this box, and the OOM killer
-does not necessarily pick the build. It then runs `npm ci`, the test suite and the build
-(nice'd, `--max-old-space-size=1536`), assembles a release, applies migrations **before**
-flipping the symlink, reloads only this PM2 app, polls `/login`, and rolls back to the
-previous release if it does not come up. Old releases are pruned to the last five.
+does not necessarily pick the build. It then runs `npm ci` and the build (nice'd, heap-capped;
+tests run only with `VOLUNTARIAT_RUN_TESTS=1`), assembles a release whose `node_modules` is
+a symlink to the repo's full install (the standalone tracer's pruned copy is discarded — it
+misses firebase-admin's dynamically-required tree), applies migrations **before** flipping
+the symlink, reloads only this PM2 app, polls `/login`, and rolls back to the previous
+release if it does not come up. Old releases are pruned to the last five.
 
 Rollback by hand:
 

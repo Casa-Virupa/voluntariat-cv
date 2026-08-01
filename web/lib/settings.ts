@@ -76,6 +76,9 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'period.close': 'Període tancat',
   'setting.set': 'Preferència canviada',
   'links.set': 'Enllaços de l’app actualitzats',
+  'prices.publish': 'Preus publicats a l’app',
+  'ledger.publish': 'Apunt publicat a l’app',
+  'ledger.import': 'Apunt importat de l’app',
 }
 
 export const AUDIT_ENTITY_LABEL: Record<string, string> = {
@@ -86,13 +89,11 @@ export const AUDIT_ENTITY_LABEL: Record<string, string> = {
   period_close: 'Tancament',
   app_setting: 'Preferència',
   firestore_links: 'Enllaços (app)',
+  firestore_prices: 'Preus (app)',
+  firestore_ledger: 'Ledger (app)',
 }
 
 export function atRiskRatio(): number {
   const value = getSetting('at_risk_ratio', DEFAULT_AT_RISK_RATIO)
   return typeof value === 'number' && value > 0 && value <= 1 ? value : DEFAULT_AT_RISK_RATIO
-}
-
-export function writebackEnabled(): boolean {
-  return getSetting<boolean>('writeback_enabled', false) === true
 }

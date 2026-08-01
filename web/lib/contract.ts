@@ -114,7 +114,16 @@ export const PERSISTED_MEALS = ['lunch', 'dinner'] as const
 
 export const COLLECTION_USERS = 'users'
 export const COLLECTION_VOLUNTEERS = 'volunteers'
+/**
+ * FROZEN ARCHIVE (2026-08). The app no longer reads or writes `payments`; money facts now
+ * live in `price_rules` + `ledger` and balances are derived. Kept only so old scripts can
+ * name it; nothing in the dashboard should read it either.
+ */
 export const COLLECTION_PAYMENTS = 'payments'
+/** Dated price history the app resolves per service date. Published by lib/publish.ts. */
+export const COLLECTION_PRICE_RULES = 'price_rules'
+/** Money movements (positive = received). Written by the dashboard, imported by the sync. */
+export const COLLECTION_LEDGER = 'ledger'
 
 // --- the app's own defaults, reproduced ---------------------------------------
 

@@ -2,6 +2,11 @@
 
 Kotlin Multiplatform + Compose Multiplatform app for volunteer-shift management at Casa Virupa. Targets **Android and iOS** from a shared codebase.
 
+## Git rules (non-negotiable)
+
+- **NEVER run `git commit` (or amend/merge that creates commits) without Oscar's explicit consent in that same conversation.** Stage and show the diff, then ask.
+- **NEVER add `Co-Authored-By: Claude` (or any Claude/session trailer) to commit messages.** Commits are authored by Oscar only.
+
 ## Repository map (read this first when delegating subtasks)
 
 This repo holds **three independent codebases**. Each has its own docs — send agents to the right one and don't mix conventions:

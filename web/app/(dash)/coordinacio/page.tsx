@@ -182,14 +182,6 @@ export default async function CoordinacioPage({
         </Notice>
       )}
 
-      {table.duplicatePayments.length > 0 && (
-        <Notice tone="warn">
-          Hi ha {table.duplicatePayments.length} mes(os) amb més d’un document de pagament a
-          Firestore (l’app els pot duplicar). El mòbil només llegeix el primer; revisa-ho a
-          Configuració → Escriptura a Firebase.
-        </Notice>
-      )}
-
       <div className="flex flex-col gap-4">
         <Card className="min-w-0 flex-1 overflow-hidden">
           {table.rows.length === 0 ? (
@@ -284,17 +276,6 @@ export default async function CoordinacioPage({
                             <Badge className={SETTLEMENT_CLASS[row.settlement]}>
                               {SETTLEMENT_LABEL[row.settlement]}
                             </Badge>
-                            {row.appPaid !== null &&
-                              row.appPaid !== (row.settlement === 'settled') && (
-                                <Badge
-                                  className="ml-1 bg-warn/10 text-warn-ink ring-warn/30"
-                                  title={`L’app diu ${row.appPaid ? 'pagat' : 'pendent'} amb ${formatCents(
-                                    row.appAmountCents ?? 0,
-                                  )}`}
-                                >
-                                  ≠ app
-                                </Badge>
-                              )}
                             {closed.has(row.uid) && (
                               <Badge className="ml-1 bg-canvas text-ink-soft ring-line">
                                 tancat
@@ -559,13 +540,6 @@ function VolunteerPanel({
                     {formatCents(row.balance.owedTotalCents)}
                   </span>
                 </DataRow>
-                {row.appAmountCents !== null && (
-                  <DataRow label="A l’app (payments.amount)">
-                    <span className="text-ink-faint">
-                      {formatCents(row.appAmountCents)} · {row.appPaid ? 'pagat' : 'pendent'}
-                    </span>
-                  </DataRow>
-                )}
               </div>
             </div>
           </div>

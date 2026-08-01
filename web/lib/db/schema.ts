@@ -322,7 +322,8 @@ export const syncRun = sqliteTable(
     windowFrom: text('window_from'),
     readUsers: integer('read_users').notNull().default(0),
     readBookings: integer('read_bookings').notNull().default(0),
-    readPayments: integer('read_payments').notNull().default(0),
+    /** Ledger docs read. SQL column name kept from the pre-2026-08 payments era. */
+    readLedger: integer('read_payments').notNull().default(0),
     insertedBookings: integer('inserted_bookings').notNull().default(0),
     deletedBookings: integer('deleted_bookings').notNull().default(0),
     anomalies: integer('anomalies').notNull().default(0),

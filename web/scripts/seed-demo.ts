@@ -6,7 +6,7 @@
  *   node scripts/seed-demo.ts --force    # wipes fs_* first
  *
  * It builds raw Firestore-shaped documents and pushes them through the REAL parser and the
- * REAL apply step (`parseUser`/`parseBooking`/`parsePayment` + `applyAll`), so anything the
+ * REAL apply step (`parseUser`/`parseBooking`/`parseLedgerDoc` + `applyAll`), so anything the
  * sync would flag as an anomaly is flagged here too, and the numbers on screen are produced
  * by exactly the code path production uses. It never touches a dashboard-owned table, so a
  * seeded database still exercises the real prices, commitments and ledger.
@@ -18,7 +18,7 @@
 import { raw } from '../lib/db/index.ts'
 import { isMigrated } from '../lib/db/index.ts'
 import { applyAll } from '../lib/sync/run.ts'
-import { parseBooking, parsePayment, parseUser } from '../lib/sync/parse.ts'
+import { parseBooking, parseLedgerDoc, parseUser } from '../lib/sync/parse.ts'
 import { epochSecondsAtLocalMidnight, localDate, quarterOf, firstMonthOfQuarter, firstOfMonth, addMonths } from '../lib/dates.ts'
 import { AREA_CODES } from '../lib/contract.ts'
 
@@ -208,24 +208,21 @@ bookingDocs.push({
   },
 })
 
-// The app's own payment docs, including the two failure modes that make `amount`
-// untrustworthy: paid-while-owing, and a duplicate doc for the same month.
-const paymentDocs = [
+// Firestore `ledger` docs as the app-side bootstrap and the console would create them —
+// one that the sync must import, one the dashboard published itself (dash-*, skipped),
+// and one malformed doc that must be skipped rather than imported wrong.
+const ledgerDocs = [
   {
-    id: 'demo-payment-0001',
-    data: { user_id: userDocs[0].id, year: ty, month: tm, paid: true, amount: 48 },
+    id: 'demo-ledger-0001',
+    data: { user_id: userDocs[0].id, date: firstOfMonth(ty, tm), amount: 48, kind: 'payment', note: 'demo: efectiu' },
   },
   {
-    id: 'demo-payment-0002',
-    data: { user_id: userDocs[1].id, year: ty, month: tm, paid: false, amount: 24 },
+    id: 'dash-999999',
+    data: { user_id: userDocs[1].id, date: firstOfMonth(ty, tm), amount: 24, kind: 'payment', dashboard_kind: 'payment' },
   },
   {
-    id: 'demo-payment-0003',
-    data: { user_id: userDocs[2].id, year: ty, month: tm, paid: true, amount: 16 },
-  },
-  {
-    id: 'demo-payment-0004',
-    data: { user_id: userDocs[2].id, year: ty, month: tm, paid: false, amount: 8 },
+    id: 'demo-ledger-broken',
+    data: { user_id: userDocs[2].id, date: 'not-a-date', amount: 16, kind: 'payment' },
   },
 ]
 
@@ -233,9 +230,9 @@ const users = userDocs.map((d) => parseUser(d.id, d.data as Record<string, unkno
 const bookings = bookingDocs
   .map((d) => parseBooking(d.id, d.data))
   .filter((b): b is NonNullable<typeof b> => b !== null)
-const payments = paymentDocs
-  .map((d) => parsePayment(d.id, d.data as Record<string, unknown>))
-  .filter((p): p is NonNullable<typeof p> => p !== null)
+const ledger = ledgerDocs
+  .map((d) => parseLedgerDoc(d.id, d.data as Record<string, unknown>))
+  .filter((e): e is NonNullable<typeof e> => e !== null)
 
 const stats = applyAll({
   now: Math.floor(Date.now() / 1000),
@@ -243,7 +240,7 @@ const stats = applyAll({
   windowFrom: null,
   users,
   bookings,
-  payments,
+  ledger,
 })
 
 const flagged = bookings.filter((b) => b.anomalyFlags !== 0).length
@@ -256,7 +253,7 @@ console.log(
     `Dades de prova carregades (${start} → ${end}):`,
     `  ${users.length} voluntaris`,
     `  ${bookings.length} reserves, ${stats.inserted} inserides`,
-    `  ${payments.length} pagaments de l'app (amb un duplicat i un "pagat però amb deute")`,
+    `  ${ledger.length} docs de ledger llegits, ${stats.importedLedger} importats`,
     `  ${flagged} reserves amb avisos, ${zeroMinutes} torns de 0 minuts`,
   ].join('\n'),
 )
