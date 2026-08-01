@@ -75,6 +75,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'admin.enable': 'Accés reactivat',
   'period.close': 'Període tancat',
   'setting.set': 'Preferència canviada',
+  'links.set': 'Enllaços de l’app actualitzats',
 }
 
 export const AUDIT_ENTITY_LABEL: Record<string, string> = {
@@ -84,6 +85,7 @@ export const AUDIT_ENTITY_LABEL: Record<string, string> = {
   admin_user: 'Accés',
   period_close: 'Tancament',
   app_setting: 'Preferència',
+  firestore_links: 'Enllaços (app)',
 }
 
 export function atRiskRatio(): number {

@@ -3,8 +3,10 @@ import assert from 'node:assert/strict'
 
 import {
   addMonths,
+  eachDay,
   epochSecondsAtLocalMidnight,
   formatMinutes,
+  isIsoDate,
   monthPeriod,
   monthsIn,
   offsetFromLocalMidnight,
@@ -118,4 +120,27 @@ test('formatMinutes', () => {
   assert.equal(formatMinutes(270), '4h 30m')
   assert.equal(formatMinutes(45), '45m')
   assert.equal(formatMinutes(0), '0h')
+})
+
+test('isIsoDate accepts only real calendar dates', () => {
+  assert.equal(isIsoDate('2026-08-01'), true)
+  assert.equal(isIsoDate('2024-02-29'), true) // leap day
+  assert.equal(isIsoDate('2026-02-29'), false) // not a leap year
+  assert.equal(isIsoDate('2026-13-01'), false)
+  assert.equal(isIsoDate('2026-8-1'), false) // unpadded
+  assert.equal(isIsoDate('01-08-2026'), false)
+  assert.equal(isIsoDate(''), false)
+})
+
+test('eachDay is inclusive on both ends and crosses month and DST edges', () => {
+  assert.deepEqual(eachDay('2026-08-01', '2026-08-01'), ['2026-08-01'])
+  assert.deepEqual(eachDay('2026-08-30', '2026-09-02'), [
+    '2026-08-30',
+    '2026-08-31',
+    '2026-09-01',
+    '2026-09-02',
+  ])
+  // the October DST change in Madrid must not duplicate or skip a day
+  assert.equal(eachDay('2026-10-24', '2026-10-26').length, 3)
+  assert.deepEqual(eachDay('2026-08-02', '2026-08-01'), [])
 })

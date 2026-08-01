@@ -114,6 +114,23 @@ function tzOffsetSeconds(epochSeconds: number): number {
 
 // --- plain date arithmetic on 'YYYY-MM-DD' strings ---------------------------
 
+/** Strict 'YYYY-MM-DD' that survives a round-trip, so '2026-02-31' is rejected. */
+export function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const t = Date.parse(`${value}T00:00:00Z`)
+  return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === value
+}
+
+/** Every 'YYYY-MM-DD' from `from` to `to`, both included. UTC arithmetic — no DST holes. */
+export function eachDay(from: string, to: string): string[] {
+  const days: string[] = []
+  const end = Date.parse(`${to}T00:00:00Z`)
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= end; t += 86_400_000) {
+    days.push(new Date(t).toISOString().slice(0, 10))
+  }
+  return days
+}
+
 export function addMonths(date: string, n: number): string {
   const [y, m, d] = date.split('-').map(Number)
   const total = y * 12 + (m - 1) + n

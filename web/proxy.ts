@@ -26,9 +26,10 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /**
-     * Everything except the login page, the auth endpoints, the sync endpoint (which
-     * authenticates with a shared key from cron, not a cookie), and static assets.
+     * Everything except the login page, the auth endpoints, the sync and recompte
+     * endpoints (which authenticate with a shared key — cron and Google Sheets have no
+     * cookie), and static assets.
      */
-    '/((?!login|api/auth|api/sync|_next/static|_next/image|favicon.ico).*)',
+    '/((?!login|api/auth|api/sync|api/recompte|_next/static|_next/image|favicon.ico).*)',
   ],
 }

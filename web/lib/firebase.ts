@@ -3,7 +3,8 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import { readFileSync } from 'node:fs'
 
 /**
- * Read-only access to the mobile app's Firestore, except for the payments write-back.
+ * Read-only access to the mobile app's Firestore, except for the payments write-back
+ * and the links editor (configuration/links).
  *
  * Credentials, in order of preference:
  *   1. FIREBASE_SERVICE_ACCOUNT_B64 — base64 key JSON, easiest to put in a systemd unit

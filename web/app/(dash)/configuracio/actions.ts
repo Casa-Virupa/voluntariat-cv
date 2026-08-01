@@ -23,6 +23,7 @@ import {
   upsertAdmin,
   ValidationError,
 } from '@/lib/mutations'
+import { writeLinks } from '@/lib/links'
 import { setSetting } from '@/lib/settings'
 import { monthPeriod } from '@/lib/dates'
 import { applyWriteback } from '@/lib/writeback'
@@ -181,6 +182,20 @@ export async function saveSettingsAction(form: FormData) {
     setSetting('at_risk_ratio', ratio, admin.email)
     setSetting('sync_history_quarters', quarters, admin.email)
     return 'Preferències guardades.'
+  })
+}
+
+// --- the app's links text ------------------------------------------------------
+
+export async function saveLinksAction(form: FormData) {
+  const admin = await requireCoordinator()
+
+  return guard('enllacos', async () => {
+    const value = form.get('text')
+    // trim() only at the ends — the inner newlines ARE the content the app renders
+    const text = typeof value === 'string' ? value.trim() : ''
+    await writeLinks(text, admin.email)
+    return 'Enllaços guardats. Els voluntaris els veuran en obrir l’app.'
   })
 }
 

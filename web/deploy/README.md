@@ -126,6 +126,7 @@ FIREBASE_PROJECT_ID=voluntariat-casa-virupa
 GOOGLE_APPLICATION_CREDENTIALS=/etc/voluntariat/firebase-sa.json
 
 SYNC_KEY=                 # openssl rand -hex 32
+RECOMPTE_KEY=             # 10+ alphanumeric chars, e.g. openssl rand -hex 5 — for /api/recompte
 ```
 
 Do **not** put `PORT` or `HOSTNAME` in this file. They come from the `env` block in
@@ -142,7 +143,22 @@ unattended.
 The Google OAuth client needs
 `https://voluntariat.casavirupa.com/api/auth/callback/google` as an authorised redirect URI.
 The Firebase service account needs only **Cloud Datastore User** (read/write on
-`payments`; everything else the dashboard touches is read-only by choice, not by grant).
+`payments` and `configuration/links`; everything else the dashboard touches is read-only
+by choice, not by grant).
+
+`RECOMPTE_KEY` protects the head-count endpoints a Google Sheet reads (how many people
+have lunch, dinner or an overnight stay booked per day). The counts are not sensitive;
+the key just keeps them off the open web. It travels in the URL because `=IMPORTDATA`
+cannot set headers:
+
+```
+=IMPORTDATA("https://voluntariat.casavirupa.com/api/recompte/dia?data=2026-08-15&clau=LA_CLAU&format=csv")
+=IMPORTDATA("https://voluntariat.casavirupa.com/api/recompte/interval?des=2026-08-01&fins=2026-08-31&clau=LA_CLAU&format=csv")
+```
+
+Without `format=csv` both return JSON (keys `data`/`dinars`/`sopars`/`pernoctes`, plus
+`ultima_sincronitzacio` so the sheet can show how fresh the mirror is). The numbers come
+from the SQLite mirror, i.e. they are as fresh as the last sync (cron: 00:10 and 12:10).
 
 ## Deploying a change
 

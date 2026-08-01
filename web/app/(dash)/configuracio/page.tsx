@@ -37,6 +37,7 @@ import {
   getSetting,
   writebackEnabled,
 } from '@/lib/settings'
+import { readLinks, type LinksConfig } from '@/lib/links'
 import { planWriteback, recentWritebacks } from '@/lib/writeback'
 import type { RawSearch } from '@/lib/query/filters'
 
@@ -49,6 +50,7 @@ import {
   endCommitmentAction,
   endPriceAction,
   runWritebackAction,
+  saveLinksAction,
   saveAdminAction,
   saveSettingsAction,
   setWritebackAction,
@@ -61,6 +63,7 @@ const SECTIONS = [
   { key: 'preus', label: 'Preus' },
   { key: 'compromisos', label: 'Compromisos' },
   { key: 'accessos', label: 'Accessos' },
+  { key: 'enllacos', label: 'Enllaços' },
   { key: 'sync', label: 'Sincronització' },
   { key: 'dades', label: 'Qualitat de dades' },
   { key: 'firebase', label: 'Escriptura a Firebase' },
@@ -120,6 +123,7 @@ export default async function ConfiguracioPage({
       {section === 'preus' && <PricesSection today={today} />}
       {section === 'compromisos' && <CommitmentsSection today={today} />}
       {section === 'accessos' && <AdminsSection />}
+      {section === 'enllacos' && <LinksSection />}
       {section === 'sync' && <SyncSection auditPageNumber={parsePageNumber(one(search.canvis))} />}
       {section === 'dades' && <DataQualitySection />}
       {section === 'firebase' && (
@@ -550,6 +554,69 @@ async function AdminsSection() {
       </Card>
     </div>
   )
+}
+
+// --- the app's links text ------------------------------------------------------
+
+/**
+ * Edits Firestore directly (configuration/links), not the SQLite mirror: this text is
+ * app content, and saving it is live for every volunteer. Hence the read may fail when
+ * Firebase credentials are absent (local dev on seed data) — that becomes a notice, not
+ * an error page, because the rest of /configuracio works fine without Firestore.
+ */
+async function LinksSection() {
+  let links: LinksConfig | null = null
+  let readError: string | null = null
+  try {
+    links = await readLinks()
+  } catch (error) {
+    readError = error instanceof Error ? error.message : String(error)
+  }
+
+  return (
+    <div className="space-y-4">
+      <Notice>
+        Aquest text és el que l’app mostra a «Enllaços d’interès», al perfil. S’escriu
+        directament a Firebase (<code>configuration/links</code>) i els voluntaris el veuen en
+        obrir l’app — no cal cap sincronització. Les URL es tornen enllaços clicables a l’app.
+      </Notice>
+
+      {readError ? (
+        <Notice tone="bad">
+          No s’ha pogut llegir <code>configuration/links</code> de Firebase: {readError}
+        </Notice>
+      ) : (
+        <Card>
+          <CardHeader
+            title="Enllaços d’interès"
+            subtitle={
+              links?.updatedAt
+                ? `Darrera actualització: ${formatIsoInstant(links.updatedAt)}`
+                : 'Encara no s’ha guardat mai cap text.'
+            }
+          />
+          <form action={saveLinksAction} className="space-y-3 p-5">
+            <textarea
+              name="text"
+              rows={10}
+              defaultValue={links?.text ?? ''}
+              placeholder={'Calendari d’activitats:\nhttps://…'}
+              className={`${inputClass} w-full font-mono leading-relaxed`}
+            />
+            <button type="submit" className={buttonClass}>
+              Guarda i publica a l’app
+            </button>
+          </form>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+/** The doc's updated_at is an ISO string, unlike the epoch seconds everywhere else. */
+function formatIsoInstant(iso: string): string {
+  const ms = Date.parse(iso)
+  return Number.isFinite(ms) ? formatInstant(Math.floor(ms / 1000)) : iso
 }
 
 // --- sync --------------------------------------------------------------------
