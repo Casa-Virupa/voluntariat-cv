@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.configuration.InterestLinks
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
@@ -30,6 +32,7 @@ import kotlin.time.Clock
 class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
+    interestLinksRepository: InterestLinksRepository,
 ) : ViewModel() {
     private val _currentMonth = MutableStateFlow(Clock.System.now().toDate())
     val currentMonth: StateFlow<LocalDate> = _currentMonth.asStateFlow()
@@ -47,6 +50,15 @@ class ProfileViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = null,
+            )
+
+    val interestLinks: StateFlow<InterestLinks> =
+        interestLinksRepository
+            .getInterestLinks()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = InterestLinks.Empty,
             )
 
     @OptIn(ExperimentalCoroutinesApi::class)

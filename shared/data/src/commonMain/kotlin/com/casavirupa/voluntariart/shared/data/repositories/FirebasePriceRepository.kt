@@ -1,45 +1,45 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
-import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebasePrices
+import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebasePriceRule
 import com.casavirupa.voluntariat.shared.domain.PriceRepository
+import com.casavirupa.voluntariat.shared.model.payment.PriceRule
+import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import com.casavirupa.voluntariat.shared.model.payment.Prices
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 
 class FirebasePriceRepository(
     private val firestore: FirebaseFirestore,
 ) : PriceRepository {
-    override fun getPrices(): Flow<Prices> =
+    override fun getPriceRules(): Flow<PriceRules> =
         firestore
-            .collection("configuration")
-            .document("prices")
+            .collection("price_rules")
             .snapshots
             .map { snapshot ->
-                if (snapshot.exists) {
-                    snapshot.data<FirebasePrices>().toDomainModel()
-                } else {
-                    Prices.Default
-                }
-            }.catch { emit(Prices.Default) }
-
-    override suspend fun getCurrentPrices(): Prices =
-        runCatching {
-            firestore
-                .collection("configuration")
-                .document("prices")
-                .get()
-                .takeIf { it.exists }
-                ?.data<FirebasePrices>()
-                ?.toDomainModel()
-        }.getOrNull() ?: Prices.Default
+                PriceRules(
+                    snapshot.documents.mapNotNull { doc ->
+                        runCatching { doc.data<FirebasePriceRule>() }
+                            .getOrNull()
+                            ?.toDomainModelOrNull()
+                    },
+                )
+            }.catch { emit(PriceRules.Empty) }
 }
 
-private fun FirebasePrices.toDomainModel() =
-    Prices(
-        lunch = lunch,
-        dinner = dinner,
-        breakfast = breakfast,
-        sleep = sleep,
-    )
+private fun FirebasePriceRule.toDomainModelOrNull(): PriceRule? =
+    runCatching { LocalDate.parse(validFrom) }
+        .getOrNull()
+        ?.let { date ->
+            PriceRule(
+                validFrom = date,
+                prices = Prices(
+                    lunch = lunch,
+                    dinner = dinner,
+                    breakfast = breakfast,
+                    sleep = sleep,
+                ),
+            )
+        }

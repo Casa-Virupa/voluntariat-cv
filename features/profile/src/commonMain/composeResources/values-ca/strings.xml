@@ -3,6 +3,8 @@
     <string name="full_name">Nom complet</string>
     <string name="email">Correu electrònic</string>
     <string name="commitment_degree">Grau de compromís</string>
+    <string name="interest_links">Enllaços d\'interès</string>
+    <string name="last_updated">Última actualització: %1$s</string>
     <string name="quarterly_hours">Hores trimestrals</string>
     <string name="monthly_hours">Hores mensuals</string>
     <string name="no_hours_registered">Sense hores registrades aquest mes</string>

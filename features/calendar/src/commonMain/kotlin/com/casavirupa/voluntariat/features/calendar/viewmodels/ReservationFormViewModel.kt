@@ -9,8 +9,6 @@ import com.casavirupa.voluntariat.shared.core.utils.getLastDayOfMonth
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.domain.PaymentRepository
-import com.casavirupa.voluntariat.shared.domain.PriceRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -36,7 +34,6 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
@@ -62,8 +59,6 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
-    private val paymentRepository: PaymentRepository,
-    private val priceRepository: PriceRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -343,19 +338,12 @@ class ReservationFormViewModel(
                     ?.specificAreas
                     ?.first() ?: return@launch
                 val volunteer = buildReservation(specificArea)
-                val prices = priceRepository.getCurrentPrices()
                 authRepository
                     .getCurrentUser()
                     .onSuccess { user ->
                         volunteerRepository
                             .reserveDay(user.id, volunteer)
-                            .mapCatching {
-                                paymentRepository.addPayment(
-                                    userId = user.id,
-                                    yearMonth = date.value!!.toYearMonth(),
-                                    amount = volunteer.calculateTotalToPay(prices),
-                                )
-                            }.onSuccess {
+                            .onSuccess {
                                 navigateBack()
                             }.onFailure {
                                 // TODO: Show error
@@ -603,11 +591,5 @@ data class ShiftInfoSummary(
     val type: FormVolunteerTypeUi,
     val specificArea: SpecificArea? = null,
 )
-
-private fun LocalDate.toYearMonth() =
-    YearMonth(
-        year = this.year,
-        month = this.month,
-    )
 
 private const val LOG_TAG = "ReservationFormViewModel"

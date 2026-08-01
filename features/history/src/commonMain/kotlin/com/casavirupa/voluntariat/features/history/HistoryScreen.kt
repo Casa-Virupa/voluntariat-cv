@@ -41,6 +41,7 @@ import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -49,10 +50,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
 import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
-import voluntariatcv.features.history.generated.resources.confirm_pay
-import voluntariatcv.features.history.generated.resources.confirm_payment_description
-import voluntariatcv.features.history.generated.resources.confirm_payment_title
 import voluntariatcv.features.history.generated.resources.days
+import voluntariatcv.features.history.generated.resources.delete
+import voluntariatcv.features.history.generated.resources.delete_volunteering_description
+import voluntariatcv.features.history.generated.resources.delete_volunteering_title
 import voluntariatcv.features.history.generated.resources.dinners_count
 import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
@@ -63,6 +64,7 @@ import voluntariatcv.features.history.generated.resources.ic_arrow_right
 import voluntariatcv.features.history.generated.resources.ic_calendar_today
 import voluntariatcv.features.history.generated.resources.ic_cancel
 import voluntariatcv.features.history.generated.resources.ic_clock
+import voluntariatcv.features.history.generated.resources.ic_delete
 import voluntariatcv.features.history.generated.resources.ic_group
 import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
@@ -85,27 +87,27 @@ import voluntariatcv.features.history.generated.resources.volunteerings_history
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val showPaymentDialog by viewModel.showPaymentDialog.collectAsStateWithLifecycle()
     val showPaymentDetailDialog by viewModel
         .showPaymentDetailDialog.collectAsStateWithLifecycle()
+    val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
         onPreviousMonth = viewModel::previousMonth,
         onNextMonth = viewModel::nextMonth,
         uiState = uiState,
-        onPayVolunteer = viewModel::showPaymentDialog,
         onShowPaymentDetail = viewModel::showPaymentDetailDialog,
+        onDeleteVolunteer = viewModel::onDeleteVolunteer,
     )
 
-    if (showPaymentDialog) {
+    if (showDeleteDialog) {
         WarningDialog(
-            onDismiss = viewModel::closePaymentDialog,
-            title = stringResource(Res.string.confirm_payment_title),
-            description = stringResource(Res.string.confirm_payment_description),
-            onCancel = viewModel::closePaymentDialog,
-            confirmText = stringResource(Res.string.accept_button),
-            onConfirm = viewModel::confirmPayment,
+            onDismiss = viewModel::onCloseDeleteDialog,
+            title = stringResource(Res.string.delete_volunteering_title),
+            description = stringResource(Res.string.delete_volunteering_description),
+            onCancel = viewModel::onCloseDeleteDialog,
+            confirmText = stringResource(Res.string.delete),
+            onConfirm = viewModel::deleteVolunteer,
         )
     }
 
@@ -123,8 +125,8 @@ private fun HistoryContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     uiState: HistoryUiState,
-    onPayVolunteer: () -> Unit,
     onShowPaymentDetail: () -> Unit,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -147,24 +149,26 @@ private fun HistoryContent(
                 info = uiState.summary,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            when (val state = uiState.paymentUiState) {
-                PaymentUiState.NotFound -> PaymentMessage(
+            if (uiState.showNoVolunteeringMessage) {
+                PaymentMessage(
                     title = stringResource(Res.string.no_volunteering_title),
                     description = stringResource(Res.string.no_volunteering_description),
                 )
-                PaymentUiState.Paid -> {}
-                is PaymentUiState.NotPaid -> PaymentMessage(
+            }
+            when (val state = uiState.paymentUiState) {
+                PaymentUiState.Hidden -> {}
+                is PaymentUiState.Pending -> PaymentMessage(
                     title = stringResource(Res.string.pending_payment),
                     description = stringResource(
                         Res.string.remember_payment,
                         state.amount.toAmountString(),
                     ),
-                    onClickPay = onPayVolunteer,
                     onClickDetail = onShowPaymentDetail,
                 )
             }
             HistoryList(
                 history = uiState.volunteers,
+                onDeleteVolunteer = onDeleteVolunteer,
                 modifier = Modifier.padding(bottom = 24.dp),
             )
         }
@@ -342,7 +346,6 @@ private fun PaymentMessage(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
-    onClickPay: (() -> Unit)? = null,
     onClickDetail: (() -> Unit)? = null,
 ) {
     Surface(
@@ -378,23 +381,13 @@ private fun PaymentMessage(
                     ),
                 )
             }
-            if (onClickPay != null || onClickDetail != null) {
+            if (onClickDetail != null) {
                 Column(horizontalAlignment = Alignment.End) {
-                    if (onClickPay != null) {
-                        TextButton(
-                            onClick = onClickPay,
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                        ) {
-                            Text(text = stringResource(Res.string.confirm_pay))
-                        }
-                    }
-                    if (onClickDetail != null) {
-                        TextButton(
-                            onClick = onClickDetail,
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                        ) {
-                            Text(text = stringResource(Res.string.payment_detail_button))
-                        }
+                    TextButton(
+                        onClick = onClickDetail,
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text(text = stringResource(Res.string.payment_detail_button))
                     }
                 }
             }
@@ -405,6 +398,7 @@ private fun PaymentMessage(
 @Composable
 private fun HistoryList(
     history: List<VolunteerHistoryItem>,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -415,7 +409,10 @@ private fun HistoryList(
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             history.forEach {
-                HistoryItem(it)
+                HistoryItem(
+                    volunteer = it,
+                    onClickDelete = { onDeleteVolunteer(it.id) },
+                )
             }
         }
     }
@@ -424,6 +421,7 @@ private fun HistoryList(
 @Composable
 private fun HistoryItem(
     volunteer: VolunteerHistoryItem,
+    onClickDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -431,7 +429,10 @@ private fun HistoryItem(
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = volunteer.date.format("d MMMM"),
@@ -444,6 +445,14 @@ private fun HistoryItem(
             }
             Column {
                 ShiftTags(shifts = volunteer.shifts)
+            }
+            if (volunteer.canBeDeleted) {
+                IconButton(onClick = onClickDelete) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_delete),
+                        contentDescription = null,
+                    )
+                }
             }
         }
     }

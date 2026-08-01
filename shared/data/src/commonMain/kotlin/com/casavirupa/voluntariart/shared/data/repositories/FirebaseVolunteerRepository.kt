@@ -69,6 +69,19 @@ class FirebaseVolunteerRepository(
                 }
         }
 
+    override fun getVolunteersByUserFlow(id: UserId): Flow<List<Volunteer>> =
+        firestore
+            .collection("volunteers")
+            .where { "user_id" equalTo id.value }
+            .snapshots
+            .map { snapshot ->
+                snapshot.documents.map { doc ->
+                    doc
+                        .data<FirebaseVolunteer>()
+                        .toDomainModel(doc.id)
+                }
+            }
+
     override fun getVolunteersByUserAndMonth(
         id: UserId,
         monthNumber: Int,

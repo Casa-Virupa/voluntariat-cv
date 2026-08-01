@@ -3,6 +3,8 @@
     <string name="full_name">Full name</string>
     <string name="email">Email</string>
     <string name="commitment_degree">Degree of commitment</string>
+    <string name="interest_links">Links of interest</string>
+    <string name="last_updated">Last updated: %1$s</string>
     <string name="quarterly_hours">Quarterly hours</string>
     <string name="monthly_hours">Monthly hours</string>
     <string name="no_hours_registered">No hours registered this month</string>

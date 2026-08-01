@@ -5,16 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
-import com.casavirupa.voluntariat.shared.domain.PaymentRepository
+import com.casavirupa.voluntariat.shared.domain.LedgerRepository
 import com.casavirupa.voluntariat.shared.domain.PriceRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
-import com.casavirupa.voluntariat.shared.model.payment.Payment
-import com.casavirupa.voluntariat.shared.model.payment.PaymentId
-import com.casavirupa.voluntariat.shared.model.payment.Prices
+import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
@@ -38,19 +36,21 @@ import kotlin.math.abs
 import kotlin.time.Clock
 
 class HistoryViewModel(
-    volunteerRepository: VolunteerRepository,
+    private val volunteerRepository: VolunteerRepository,
     authRepository: AuthRepository,
     priceRepository: PriceRepository,
-    private val paymentRepository: PaymentRepository,
+    ledgerRepository: LedgerRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
     val currentDate: StateFlow<LocalDate> = _currentDate.asStateFlow()
+
+    private val user = authRepository.getCurrentUserFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val monthData: StateFlow<MonthData?> =
         combine(
             currentDate,
-            authRepository.getCurrentUserFlow(),
+            user,
         ) { date, user ->
             date to user
         }.flatMapLatest { (date, user) ->
@@ -60,10 +60,29 @@ class HistoryViewModel(
                     monthNumber = date.month.number,
                     year = date.year
                 ),
-                paymentRepository.getPaymentByYearMonth(user.id, date.toYearMonth()),
-                priceRepository.getPrices(),
-            ) { volunteers, payment, prices ->
-                MonthData(volunteers, payment, prices)
+                priceRepository.getPriceRules(),
+            ) { volunteers, priceRules ->
+                MonthData(volunteers, priceRules)
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
+        )
+
+    // Global outstanding balance: charges over ALL the user's bookings (past and
+    // future) minus everything the admin has recorded in the ledger. Null until all
+    // three sources have emitted, so the UI never shows a wrong amount.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val pendingBalance: StateFlow<Double?> =
+        user.flatMapLatest { user ->
+            combine(
+                volunteerRepository.getVolunteersByUserFlow(user.id),
+                priceRepository.getPriceRules(),
+                ledgerRepository.getEntriesByUser(user.id),
+            ) { allVolunteers, priceRules, ledger ->
+                allVolunteers.sumOf { it.calculateTotalToPay(priceRules.priceAt(it.date)) } -
+                        ledger.sumOf { it.amount }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -72,44 +91,55 @@ class HistoryViewModel(
         )
 
     val uiState: StateFlow<HistoryUiState> =
-        monthData
-            .filterNotNull()
-            .map { data ->
-                val volunteers = data.volunteers.toUiModel()
-                HistoryUiState(
-                    summary = MonthSummary(volunteers),
-                    volunteers = volunteers,
-                    paymentUiState = when {
-                        data.payment == null -> PaymentUiState.NotFound
-                        data.payment.paid -> PaymentUiState.Paid
-                        else -> PaymentUiState.NotPaid(data.payment.id, data.payment.amount)
-                    },
-                    paymentDetail = PaymentDetail(volunteers, data.prices),
-                )
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = HistoryUiState.Empty,
+        combine(
+            monthData.filterNotNull(),
+            pendingBalance,
+        ) { data, balance ->
+            val volunteers = data.volunteers.toUiModel()
+            HistoryUiState(
+                summary = MonthSummary(volunteers),
+                volunteers = volunteers,
+                showNoVolunteeringMessage = data.volunteers.isEmpty(),
+                paymentUiState = if (balance != null && balance > AMOUNT_TOLERANCE) {
+                    PaymentUiState.Pending(balance)
+                } else {
+                    PaymentUiState.Hidden
+                },
+                paymentDetail = PaymentDetail(data.volunteers, data.priceRules),
             )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = HistoryUiState.Empty,
+        )
 
-    init {
-        // Keeps pending payments coherent with the configured prices: whenever the
-        // stored amount of a "paid = false" payment no longer matches the month's
-        // bookings priced at the current rates, the amount is rewritten in Firestore.
-        viewModelScope.launch {
-            monthData.filterNotNull().collect { data ->
-                val payment = data.payment ?: return@collect
-                if (payment.paid) return@collect
-                val expected = data.volunteers.sumOf { it.calculateTotalToPay(data.prices) }
-                if (abs(expected - payment.amount) > AMOUNT_TOLERANCE) {
-                    paymentRepository.updateAmount(payment.id, expected)
-                }
-            }
-        }
+    private val _showDeleteDialog = MutableStateFlow(false)
+    val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
+
+    private var selectedVolunteerToDelete: VolunteerId? = null
+
+    fun onDeleteVolunteer(id: VolunteerId) {
+        selectedVolunteerToDelete = id
+        _showDeleteDialog.update { true }
     }
 
-    private val _showPaymentDialog = MutableStateFlow(false)
-    val showPaymentDialog: StateFlow<Boolean> = _showPaymentDialog.asStateFlow()
+    fun onCloseDeleteDialog() {
+        selectedVolunteerToDelete = null
+        _showDeleteDialog.update { false }
+    }
+
+    fun deleteVolunteer() {
+        val volunteerId = selectedVolunteerToDelete ?: return
+        viewModelScope.launch {
+            volunteerRepository
+                .deleteVolunteer(volunteerId)
+                .onSuccess {
+                    onCloseDeleteDialog()
+                }.onFailure {
+                    // TODO: Handle the failure
+                }
+        }
+    }
 
     private val _showPaymentDetailDialog = MutableStateFlow(false)
     val showPaymentDetailDialog: StateFlow<Boolean> = _showPaymentDetailDialog.asStateFlow()
@@ -130,43 +160,26 @@ class HistoryViewModel(
         _currentDate.update { it.minus(DatePeriod(months = 1)) }
     }
 
-    fun showPaymentDialog() {
-        _showPaymentDialog.update { true }
-    }
-
-    fun closePaymentDialog() {
-        _showPaymentDialog.update { false }
-    }
-
-    fun confirmPayment() {
-        viewModelScope.launch {
-            val paymentState = uiState.value.paymentUiState
-            if (paymentState !is PaymentUiState.NotPaid) {
-                return@launch
-            }
-            paymentRepository.pay(
-                id = paymentState.id,
-                yearMonth = currentDate.value.toYearMonth(),
-            )
-            closePaymentDialog()
-        }
-    }
-
-    private fun List<Volunteer>.toUiModel() =
-        map {
+    private fun List<Volunteer>.toUiModel(): List<VolunteerHistoryItem> {
+        val today = Clock.System.now().toDate()
+        return map {
             VolunteerHistoryItem(
+                id = it.id,
                 date = it.date,
                 hours = it.shifts.sumOf { it.getTotalHour() }.toInt(),
                 shifts = it.shifts,
                 meals = it.meals,
                 sleep = it.sleep,
+                canBeDeleted = it.date > today,
             )
         }
+    }
 }
 
 data class HistoryUiState(
     val summary: MonthSummary,
     val volunteers: List<VolunteerHistoryItem>,
+    val showNoVolunteeringMessage: Boolean,
     val paymentUiState: PaymentUiState,
     val paymentDetail: PaymentDetail,
 ) {
@@ -174,7 +187,8 @@ data class HistoryUiState(
         val Empty = HistoryUiState(
             summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
             volunteers = emptyList(),
-            paymentUiState = PaymentUiState.NotFound,
+            showNoVolunteeringMessage = false,
+            paymentUiState = PaymentUiState.Hidden,
             paymentDetail = PaymentDetail.Empty,
         )
     }
@@ -182,31 +196,61 @@ data class HistoryUiState(
 
 private data class MonthData(
     val volunteers: List<Volunteer>,
-    val payment: Payment?,
-    val prices: Prices,
+    val priceRules: PriceRules,
 )
 
 data class PaymentDetail(
     val lunches: Int,
     val dinners: Int,
     val nights: Int,
-    val prices: Prices = Prices.Default,
+    val lunchesAmount: Double,
+    val dinnersAmount: Double,
+    val nightsAmount: Double,
 ) {
-    val lunchesAmount: Double get() = lunches * prices.lunch
-    val dinnersAmount: Double get() = dinners * prices.dinner
-    val nightsAmount: Double get() = nights * prices.sleep
     val total: Double get() = lunchesAmount + dinnersAmount + nightsAmount
 
     companion object {
-        val Empty = PaymentDetail(lunches = 0, dinners = 0, nights = 0)
+        val Empty = PaymentDetail(0, 0, 0, 0.0, 0.0, 0.0)
 
-        operator fun invoke(volunteers: List<VolunteerHistoryItem>, prices: Prices) =
-            PaymentDetail(
-                lunches = volunteers.sumOf { item -> item.meals.count { it == Meal.Lunch } },
-                dinners = volunteers.sumOf { item -> item.meals.count { it == Meal.Dinner } },
-                nights = volunteers.count { it.sleep },
-                prices = prices,
+        operator fun invoke(
+            volunteers: List<Volunteer>,
+            priceRules: PriceRules,
+        ): PaymentDetail {
+            var lunches = 0
+            var dinners = 0
+            var nights = 0
+            var lunchesAmount = 0.0
+            var dinnersAmount = 0.0
+            var nightsAmount = 0.0
+            volunteers.forEach { volunteer ->
+                val prices = priceRules.priceAt(volunteer.date)
+                volunteer.meals.forEach { meal ->
+                    when (meal) {
+                        Meal.Lunch -> {
+                            lunches++
+                            lunchesAmount += prices.lunch
+                        }
+                        Meal.Dinner -> {
+                            dinners++
+                            dinnersAmount += prices.dinner
+                        }
+                        else -> Unit
+                    }
+                }
+                if (volunteer.sleep) {
+                    nights++
+                    nightsAmount += prices.sleep
+                }
+            }
+            return PaymentDetail(
+                lunches = lunches,
+                dinners = dinners,
+                nights = nights,
+                lunchesAmount = lunchesAmount,
+                dinnersAmount = dinnersAmount,
+                nightsAmount = nightsAmount,
             )
+        }
     }
 }
 
@@ -278,20 +322,18 @@ data class DetailedSummary(
 }
 
 data class VolunteerHistoryItem(
+    val id: VolunteerId,
     val date: LocalDate,
     val hours: Int,
     val shifts: List<Shift>,
     val meals: List<Meal>,
     val sleep: Boolean,
+    val canBeDeleted: Boolean = false,
 )
 
 sealed class PaymentUiState {
-    data object Paid : PaymentUiState()
-    data class NotPaid(
-        val id: PaymentId,
-        val amount: Double,
-    ) : PaymentUiState()
-    data object NotFound : PaymentUiState()
+    data object Hidden : PaymentUiState()
+    data class Pending(val amount: Double) : PaymentUiState()
 }
 
 private fun Shift.getTotalHour() =
@@ -322,13 +364,6 @@ private operator fun LocalTime.minus(other: LocalTime): Double {
     val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()
     return abs(diffSeconds) / 3600.0
 }
-
-private fun LocalDate.toYearMonth() =
-    YearMonth(
-        year = this.year,
-        month = this.month,
-    )
-
 
 private const val ALL_DAY_DIVIDER = 8.0
 

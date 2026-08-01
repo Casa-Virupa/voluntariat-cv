@@ -17,6 +17,8 @@ interface VolunteerRepository {
 
     suspend fun getVolunteersByUser(id: UserId): Result<List<Volunteer>>
 
+    fun getVolunteersByUserFlow(id: UserId): Flow<List<Volunteer>>
+
     fun getVolunteersByUserAndMonth(
         id: UserId,
         monthNumber: Int,

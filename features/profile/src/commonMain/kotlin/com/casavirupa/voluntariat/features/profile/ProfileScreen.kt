@@ -1,7 +1,9 @@
 package com.casavirupa.voluntariat.features.profile
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,14 +28,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -44,6 +56,7 @@ import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.designsystem.components.CVOutlinedButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
+import com.casavirupa.voluntariat.shared.model.configuration.InterestLinks
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserRole
@@ -66,10 +79,13 @@ import voluntariatcv.features.profile.generated.resources.ic_arrow_right
 import voluntariatcv.features.profile.generated.resources.ic_check
 import voluntariatcv.features.profile.generated.resources.ic_clock
 import voluntariatcv.features.profile.generated.resources.ic_layers
+import voluntariatcv.features.profile.generated.resources.ic_link
 import voluntariatcv.features.profile.generated.resources.ic_mail
 import voluntariatcv.features.profile.generated.resources.ic_person
 import voluntariatcv.features.profile.generated.resources.ic_star
 import voluntariatcv.features.profile.generated.resources.ic_target
+import voluntariatcv.features.profile.generated.resources.interest_links
+import voluntariatcv.features.profile.generated.resources.last_updated
 import voluntariatcv.features.profile.generated.resources.log_out
 import voluntariatcv.features.profile.generated.resources.member_of_casa_virupa
 import voluntariatcv.features.profile.generated.resources.missing_hours
@@ -92,6 +108,7 @@ internal fun ProfileScreen(
     val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
     val quarter by viewModel.quarter.collectAsStateWithLifecycle()
     val hoursDone by viewModel.hoursDone.collectAsStateWithLifecycle()
+    val interestLinks by viewModel.interestLinks.collectAsStateWithLifecycle()
 
     user?.let {
         ProfileContent(
@@ -100,6 +117,7 @@ internal fun ProfileScreen(
             currentMonth = currentMonth,
             quarter = quarter,
             hoursDone = hoursDone,
+            interestLinks = interestLinks,
             onNextMonth = viewModel::nextMonth,
             onPreviousMonth = viewModel::previousMonth,
             onNextQuarter = viewModel::nextQuarter,
@@ -127,6 +145,7 @@ private fun ProfileContent(
     currentMonth: LocalDate,
     quarter: Quarter,
     hoursDone: HoursBreakdown,
+    interestLinks: InterestLinks,
     onNextMonth: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextQuarter: () -> Unit,
@@ -160,6 +179,9 @@ private fun ProfileContent(
                 onNextQuarter = onNextQuarter,
                 onPreviousQuarter = onPreviousQuarter,
             )
+            if (interestLinks.text.isNotBlank()) {
+                InterestLinksSection(interestLinks = interestLinks)
+            }
             if (user.role is UserRole.Volunteer) {
                 VolunteerType(volunteerRole = user.role as UserRole.Volunteer)
                 SpecificAreas(specificAreas = user.specificAreas)
@@ -444,6 +466,95 @@ private fun TimeSelector(
             )
         }
     }
+}
+
+@Composable
+private fun InterestLinksSection(
+    interestLinks: InterestLinks,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.interest_links).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        ContentSurface {
+            Column(modifier = Modifier.animateContentSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SectionIcon(
+                        icon = painterResource(Res.drawable.ic_link),
+                        modifier = Modifier.padding(end = 16.dp),
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(Res.string.interest_links),
+                            style = MaterialTheme.typography.bodyMedium
+                                .copy(fontWeight = FontWeight.Medium),
+                        )
+                        interestLinks.updatedAt?.let { updatedAt ->
+                            Text(
+                                text = stringResource(
+                                    Res.string.last_updated,
+                                    updatedAt.format("dd/MM/yyyy"),
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_arrow_right),
+                        contentDescription = null,
+                        modifier = Modifier.rotate(if (expanded) 90f else 0f),
+                    )
+                }
+                if (expanded) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    SelectionContainer {
+                        Text(
+                            text = linkifiedText(interestLinks.text),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val URL_REGEX = Regex("""(https?://|www\.)\S+""")
+
+@Composable
+private fun linkifiedText(text: String) = buildAnnotatedString {
+    val linkStyles = TextLinkStyles(
+        style = SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+        ),
+    )
+    var lastIndex = 0
+    URL_REGEX.findAll(text).forEach { match ->
+        append(text.substring(lastIndex, match.range.first))
+        val visibleUrl = match.value.trimEnd('.', ',', ';', ':', ')')
+        val url = if (visibleUrl.startsWith("www.")) "https://$visibleUrl" else visibleUrl
+        withLink(LinkAnnotation.Url(url = url, styles = linkStyles)) {
+            append(visibleUrl)
+        }
+        lastIndex = match.range.first + visibleUrl.length
+    }
+    append(text.substring(lastIndex))
 }
 
 @Composable
