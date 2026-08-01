@@ -776,7 +776,10 @@ function FilterBar({
       </label>
 
       {canFilterOwn && (
-        <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+        <label
+          className="flex items-center gap-1.5 text-xs text-ink-soft"
+          title="Voluntaris apuntats a alguna de les teves àrees o amb un compromís en alguna d’elles."
+        >
           <input
             type="checkbox"
             name="meus"

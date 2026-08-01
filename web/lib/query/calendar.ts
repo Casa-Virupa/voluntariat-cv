@@ -18,6 +18,7 @@
 import { raw } from '../db/index.ts'
 import { AREA_GENERAL } from '../contract.ts'
 import { ANOMALY_AFFECTS_NUMBERS } from '../sync/anomalies.ts'
+import { myVolunteerUids } from './scope.ts'
 import type { CalendarFilters } from './filters.ts'
 
 /** Turns a list into `(?, ?, ?)` plus its bindings. Never called with an empty list. */
@@ -74,13 +75,14 @@ function scopeOf(
   }
 
   if (filters.onlyMine) {
-    if (myVolunteerAreas.length === 0) {
+    // Resolved here rather than passed in so /calendari and /coordinacio cannot end up with
+    // two different ideas of whose volunteers these are — see lib/query/scope.ts.
+    const mine = myVolunteerUids(myVolunteerAreas, filters.period.from)
+    if (mine.length === 0) {
       return { sql: '1 = 0', args: [] }
     }
-    parts.push(
-      `b.user_id IN (SELECT ua.uid FROM fs_user_area ua WHERE ua.area IN ${inList(myVolunteerAreas)})`,
-    )
-    args.push(...myVolunteerAreas)
+    parts.push(`b.user_id IN ${inList(mine)}`)
+    args.push(...mine)
   }
 
   return { sql: parts.join(' AND '), args }

@@ -57,6 +57,35 @@ export function audit(
     .run()
 }
 
+/**
+ * Catalan for every action string `audit()` is called with. Keep in step with the calls in
+ * lib/mutations.ts — an unknown key falls back to the raw string rather than to an empty
+ * cell, so a forgotten label is visible instead of silently hiding a change.
+ */
+export const AUDIT_ACTION_LABEL: Record<string, string> = {
+  'ledger.insert': 'Apunt registrat',
+  'ledger.void': 'Apunt anul·lat',
+  'price.add': 'Preu nou',
+  'price.end': 'Preu tancat',
+  'commitment.add': 'Compromís nou',
+  'commitment.end': 'Compromís tancat',
+  'commitment.delete': 'Compromís esborrat',
+  'admin.upsert': 'Accés desat',
+  'admin.disable': 'Accés desactivat',
+  'admin.enable': 'Accés reactivat',
+  'period.close': 'Període tancat',
+  'setting.set': 'Preferència canviada',
+}
+
+export const AUDIT_ENTITY_LABEL: Record<string, string> = {
+  ledger_entry: 'Apunt',
+  price_rule: 'Preu',
+  commitment_rule: 'Compromís',
+  admin_user: 'Accés',
+  period_close: 'Tancament',
+  app_setting: 'Preferència',
+}
+
 export function atRiskRatio(): number {
   const value = getSetting('at_risk_ratio', DEFAULT_AT_RISK_RATIO)
   return typeof value === 'number' && value > 0 && value <= 1 ? value : DEFAULT_AT_RISK_RATIO

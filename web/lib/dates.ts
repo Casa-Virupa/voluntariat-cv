@@ -24,6 +24,32 @@ export function localDate(epochSeconds: number): string {
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
+const dateTimeParts = new Intl.DateTimeFormat('en-GB', {
+  timeZone: CANONICAL_TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
+/**
+ * 'YYYY-MM-DD HH:MM:SS' in Europe/Madrid, for exports.
+ *
+ * Written as text and not as an Excel date cell on purpose: ExcelJS serialises a JS Date
+ * against UTC, so a 00:30 Madrid audit entry would open as 22:30 the previous day. This
+ * format still sorts correctly as a string, which is what an archive actually needs.
+ */
+export function localDateTime(epochSeconds: number): string {
+  const p = dateTimeParts.formatToParts(new Date(epochSeconds * 1000))
+  const get = (t: string) => p.find((x) => x.type === t)!.value
+  // en-GB gives 24 as the hour at midnight in some runtimes; normalise it to 00.
+  const hour = get('hour') === '24' ? '00' : get('hour')
+  return `${get('year')}-${get('month')}-${get('day')} ${hour}:${get('minute')}:${get('second')}`
+}
+
 /**
  * The date a booking is FOR.
  *

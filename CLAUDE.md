@@ -2,6 +2,18 @@
 
 Kotlin Multiplatform + Compose Multiplatform app for volunteer-shift management at Casa Virupa. Targets **Android and iOS** from a shared codebase.
 
+## Repository map (read this first when delegating subtasks)
+
+This repo holds **three independent codebases**. Each has its own docs — send agents to the right one and don't mix conventions:
+
+| Path | What it is | Docs that govern it |
+| --- | --- | --- |
+| `/` (root: `androidApp/`, `iosApp/`, `features/`, `shared/`, `build-logic/`) | The KMP mobile app | this file |
+| `web/` | Next.js 16 admin dashboard (SQLite mirror of Firestore, self-hosted VPS) | `web/AGENTS.md` (also loaded via `web/CLAUDE.md`); deployment: `web/deploy/README.md` |
+| `tools/users/` | Local-only Node CLI to create Firebase Auth users + `users/{uid}` docs | `tools/users/README.md` |
+
+`web/` is plain TypeScript/Node — none of the Gradle/Kotlin rules below apply there, and vice versa. The two share only the **Firestore contract** (see below): if a task changes what the app writes to Firestore, the dashboard's sync (`web/lib/sync`) almost certainly needs a matching change, and vice versa.
+
 ## Tech stack
 
 - Kotlin 2.3.10 (forced `languageVersion = KOTLIN_2_2` via convention), Compose Multiplatform 1.10.0
@@ -10,6 +22,7 @@ Kotlin Multiplatform + Compose Multiplatform app for volunteer-shift management 
 - **DI**: Koin 4.1.1 (`viewModelOf`, `koinViewModel`, `koinInject`)
 - **Backend**: Firebase Auth + Firestore via **GitLive KMP wrapper** (`dev.gitlive:firebase-auth`, `firebase-firestore`). Android also pulls `firebase-bom` + `firebase-analytics`; iOS uses native `FirebaseCore`.
 - **HTTP**: Ktor 3.4 (client-android / client-darwin). Used to hit a Google Apps Script endpoint for calendar events.
+- **Local DB**: SQLDelight (`shared/database`, `CVDatabase`) — caches Google Calendar events
 - **Utils**: kotlinx-datetime, kotlinx-serialization-json, Kermit (logging)
 
 ## Build & run
@@ -36,22 +49,27 @@ iosApp/                                      # Xcode project (SwiftUI entry)
 features/
   authentication/   sign-in, create-password screens + VMs + authModule
   calendar/         calendar, day-detail, reservation-form + VMs + calendarModule
+  history/          volunteer history screen + historyModule
+  profile/          profile screen + profileModule
 
 shared/
   common/           AppViewModel + InitialUserState (auth bootstrap)
   core/             BuildEnvironment, Ktor HttpClient factory, Navigation3
                     state/navigator helpers (Auth + Main), DateTimeUtils,
                     CalendarConstants, coreModule
-  data/             FirebaseAuthRepository, RemoteCalendarRepository,
-                    Firestore/request/response models, dataModule
-                    (bindings for AuthRepository / CalendarRepository)
+  data/             FirebaseAuthRepository, FirebaseUserRepository,
+                    FirebaseVolunteerRepository, FirebasePaymentRepository,
+                    GoogleCalendarRepository, Firestore request/response models,
+                    dataModule (bindings for the shared/domain interfaces)
+  database/         SQLDelight CVDatabase — local cache (Google Calendar events),
+                    expect/actual driver via databaseModule
   dependencies/     initKoin() entry + SharedModule aggregating feature modules
   designsystem/     VoluntariatCVTheme, Colors, Typography, Buttons,
                     TextFields, Pickers (expect/actual on Android/iOS)
-  domain/           AuthRepository, CalendarRepository interfaces
-  model/            Domain models: User/UserId/UserRole/VolunteerType,
-                    Reservation/Meal/VolunteerShift/TechnicalAreaTurn,
-                    Event, GoogleCalendarEvent
+  domain/           AuthRepository, UserRepository, VolunteerRepository,
+                    PaymentRepository, CalendarRepository interfaces
+  model/            Domain models: User, Volunteer (+ VolunteerType/shifts),
+                    SpecificArea, Payment, Event, GoogleCalendarEvent
   ui/               RootApp (auth nav host) + MainApp (main nav host) +
                     iOS MainViewController + initKoinIOS
 ```
@@ -83,7 +101,7 @@ Changes to `build-logic` require a Gradle sync; it's an included build (`include
   - `NotLogged` → `SignInNavKey`
   - `LoggedIn(onboardingCompleted = false)` → `CreatePasswordNavKey`
   - `LoggedIn(onboardingCompleted = true)` → `MainAppContentNavKey` (renders `MainApp`)
-- **MainApp**: main-content NavDisplay starting at `CalendarNavKey`, with destinations `ReservationFormNavKey`, `DayDetailNavKey(date)`.
+- **MainApp**: main-content NavDisplay starting at `CalendarNavKey`, with destinations `ReservationFormNavKey`, `DayDetailNavKey(date)`, `HistoryNavKey`, `ProfileNavKey` (bottom-bar navigation between Calendar/History/Profile).
 
 Two separate nav stacks (auth vs main) keep auth history isolated. `MainAppContentNavKey` sets `isLastNavKey = true`, so navigating to it clears the auth stack.
 
@@ -104,11 +122,14 @@ Two separate nav stacks (auth vs main) keep auth history isolated. `MainAppConte
 
 ## Firebase contract (current)
 
+This contract is **shared with the `web/` dashboard** — its sync mirrors these collections into SQLite. Change a field name here and `web/lib/sync` breaks silently.
+
 - Firestore collections:
   - `users/{uid}` — shape: `FirestoreUser(id, name, email, role, onboarding_completed)`. Role strings: `"volunteer"`, `"area_responsible"`, `"coordination_team"`.
-  - `reservations` — shape: `FirebaseReservation(userId, date, scheduleRange, technicalAreaTurn, mealType, sleep)`. Documents are added with `.add(...)` (auto-id).
+  - `volunteers` — one doc per booking, auto-id via `.add(...)`. Shape: `FirebaseVolunteer(user_id, timestamp, shifts, meal_types, sleep)`; each shift is `FirebaseShift(shift, time_range{start,end}, type{type, specific_areas})`. `type.type` is `"general"` or `"specific"`; the exact `specific_areas` strings are listed in the root `README.md` ("Reference types").
+  - `payments` — shape: `FirebasePayment(user_id, year, month, paid, amount)`.
 - `AuthRepository.updateNewPassword` reauthenticates with email/password then writes `onboarding_completed = true` to the user doc.
-- Google Calendar events are fetched from an Apps Script URL (`CalendarConstants.SCRIPT_URL`) — this is **not** Firebase but lives behind the same `CalendarRepository` interface.
+- Google Calendar events are fetched from an Apps Script URL (`CalendarConstants.SCRIPT_URL` in `shared/core/.../constants/Constants.kt`) — this is **not** Firebase but lives behind the same `CalendarRepository` interface, and is cached locally via SQLDelight (`shared/database`).
 
 ## Gotchas
 

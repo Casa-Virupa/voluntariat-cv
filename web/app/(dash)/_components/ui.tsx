@@ -11,12 +11,17 @@ import { STATUS_DOT_CLASS, STATUS_LABEL, type CommitmentStatus } from '@/lib/com
 export function Card({
   children,
   className = '',
+  /** Anchor target, so a paged table can link back to itself instead of to the page top. */
+  id,
 }: {
   children: React.ReactNode
   className?: string
+  id?: string
 }) {
   return (
-    <section className={`rounded-2xl bg-surface ring-1 ring-line ${className}`}>{children}</section>
+    <section id={id} className={`rounded-2xl bg-surface ring-1 ring-line ${className}`}>
+      {children}
+    </section>
   )
 }
 

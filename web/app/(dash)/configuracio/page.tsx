@@ -22,14 +22,21 @@ import {
 import { formatCents, formatMinutes, monthPeriod, todayInMadrid } from '@/lib/dates'
 import {
   admins,
+  auditPage,
   commitmentRules,
   dataQuality,
   priceRules,
-  recentAudit,
   recentSyncRuns,
   volunteerOptions,
+  type AuditPage,
 } from '@/lib/query/config'
-import { atRiskRatio, getSetting, writebackEnabled } from '@/lib/settings'
+import {
+  atRiskRatio,
+  AUDIT_ACTION_LABEL,
+  AUDIT_ENTITY_LABEL,
+  getSetting,
+  writebackEnabled,
+} from '@/lib/settings'
 import { planWriteback, recentWritebacks } from '@/lib/writeback'
 import type { RawSearch } from '@/lib/query/filters'
 
@@ -113,7 +120,7 @@ export default async function ConfiguracioPage({
       {section === 'preus' && <PricesSection today={today} />}
       {section === 'compromisos' && <CommitmentsSection today={today} />}
       {section === 'accessos' && <AdminsSection />}
-      {section === 'sync' && <SyncSection />}
+      {section === 'sync' && <SyncSection auditPageNumber={parsePageNumber(one(search.canvis))} />}
       {section === 'dades' && <DataQualitySection />}
       {section === 'firebase' && (
         <FirebaseSection today={today} month={parseMonth(one(search.mes), today)} />
@@ -130,6 +137,12 @@ function one(v: string | string[] | undefined): string | null {
 function pickSection(value: string | null): (typeof SECTIONS)[number]['key'] {
   const found = SECTIONS.find((s) => s.key === value)
   return found?.key ?? 'preus'
+}
+
+/** Out-of-range or hand-edited page numbers fall back to the first page; auditPage() clamps the top. */
+function parsePageNumber(value: string | null): number {
+  const n = Number(value)
+  return Number.isInteger(n) && n >= 1 ? n : 1
 }
 
 /**
@@ -541,9 +554,9 @@ async function AdminsSection() {
 
 // --- sync --------------------------------------------------------------------
 
-async function SyncSection() {
+async function SyncSection({ auditPageNumber }: { auditPageNumber: number }) {
   const runs = recentSyncRuns()
-  const audit = recentAudit()
+  const audit = auditPage(auditPageNumber)
   const ratio = atRiskRatio()
   const quarters = getSetting<number>('sync_history_quarters', 1)
 
@@ -638,23 +651,93 @@ async function SyncSection() {
         </form>
       </Card>
 
-      <Card>
-        <CardHeader title="Últims canvis" subtitle="Qui ha canviat què, i quan." />
-        <ul className="divide-y divide-line text-xs">
-          {audit.length === 0 && <li className="px-5 py-3 text-ink-faint">Cap canvi registrat.</li>}
-          {audit.map((a) => (
-            <li key={a.id} className="flex items-baseline gap-3 px-5 py-2">
-              <span className="tabular-nums text-ink-faint">{formatInstant(a.at)}</span>
-              <span className="font-medium text-ink">{a.action}</span>
-              <span className="text-ink-soft">
-                {a.entity}
-                {a.entityId ? ` · ${a.entityId}` : ''}
-              </span>
-              <span className="ml-auto text-ink-faint">{a.actor}</span>
-            </li>
-          ))}
-        </ul>
+      <Card id="canvis">
+        <CardHeader
+          title="Últims canvis"
+          subtitle="Qui ha canviat què, i quan. Preus, compromisos, accessos, apunts i tancaments: tot el que escriu el panell queda aquí."
+          actions={
+            <a href="/api/export/canvis" className={ghostButtonClass}>
+              Exporta tot l’historial
+            </a>
+          }
+        />
+        {audit.total === 0 ? (
+          <EmptyState title="Cap canvi registrat">
+            Encara no s’ha tocat cap preu, compromís, accés ni apunt des del panell.
+          </EmptyState>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr>
+                    <th className={thClass}>Quan</th>
+                    <th className={thClass}>Acció</th>
+                    <th className={thClass}>Entitat</th>
+                    <th className={thClass}>Id</th>
+                    <th className={thClass}>Qui</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {audit.rows.map((a) => (
+                    <tr key={a.id}>
+                      <td className={`${tdClass} tabular-nums text-ink-soft`}>
+                        {formatInstant(a.at)}
+                      </td>
+                      <td className={`${tdClass} font-medium`}>
+                        {AUDIT_ACTION_LABEL[a.action] ?? a.action}
+                      </td>
+                      <td className={tdClass}>{AUDIT_ENTITY_LABEL[a.entity] ?? a.entity}</td>
+                      <td className={`${tdClass} text-ink-faint`}>{a.entityId ?? '—'}</td>
+                      <td className={tdClass}>{a.actor}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <AuditPager page={audit} />
+          </>
+        )}
       </Card>
+    </div>
+  )
+}
+
+/**
+ * The change log is the one table here that only ever grows, so it is paged instead of
+ * truncated: page 1 is the newest AUDIT_PAGE_SIZE entries and every older one is still
+ * reachable. The export ignores the paging and takes the lot.
+ */
+function AuditPager({ page }: { page: AuditPage }) {
+  const first = (page.page - 1) * page.pageSize + 1
+  const last = first + page.rows.length - 1
+  const href = (n: number) => `/configuracio?seccio=sync&canvis=${n}#canvis`
+  const disabledClass = 'rounded-lg px-2 py-1 text-xs text-ink-ghost ring-1 ring-line/60'
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-3">
+      <span className="text-xs tabular-nums text-ink-soft">
+        {first}–{last} de {page.total}
+      </span>
+      <div className="ml-auto flex items-center gap-2">
+        <span className="text-xs tabular-nums text-ink-faint">
+          Pàgina {page.page} de {page.pageCount}
+        </span>
+        {page.page > 1 ? (
+          <Link href={href(page.page - 1)} className={ghostButtonClass}>
+            Més recents
+          </Link>
+        ) : (
+          <span className={disabledClass}>Més recents</span>
+        )}
+        {page.page < page.pageCount ? (
+          <Link href={href(page.page + 1)} className={ghostButtonClass}>
+            Més antics
+          </Link>
+        ) : (
+          <span className={disabledClass}>Més antics</span>
+        )}
+      </div>
     </div>
   )
 }
@@ -1005,10 +1088,12 @@ function Field({
 
 function formatInstant(epochSeconds: number | null): string {
   if (epochSeconds === null) return '—'
+  // The year is not decoration here: the change log now goes back as far as the install does.
   return new Intl.DateTimeFormat('ca-ES', {
     timeZone: 'Europe/Madrid',
     day: '2-digit',
     month: '2-digit',
+    year: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(epochSeconds * 1000))

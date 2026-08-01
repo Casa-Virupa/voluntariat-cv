@@ -1,35 +1,23 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# VoluntariatCV
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Volunteer-shift management for Casa Virupa. This repository holds three codebases:
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+* **Mobile app** (root) — Kotlin Multiplatform + Compose Multiplatform, targeting Android and iOS. Modules: `androidApp/` (Android entry), `iosApp/` (Xcode project), `features/` (feature screens), `shared/` (core, data, domain, design system…), `build-logic/` (convention plugins). See `CLAUDE.md` for the full architecture and conventions.
+* **Admin dashboard** — `web/`, a Next.js app for coordinators. See `web/AGENTS.md` and `web/deploy/README.md`.
+* **Admin tooling** — `tools/users/`, a local CLI to create Firebase users. See `tools/users/README.md`.
 
-### Build and Run Android Application
+### Build and run the Android app
 
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
+Product flavors are `dev` and `prod`, so task names are flavor-scoped:
 
-### Build and Run iOS Application
+```shell
+./gradlew :androidApp:assembleDevDebug   # build dev debug APK
+./gradlew :androidApp:installDevDebug    # install on a device/emulator
+```
 
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+### Build and run the iOS app
 
+Open [/iosApp](./iosApp) in Xcode, pick a scheme and run. The Xcode build phase rebuilds the shared Kotlin framework automatically.
 
 ### Reference types
 
@@ -46,7 +34,7 @@ The `VolunteerType` sealed class only has **two** category strings written to Fi
 
 When it's `"specific"`, the actual area goes in the `specific_areas` field (null for `"general"`).
 
-> Note: this is per-shift on the reservation (`FirebaseShift.type`). It's distinct from the *user's* volunteer type (`UserVolunteerType` = `Habitual` / `Mitra`), which lives on the user doc — let me know if that's the one you meant.
+> Note: this is per-shift on the reservation (`FirebaseShift.type`). It's distinct from the *user's* volunteer type (`UserVolunteerType` = `Habitual` / `Mitra`), which lives on the user doc.
 
 ## `specific_areas` — the `specific_areas` field
 
@@ -80,9 +68,3 @@ The following lists each SpecificArea enum value and the exact string that is wr
 - Unknown: (empty string) `""`
 
 These same strings map back on read via `String.toSpecificArea()`.
-
-
-
----
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…

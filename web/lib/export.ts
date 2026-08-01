@@ -1,5 +1,8 @@
 /**
- * The .xlsx export, built with LIVE FORMULAS rather than baked-in numbers.
+ * The .xlsx exports. Two of them, with opposite rules — see `buildAuditWorkbook` at the
+ * bottom for the flat change-log archive, which deliberately has no formulas at all.
+ *
+ * The coordination workbook is built with LIVE FORMULAS rather than baked-in numbers.
  *
  * That is the whole point of this file. A coordinator who receives the workbook needs to be
  * able to correct one cell — a unit price, a payment that arrived late — and watch the
@@ -22,9 +25,11 @@
 import ExcelJS from 'exceljs'
 
 import { areaLabel, AREA_GENERAL, ITEM_LABEL, VOLUNTEER_TYPE_LABEL } from './contract.ts'
-import { minutesToHours, type Period } from './dates.ts'
+import { localDateTime, minutesToHours, type Period } from './dates.ts'
 import { LEDGER_KIND_LABEL, LEDGER_METHOD_LABEL } from './ledger.ts'
 import { volunteerDetail, type CoordinationTable } from './query/coordination.ts'
+import type { AuditEntryFull } from './query/config.ts'
+import { AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL } from './settings.ts'
 
 const MONEY = '#,##0.00\\ "€"'
 const HOURS = '0.00'
@@ -417,6 +422,88 @@ function buildEntriesSheet(workbook: ExcelJS.Workbook, { table, period }: Export
   sheet.autoFilter = { from: 'A1', to: { row: 1, column: 8 } }
   return sheet
 }
+
+// --- the change log ----------------------------------------------------------
+
+/**
+ * The whole `audit_log` as one flat sheet. No formulas here on purpose: unlike the
+ * coordination workbook, nothing in this file is derived — every cell is a fact about
+ * something that already happened, and a formula over facts would only invite editing them.
+ *
+ * The before/after payloads travel as raw JSON. They are the only record of what a value
+ * used to be, so they are exported verbatim rather than summarised, and truncated only at
+ * Excel's own cell limit.
+ */
+export async function buildAuditWorkbook(options: {
+  entries: AuditEntryFull[]
+  actor: string
+  generatedAt: Date
+}): Promise<ArrayBuffer> {
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'Panell de voluntariat · Casa Virupa'
+  workbook.created = options.generatedAt
+
+  const sheet = workbook.addWorksheet('Canvis', {
+    views: [{ state: 'frozen', ySplit: 4 }],
+  })
+
+  sheet.getCell('A1').value = 'Historial de canvis del panell'
+  sheet.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FF2B2E66' } }
+  sheet.getCell('A2').value =
+    `${options.entries.length} ${options.entries.length === 1 ? 'canvi' : 'canvis'} · ` +
+    `generat per ${options.actor} el ${localDateTime(Math.floor(options.generatedAt.getTime() / 1000))}`
+  sheet.getCell('A2').font = { size: 9, color: { argb: 'FF64748B' } }
+  sheet.getCell('A3').value =
+    'Tot l’historial, del canvi més recent al més antic. Les hores són de Europe/Madrid. ' +
+    '«Abans» i «Després» són el valor cru tal com es va guardar: és l’únic lloc on queda ' +
+    'què deia una regla o un apunt abans de canviar-lo.'
+  sheet.getCell('A3').font = { size: 9, italic: true, color: { argb: 'FF64748B' } }
+
+  const headerRow = sheet.getRow(4)
+  headerRow.values = ['#', 'Quan', 'Qui', 'Acció', 'Entitat', 'Id', 'Abans', 'Després']
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, size: 9, color: { argb: 'FFFFFFFF' } }
+    cell.fill = HEADER_FILL
+  })
+
+  let r = 5
+  for (const entry of options.entries) {
+    const row = sheet.getRow(r)
+    row.getCell(1).value = entry.id
+    row.getCell(2).value = localDateTime(entry.at)
+    row.getCell(3).value = entry.actor
+    row.getCell(4).value = AUDIT_ACTION_LABEL[entry.action] ?? entry.action
+    row.getCell(5).value = AUDIT_ENTITY_LABEL[entry.entity] ?? entry.entity
+    row.getCell(6).value = entry.entityId ?? ''
+    row.getCell(7).value = payloadCell(entry.beforeJson)
+    row.getCell(8).value = payloadCell(entry.afterJson)
+    r++
+  }
+
+  sheet.columns = [
+    { width: 7 },
+    { width: 20 },
+    { width: 30 },
+    { width: 22 },
+    { width: 16 },
+    { width: 26 },
+    { width: 60 },
+    { width: 60 },
+  ]
+  sheet.autoFilter = { from: 'A4', to: { row: 4, column: 8 } }
+
+  return workbook.xlsx.writeBuffer()
+}
+
+/** Excel refuses a cell over 32767 characters, so an oversized payload is marked, not lost. */
+function payloadCell(json: string | null): string {
+  if (!json) return ''
+  return json.length <= EXCEL_CELL_LIMIT
+    ? json
+    : `${json.slice(0, EXCEL_CELL_LIMIT - 40)}… [retallat, ${json.length} caràcters]`
+}
+
+const EXCEL_CELL_LIMIT = 32767
 
 function styleHeader(sheet: ExcelJS.Worksheet): void {
   const header = sheet.getRow(1)

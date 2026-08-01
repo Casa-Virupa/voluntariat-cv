@@ -192,19 +192,68 @@ export function dataQuality(): DataQuality {
   }
 }
 
-/** The most recent audit entries, so a price change is traceable to a person. */
-export function recentAudit(limit = 20) {
-  return raw()
+// --- the change log ----------------------------------------------------------
+
+export interface AuditEntry {
+  id: number
+  actor: string
+  action: string
+  entity: string
+  entityId: string | null
+  at: number
+}
+
+/** One page of it, plus the before/after payloads — only the export asks for those. */
+export interface AuditEntryFull extends AuditEntry {
+  beforeJson: string | null
+  afterJson: string | null
+}
+
+export const AUDIT_PAGE_SIZE = 100
+
+export interface AuditPage {
+  rows: AuditEntry[]
+  /** Rows in the whole log, so the pager can size itself and the page can say "de N". */
+  total: number
+  /** 1-based, already clamped to the pages that exist. */
+  page: number
+  pageCount: number
+  pageSize: number
+}
+
+/**
+ * A page of the change log, newest first.
+ *
+ * Paged rather than `LIMIT 20`: this table only grows, and the point of an audit log is
+ * that the entry you need is still reachable months later. The full history — including
+ * the before/after payloads, which are too wide for the screen — goes out through
+ * `allAuditEntries()` and /api/export/canvis.
+ */
+export function auditPage(page = 1, pageSize = AUDIT_PAGE_SIZE): AuditPage {
+  const total = (raw().prepare(`SELECT COUNT(*) AS n FROM audit_log`).get() as { n: number }).n
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const current = Math.min(Math.max(1, Math.trunc(page) || 1), pageCount)
+
+  const rows = raw()
     .prepare(
       `SELECT id, actor_email AS actor, action, entity, entity_id AS entityId, at
-         FROM audit_log ORDER BY id DESC LIMIT ?`,
+         FROM audit_log ORDER BY id DESC LIMIT ? OFFSET ?`,
     )
-    .all(limit) as Array<{
-    id: number
-    actor: string
-    action: string
-    entity: string
-    entityId: string | null
-    at: number
-  }>
+    .all(pageSize, (current - 1) * pageSize) as AuditEntry[]
+
+  return { rows, total, page: current, pageCount, pageSize }
+}
+
+/**
+ * The whole log for the archive export. Deliberately unbounded — an export that silently
+ * stopped at N would be worse than no export — so it is never called from a page render.
+ */
+export function allAuditEntries(): AuditEntryFull[] {
+  return raw()
+    .prepare(
+      `SELECT id, actor_email AS actor, action, entity, entity_id AS entityId, at,
+              before_json AS beforeJson, after_json AS afterJson
+         FROM audit_log ORDER BY id DESC`,
+    )
+    .all() as AuditEntryFull[]
 }

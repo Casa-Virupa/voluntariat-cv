@@ -19,11 +19,10 @@ import {
   progressOf,
   resolveCommitment,
   ruleMatchesVolunteer,
-  ruleValidAt,
-  type CommitmentRule,
   type Progress,
 } from '../commitments.ts'
 import { balanceOf, settlementOf, type Balance, type SettlementState } from '../ledger.ts'
+import { commitmentRulesValidAt, myVolunteerUids } from './scope.ts'
 import type { CoordinationFilters } from './filters.ts'
 
 function inList(values: unknown[]): string {
@@ -95,10 +94,16 @@ export function coordinationTable(
   filters: CoordinationFilters,
   scope: CoordinationScope,
 ): CoordinationTable {
-  const hours = hoursByUserArea(filters.period, scope.queryAreas, filters.onlyMine ? scope.myVolunteerAreas : null)
+  // "Els meus voluntaris" resolves to a uid list once and is then applied to both queries,
+  // so the hours and the rows can never be filtered by different definitions of "mine".
+  const mine = filters.onlyMine
+    ? myVolunteerUids(scope.myVolunteerAreas, filters.period.from)
+    : null
+
+  const hours = hoursByUserArea(filters.period, scope.queryAreas, mine)
   const rules = commitmentRulesValidAt(filters.period.from)
 
-  const users = candidateUsers(filters, scope, hours)
+  const users = candidateUsers(filters, scope, hours, mine)
 
   const charges = scope.showPayments ? chargesByUserItem(filters.period, scope.today) : new Map()
   const carryCharges = scope.showPayments ? chargeTotalsBefore(filters.period.from) : new Map<string, number>()
@@ -246,7 +251,8 @@ function orderColumns(columns: Set<string>): string[] {
 export function hoursByUserArea(
   period: Period,
   areas: string[] | null,
-  myVolunteerAreas: string[] | null,
+  /** From myVolunteerUids(); null means the filter is off. Empty means nobody, not everybody. */
+  onlyUids: string[] | null,
 ): Map<string, Map<string, number>> {
   const parts = ['b.deleted_at IS NULL', 'b.service_date >= ?', 'b.service_date < ?']
   const args: unknown[] = [period.from, period.to]
@@ -256,12 +262,10 @@ export function hoursByUserArea(
     parts.push(`s.area IN ${inList(areas)}`)
     args.push(...areas)
   }
-  if (myVolunteerAreas !== null) {
-    if (myVolunteerAreas.length === 0) return new Map()
-    parts.push(
-      `b.user_id IN (SELECT ua.uid FROM fs_user_area ua WHERE ua.area IN ${inList(myVolunteerAreas)})`,
-    )
-    args.push(...myVolunteerAreas)
+  if (onlyUids !== null) {
+    if (onlyUids.length === 0) return new Map()
+    parts.push(`b.user_id IN ${inList(onlyUids)}`)
+    args.push(...onlyUids)
   }
 
   const rows = raw()
@@ -305,6 +309,7 @@ function candidateUsers(
   filters: CoordinationFilters,
   scope: CoordinationScope,
   hours: Map<string, Map<string, number>>,
+  mine: string[] | null,
 ): UserRow[] {
   const parts: string[] = []
   const args: unknown[] = []
@@ -313,20 +318,27 @@ function candidateUsers(
     parts.push(`u.volunteer_type IN ${inList(filters.types)}`)
     args.push(...filters.types)
   }
-  if (filters.onlyMine) {
-    if (scope.myVolunteerAreas.length === 0) return []
-    parts.push(
-      `u.uid IN (SELECT ua.uid FROM fs_user_area ua WHERE ua.area IN ${inList(scope.myVolunteerAreas)})`,
-    )
-    args.push(...scope.myVolunteerAreas)
+  if (mine !== null) {
+    if (mine.length === 0) return []
+    parts.push(`u.uid IN ${inList(mine)}`)
+    args.push(...mine)
   } else if (!scope.showPayments && scope.allowedAreas !== null) {
-    // An area_responsible's table is their areas: volunteers who worked those areas in the
-    // period, or who are currently listed in them. Enforced here, in the query.
+    // An area_responsible's table is their areas: volunteers who WORKED those areas in the
+    // period, plus everyone the areas belong to (listed in them, or carrying a commitment
+    // aimed at one of them). Enforced here, in the query.
+    //
+    // All of it, and not membership alone, for two reasons: hours that happened in the area
+    // must appear even if the volunteer has since removed it from their profile — otherwise
+    // the column silently under-reports its own area — and this set is a superset of
+    // `myVolunteerUids`, so ticking "només els meus voluntaris" can only ever narrow the
+    // table, never add to it.
     if (scope.allowedAreas.length === 0) return []
-    parts.push(
-      `u.uid IN (SELECT ua.uid FROM fs_user_area ua WHERE ua.area IN ${inList(scope.allowedAreas)})`,
-    )
-    args.push(...scope.allowedAreas)
+    const visible = [
+      ...new Set([...hours.keys(), ...myVolunteerUids(scope.allowedAreas, filters.period.from)]),
+    ]
+    if (visible.length === 0) return []
+    parts.push(`u.uid IN ${inList(visible)}`)
+    args.push(...visible)
   }
 
   const where = parts.length ? `WHERE ${parts.join(' AND ')}` : ''
@@ -371,19 +383,6 @@ function candidateUsers(
   }
 
   return [...byUid.values()]
-}
-
-export function commitmentRulesValidAt(date: string): CommitmentRule[] {
-  const rows = raw()
-    .prepare(
-      `SELECT id, scope_kind AS scopeKind, scope_value AS scopeValue, area,
-              period_kind AS periodKind, target_minutes AS targetMinutes,
-              valid_from AS validFrom, valid_to AS validTo
-         FROM commitment_rule`,
-    )
-    .all() as CommitmentRule[]
-  // Filtered in JS rather than SQL so the same predicate serves the config page's preview.
-  return rows.filter((r) => ruleValidAt(r, date))
 }
 
 interface ItemRow {
