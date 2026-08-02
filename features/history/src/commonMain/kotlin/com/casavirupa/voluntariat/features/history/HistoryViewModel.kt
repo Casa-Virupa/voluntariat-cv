@@ -14,6 +14,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.payment.PriceRules
+import com.casavirupa.voluntariat.shared.model.payment.calculateMonthlyCharge
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -62,7 +63,7 @@ class HistoryViewModel(
                 ),
                 priceRepository.getPriceRules(),
             ) { volunteers, priceRules ->
-                MonthData(volunteers, priceRules)
+                MonthData(volunteers, priceRules, user.isMitra)
             }
         }.stateIn(
             scope = viewModelScope,
@@ -71,8 +72,9 @@ class HistoryViewModel(
         )
 
     // Global outstanding balance: charges over ALL the user's bookings (past and
-    // future) minus everything the admin has recorded in the ledger. Null until all
-    // three sources have emitted, so the UI never shows a wrong amount.
+    // future) minus everything the admin has recorded in the ledger. Charges are
+    // netted per calendar month so the mitra allowance never carries over. Null
+    // until all three sources have emitted, so the UI never shows a wrong amount.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val pendingBalance: StateFlow<Double?> =
         user.flatMapLatest { user ->
@@ -81,8 +83,12 @@ class HistoryViewModel(
                 priceRepository.getPriceRules(),
                 ledgerRepository.getEntriesByUser(user.id),
             ) { allVolunteers, priceRules, ledger ->
-                allVolunteers.sumOf { it.calculateTotalToPay(priceRules.priceAt(it.date)) } -
-                        ledger.sumOf { it.amount }
+                allVolunteers
+                    .groupBy { it.date.year to it.date.month }
+                    .values
+                    .sumOf { monthVolunteers ->
+                        calculateMonthlyCharge(monthVolunteers, priceRules, user.isMitra).total
+                    } - ledger.sumOf { it.amount }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -105,7 +111,7 @@ class HistoryViewModel(
                 } else {
                     PaymentUiState.Hidden
                 },
-                paymentDetail = PaymentDetail(data.volunteers, data.priceRules),
+                paymentDetail = PaymentDetail(data.volunteers, data.priceRules, data.isMitra),
             )
         }.stateIn(
             scope = viewModelScope,
@@ -197,6 +203,7 @@ data class HistoryUiState(
 private data class MonthData(
     val volunteers: List<Volunteer>,
     val priceRules: PriceRules,
+    val isMitra: Boolean,
 )
 
 data class PaymentDetail(
@@ -206,49 +213,37 @@ data class PaymentDetail(
     val lunchesAmount: Double,
     val dinnersAmount: Double,
     val nightsAmount: Double,
+    val freeLunches: Int,
+    val freeDinners: Int,
+    val freeNights: Int,
+    val lunchesDiscount: Double,
+    val dinnersDiscount: Double,
+    val nightsDiscount: Double,
+    val total: Double,
 ) {
-    val total: Double get() = lunchesAmount + dinnersAmount + nightsAmount
-
     companion object {
-        val Empty = PaymentDetail(0, 0, 0, 0.0, 0.0, 0.0)
+        val Empty = PaymentDetail(0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0)
 
         operator fun invoke(
             volunteers: List<Volunteer>,
             priceRules: PriceRules,
+            isMitra: Boolean,
         ): PaymentDetail {
-            var lunches = 0
-            var dinners = 0
-            var nights = 0
-            var lunchesAmount = 0.0
-            var dinnersAmount = 0.0
-            var nightsAmount = 0.0
-            volunteers.forEach { volunteer ->
-                val prices = priceRules.priceAt(volunteer.date)
-                volunteer.meals.forEach { meal ->
-                    when (meal) {
-                        Meal.Lunch -> {
-                            lunches++
-                            lunchesAmount += prices.lunch
-                        }
-                        Meal.Dinner -> {
-                            dinners++
-                            dinnersAmount += prices.dinner
-                        }
-                        else -> Unit
-                    }
-                }
-                if (volunteer.sleep) {
-                    nights++
-                    nightsAmount += prices.sleep
-                }
-            }
+            val breakdown = calculateMonthlyCharge(volunteers, priceRules, isMitra)
             return PaymentDetail(
-                lunches = lunches,
-                dinners = dinners,
-                nights = nights,
-                lunchesAmount = lunchesAmount,
-                dinnersAmount = dinnersAmount,
-                nightsAmount = nightsAmount,
+                lunches = breakdown.lunches,
+                dinners = breakdown.dinners,
+                nights = breakdown.nights,
+                lunchesAmount = breakdown.lunchesAmount,
+                dinnersAmount = breakdown.dinnersAmount,
+                nightsAmount = breakdown.nightsAmount,
+                freeLunches = breakdown.freeLunchesUsed,
+                freeDinners = breakdown.freeDinnersUsed,
+                freeNights = breakdown.freeNightsUsed,
+                lunchesDiscount = breakdown.lunchesDiscount,
+                dinnersDiscount = breakdown.dinnersDiscount,
+                nightsDiscount = breakdown.nightsDiscount,
+                total = breakdown.total,
             )
         }
     }

@@ -32,4 +32,16 @@
         <item quantity="one">1 pernoctació</item>
         <item quantity="other">%1$d pernoctacions</item>
     </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 dinar inclòs (mitra)</item>
+        <item quantity="other">%1$d dinars inclosos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 sopar inclòs (mitra)</item>
+        <item quantity="other">%1$d sopars inclosos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 pernoctació inclosa (mitra)</item>
+        <item quantity="other">%1$d pernoctacions incloses (mitra)</item>
+    </plurals>
 </resources>

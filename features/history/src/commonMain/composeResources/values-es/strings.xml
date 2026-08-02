@@ -32,4 +32,16 @@
         <item quantity="one">1 pernoctación</item>
         <item quantity="other">%1$d pernoctaciones</item>
     </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 almuerzo incluido (mitra)</item>
+        <item quantity="other">%1$d almuerzos incluidos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 cena incluida (mitra)</item>
+        <item quantity="other">%1$d cenas incluidas (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 pernoctación incluida (mitra)</item>
+        <item quantity="other">%1$d pernoctaciones incluidas (mitra)</item>
+    </plurals>
 </resources>

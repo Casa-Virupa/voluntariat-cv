@@ -32,4 +32,16 @@
         <item quantity="one">1 overnight stay</item>
         <item quantity="other">%1$d overnight stays</item>
     </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 lunch included (mitra)</item>
+        <item quantity="other">%1$d lunches included (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 dinner included (mitra)</item>
+        <item quantity="other">%1$d dinners included (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 overnight stay included (mitra)</item>
+        <item quantity="other">%1$d overnight stays included (mitra)</item>
+    </plurals>
 </resources>

@@ -2,6 +2,7 @@ package com.casavirupa.voluntariart.shared.data.repositories
 
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebasePriceRule
 import com.casavirupa.voluntariat.shared.domain.PriceRepository
+import com.casavirupa.voluntariat.shared.model.payment.MitraAllowance
 import com.casavirupa.voluntariat.shared.model.payment.PriceRule
 import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import com.casavirupa.voluntariat.shared.model.payment.Prices
@@ -40,6 +41,11 @@ private fun FirebasePriceRule.toDomainModelOrNull(): PriceRule? =
                     dinner = dinner,
                     breakfast = breakfast,
                     sleep = sleep,
+                    mitraAllowance = MitraAllowance(
+                        freeLunches = mitraFreeLunches,
+                        freeDinners = mitraFreeDinners,
+                        freeSleeps = mitraFreeSleeps,
+                    ),
                 ),
             )
         }
