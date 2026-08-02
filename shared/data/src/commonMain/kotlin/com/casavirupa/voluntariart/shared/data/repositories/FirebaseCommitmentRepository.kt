@@ -2,6 +2,7 @@ package com.casavirupa.voluntariart.shared.data.repositories
 
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseCommitmentRule
 import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentArea
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentPeriod
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentRule
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentRules
@@ -45,12 +46,17 @@ private fun FirebaseCommitmentRule.toDomainModelOrNull(id: String): CommitmentRu
         else -> null
     } ?: return null
     if (area.isBlank() || targetMinutes < 0) return null
+    val commitmentArea = when (area) {
+        "__total__" -> CommitmentArea.Total
+        "__general__" -> CommitmentArea.General
+        else -> CommitmentArea.Specific(area.toSpecificArea())
+    }
     val from = runCatching { LocalDate.parse(validFrom) }.getOrNull() ?: return null
     val to = validTo?.let { runCatching { LocalDate.parse(it) }.getOrNull() ?: return null }
     return CommitmentRule(
         id = id,
         scope = scope,
-        area = area,
+        area = commitmentArea,
         periodKind = period,
         targetMinutes = targetMinutes,
         validFrom = from,

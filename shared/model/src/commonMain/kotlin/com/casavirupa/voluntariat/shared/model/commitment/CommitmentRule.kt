@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.model.commitment
 
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserVolunteerType
 import kotlinx.datetime.LocalDate
@@ -8,6 +9,16 @@ import kotlin.math.roundToInt
 enum class CommitmentPeriod {
     Month,
     Quarter,
+}
+
+sealed class CommitmentArea {
+    // All hours summed regardless of area
+    data object Total : CommitmentArea()
+
+    // General (non-area) volunteering hours only
+    data object General : CommitmentArea()
+
+    data class Specific(val area: SpecificArea) : CommitmentArea()
 }
 
 sealed class CommitmentScope {
@@ -28,7 +39,7 @@ sealed class CommitmentScope {
 data class CommitmentRule(
     val id: String,
     val scope: CommitmentScope,
-    val area: String,
+    val area: CommitmentArea,
     val periodKind: CommitmentPeriod,
     val targetMinutes: Int,
     val validFrom: LocalDate,
@@ -70,7 +81,7 @@ data class CommitmentRules(val rules: List<CommitmentRule>) {
         volunteerType: UserVolunteerType?,
         periodStart: LocalDate,
         viewedPeriod: CommitmentPeriod,
-        area: String = TOTAL_AREA,
+        area: CommitmentArea = CommitmentArea.Total,
     ): CommitmentTarget? {
         val winner = rules
             .filter { it.area == area }
@@ -93,8 +104,25 @@ data class CommitmentRules(val rules: List<CommitmentRule>) {
         )
     }
 
+    // One resolved target per non-total area that has a rule addressing this user,
+    // so the UI can show per-area targets even for areas with no hours done yet
+    fun areaTargetsFor(
+        uid: UserId,
+        volunteerType: UserVolunteerType?,
+        periodStart: LocalDate,
+        viewedPeriod: CommitmentPeriod,
+    ): Map<CommitmentArea, CommitmentTarget> =
+        rules
+            .asSequence()
+            .map { it.area }
+            .filter { it != CommitmentArea.Total }
+            .distinct()
+            .mapNotNull { area ->
+                targetFor(uid, volunteerType, periodStart, viewedPeriod, area)
+                    ?.let { area to it }
+            }.toMap()
+
     companion object {
-        const val TOTAL_AREA = "__total__"
         private const val MONTHS_PER_QUARTER = 3.0
         val Empty = CommitmentRules(emptyList())
     }

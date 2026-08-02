@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.model.commitment
 
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserVolunteerType
 import kotlinx.datetime.LocalDate
@@ -20,7 +21,7 @@ class CommitmentRulesTest {
         periodKind: CommitmentPeriod,
         validFrom: LocalDate = LocalDate(1970, 1, 1),
         validTo: LocalDate? = null,
-        area: String = CommitmentRules.TOTAL_AREA,
+        area: CommitmentArea = CommitmentArea.Total,
     ) = CommitmentRule(
         id = id,
         scope = scope,
@@ -222,7 +223,7 @@ class CommitmentRulesTest {
                     scope = CommitmentScope.Global,
                     targetMinutes = 120,
                     periodKind = CommitmentPeriod.Month,
-                    area = "kitchen",
+                    area = CommitmentArea.Specific(SpecificArea.Kitchen),
                 ),
             ),
         )
@@ -235,5 +236,81 @@ class CommitmentRulesTest {
         )
 
         assertNull(target)
+    }
+
+    @Test
+    fun areaTargetsResolvePerAreaAndScaleToViewedPeriod() {
+        // A mitra with a 60 h/quarter total plus a personal 8 h/month area rule,
+        // viewed in their native quarter view
+        val oscar = UserId("uid-oscar")
+        val rules = CommitmentRules(
+            listOf(
+                rule(
+                    id = "dash-1",
+                    scope = CommitmentScope.VolunteerType(UserVolunteerType.Mitra),
+                    targetMinutes = 3600,
+                    periodKind = CommitmentPeriod.Quarter,
+                ),
+                rule(
+                    id = "dash-4",
+                    scope = CommitmentScope.User(oscar),
+                    targetMinutes = 480,
+                    periodKind = CommitmentPeriod.Month,
+                    validFrom = LocalDate(2026, 7, 1),
+                    area = CommitmentArea.Specific(SpecificArea.TechnicalAndTexts),
+                ),
+                rule(
+                    id = "dash-5",
+                    scope = CommitmentScope.User(UserId("uid-franc")),
+                    targetMinutes = 240,
+                    periodKind = CommitmentPeriod.Month,
+                    validFrom = LocalDate(2026, 7, 1),
+                    area = CommitmentArea.Specific(SpecificArea.VolunteerCoordination),
+                ),
+            ),
+        )
+
+        val targets = rules.areaTargetsFor(
+            uid = oscar,
+            volunteerType = UserVolunteerType.Mitra,
+            periodStart = LocalDate(2026, 7, 1),
+            viewedPeriod = CommitmentPeriod.Quarter,
+        )
+
+        // Total rules are excluded, other users' area rules don't leak in
+        assertEquals(1, targets.size)
+        val techAndTexts = targets[CommitmentArea.Specific(SpecificArea.TechnicalAndTexts)]
+        assertEquals(480 * 3, techAndTexts?.targetMinutes)
+        assertTrue(techAndTexts!!.isScaled)
+    }
+
+    @Test
+    fun generalAreaResolvesSeparatelyFromTotal() {
+        val rules = CommitmentRules(
+            listOf(
+                rule(
+                    id = "dash-1",
+                    scope = CommitmentScope.Global,
+                    targetMinutes = 480,
+                    periodKind = CommitmentPeriod.Month,
+                ),
+                rule(
+                    id = "dash-2",
+                    scope = CommitmentScope.Global,
+                    targetMinutes = 240,
+                    periodKind = CommitmentPeriod.Month,
+                    area = CommitmentArea.General,
+                ),
+            ),
+        )
+
+        val targets = rules.areaTargetsFor(
+            uid = anna,
+            volunteerType = null,
+            periodStart = LocalDate(2026, 8, 1),
+            viewedPeriod = CommitmentPeriod.Month,
+        )
+
+        assertEquals(mapOf<CommitmentArea, Int>(CommitmentArea.General to 240), targets.mapValues { it.value.targetMinutes })
     }
 }

@@ -18,15 +18,18 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
 `runCatching { doc.data<DTO>() }` so malformed docs are skipped, `.catch` on the Flow.
 
 - `price_rules` → `FirebasePriceRepository` → `PriceRules.priceAt(date)`. Errors emit `PriceRules.Empty`.
-- `commitment_rules` → `FirebaseCommitmentRepository` → `CommitmentRules.targetFor(...)`.
+- `commitment_rules` → `FirebaseCommitmentRepository` → `CommitmentRules.targetFor(...)` (total)
+  and `.areaTargetsFor(...)` (per-area, shown in the profile breakdown rows).
   Errors emit **null** (not empty): null means "could not read → fall back to the hardcoded
   defaults in `User.getMonthHours()` (60 h/quarter Mitra, 8 h/month Habitual)", while a loaded
   collection with no matching rule means "no commitment → show no target, not 0 %".
   Spec: `../voluntariat-dashboard/COMMITMENTS-APP.md`. Key points:
   - Doc IDs `dash-<n>`; `<n>` is the last tiebreak in resolution.
-  - Resolution: filter by area (`__total__` for the profile UI) + scope match + validity at the
-    **period start** (`valid_from <= start`, `valid_to` exclusive/absent); winner = highest
-    scope specificity (user > volunteer_type > global), then greatest `valid_from`, then greatest `<n>`.
+  - Resolution: filter by area + scope match + validity at the **period start**
+    (`valid_from <= start`, `valid_to` exclusive/absent); winner = highest scope specificity
+    (user > volunteer_type > global), then greatest `valid_from`, then greatest `<n>`.
+  - Areas are typed (`CommitmentArea`: `Total`/`General`/`Specific(SpecificArea)`); the data
+    layer maps `__total__`/`__general__`/area codes via `toSpecificArea()`.
   - `target_minutes` is minutes; scale when the rule's native `period_kind` differs from the viewed
     period (quarter→month: /3 rounded; month→quarter: ×3). A scaled target must never be shown as
     "failed" — the native period isn't over.
@@ -42,6 +45,12 @@ Firestore security rules are console-managed (not in either repo): rule collecti
 
 Firestore stores `"mitra"`/`"habitual"` (also used by `commitment_rules.scope_value`);
 mapping lives in `FirebaseAuthRepository.kt` (`String?.toVolunteerType()`).
+
+IMPORTANT: `User.volunteerType` is carried **independently of role**, mirroring the dashboard
+(`lib/commitments.ts` matches on the raw `volunteer_type` field with no role gate) — an
+admin/coordinator can still be a mitra. `isMitra` and `getMonthHours()` derive from it, not
+from `role`. Don't reintroduce the old pattern of reading the type through
+`(role as? UserRole.Volunteer)?.type`.
 
 ## Building & testing
 

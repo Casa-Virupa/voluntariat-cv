@@ -7,6 +7,7 @@ import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
 import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentArea
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentPeriod
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentTarget
 import com.casavirupa.voluntariat.shared.model.configuration.InterestLinks
@@ -14,7 +15,6 @@ import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
-import com.casavirupa.voluntariat.shared.model.user.UserRole
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,18 +66,18 @@ class ProfileViewModel(
                 initialValue = InterestLinks.Empty,
             )
 
-    // Target derived from the dashboard-published commitment_rules. Null means the
-    // user has no commitment for the viewed period (show no target rather than 0 %).
-    // The hardcoded defaults in User.getMonthHours are used only when the collection
-    // could not be read at all (the repository emits null).
-    val commitmentTarget: StateFlow<CommitmentTarget?> =
+    // Targets derived from the dashboard-published commitment_rules. A null total means
+    // the user has no overall commitment for the viewed period (show no target rather
+    // than 0 %). The hardcoded defaults in User.getMonthHours are used only when the
+    // collection could not be read at all (the repository emits null).
+    val commitmentTargets: StateFlow<CommitmentTargets> =
         combine(
             user,
             currentMonth,
             quarter,
             commitmentRepository.getCommitmentRules(),
         ) { user, month, quarter, rules ->
-            if (user == null) return@combine null
+            if (user == null) return@combine CommitmentTargets.Empty
             val viewedPeriod = if (user.isMitra) CommitmentPeriod.Quarter else CommitmentPeriod.Month
             val periodStart = if (user.isMitra) {
                 quarter.startDate()
@@ -85,7 +85,7 @@ class ProfileViewModel(
                 LocalDate(month.year, month.month, 1)
             }
             if (rules == null) {
-                user.getMonthHours()
+                val fallbackTotal = user.getMonthHours()
                     .takeIf { it > 0 }
                     ?.let { hours ->
                         CommitmentTarget(
@@ -94,18 +94,33 @@ class ProfileViewModel(
                             isScaled = false,
                         )
                     }
+                CommitmentTargets(total = fallbackTotal, general = null, byArea = emptyMap())
             } else {
-                rules.targetFor(
+                val volunteerType = user.volunteerType
+                val areaTargets = rules.areaTargetsFor(
                     uid = user.id,
-                    volunteerType = (user.role as? UserRole.Volunteer)?.type,
+                    volunteerType = volunteerType,
                     periodStart = periodStart,
                     viewedPeriod = viewedPeriod,
+                )
+                CommitmentTargets(
+                    total = rules.targetFor(
+                        uid = user.id,
+                        volunteerType = volunteerType,
+                        periodStart = periodStart,
+                        viewedPeriod = viewedPeriod,
+                    ),
+                    general = areaTargets[CommitmentArea.General],
+                    byArea = areaTargets
+                        .mapNotNull { (area, target) ->
+                            (area as? CommitmentArea.Specific)?.let { it.area to target }
+                        }.toMap(),
                 )
             }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = null,
+            initialValue = CommitmentTargets.Empty,
         )
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -168,6 +183,16 @@ class ProfileViewModel(
 }
 
 data class ProfileUiState(val navigateToSignIn: Boolean = false)
+
+data class CommitmentTargets(
+    val total: CommitmentTarget?,
+    val general: CommitmentTarget?,
+    val byArea: Map<SpecificArea, CommitmentTarget>,
+) {
+    companion object {
+        val Empty = CommitmentTargets(total = null, general = null, byArea = emptyMap())
+    }
+}
 
 data class HoursBreakdown(
     val total: Int = 0,

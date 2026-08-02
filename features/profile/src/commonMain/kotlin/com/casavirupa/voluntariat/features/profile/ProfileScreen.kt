@@ -109,7 +109,7 @@ internal fun ProfileScreen(
     val currentMonth by viewModel.currentMonth.collectAsStateWithLifecycle()
     val quarter by viewModel.quarter.collectAsStateWithLifecycle()
     val hoursDone by viewModel.hoursDone.collectAsStateWithLifecycle()
-    val commitmentTarget by viewModel.commitmentTarget.collectAsStateWithLifecycle()
+    val commitmentTargets by viewModel.commitmentTargets.collectAsStateWithLifecycle()
     val interestLinks by viewModel.interestLinks.collectAsStateWithLifecycle()
 
     user?.let {
@@ -119,7 +119,7 @@ internal fun ProfileScreen(
             currentMonth = currentMonth,
             quarter = quarter,
             hoursDone = hoursDone,
-            commitmentTarget = commitmentTarget,
+            commitmentTargets = commitmentTargets,
             interestLinks = interestLinks,
             onNextMonth = viewModel::nextMonth,
             onPreviousMonth = viewModel::previousMonth,
@@ -148,7 +148,7 @@ private fun ProfileContent(
     currentMonth: LocalDate,
     quarter: Quarter,
     hoursDone: HoursBreakdown,
-    commitmentTarget: CommitmentTarget?,
+    commitmentTargets: CommitmentTargets,
     interestLinks: InterestLinks,
     onNextMonth: () -> Unit,
     onPreviousMonth: () -> Unit,
@@ -174,7 +174,7 @@ private fun ProfileContent(
             )
             DegreeOfCompliance(
                 hoursBreakdown = hoursDone,
-                target = commitmentTarget,
+                targets = commitmentTargets,
                 currentMonth = currentMonth,
                 quarter = quarter,
                 isMitra = user.isMitra,
@@ -276,7 +276,7 @@ private fun UserItemInfo(
 private fun DegreeOfCompliance(
     isMitra: Boolean,
     hoursBreakdown: HoursBreakdown,
-    target: CommitmentTarget?,
+    targets: CommitmentTargets,
     currentMonth: LocalDate,
     quarter: Quarter,
     onNextMonth: () -> Unit,
@@ -286,7 +286,7 @@ private fun DegreeOfCompliance(
     modifier: Modifier = Modifier,
 ) {
     val done = hoursBreakdown.total.toDouble()
-    val targetHours = target?.targetHours?.takeIf { it > 0 }
+    val targetHours = targets.total?.targetHours?.takeIf { it > 0 }
     val percentage = targetHours?.let {
         ((done / it) * 100).coerceAtMost(100.0).formatString(1)
     }
@@ -392,8 +392,12 @@ private fun DegreeOfCompliance(
                         )
                     }
                 }
-                if (hoursBreakdown.total > 0) {
-                    HoursBreakdownDetail(hoursBreakdown = hoursBreakdown)
+                val hasAreaTargets = targets.general != null || targets.byArea.isNotEmpty()
+                if (hoursBreakdown.total > 0 || hasAreaTargets) {
+                    HoursBreakdownDetail(
+                        hoursBreakdown = hoursBreakdown,
+                        targets = targets,
+                    )
                 }
             }
         }
@@ -403,6 +407,7 @@ private fun DegreeOfCompliance(
 @Composable
 private fun HoursBreakdownDetail(
     hoursBreakdown: HoursBreakdown,
+    targets: CommitmentTargets,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -414,12 +419,17 @@ private fun HoursBreakdownDetail(
             icon = painterResource(Res.drawable.ic_layers),
             title = stringResource(Res.string.general_volunteering),
             hours = hoursBreakdown.general,
+            target = targets.general,
         )
-        hoursBreakdown.specificByArea.forEach { (area, hours) ->
+        // Areas with hours done or a commitment target, so a target is visible
+        // even before the first hour is registered in its area
+        val areas = hoursBreakdown.specificByArea.keys + targets.byArea.keys
+        areas.forEach { area ->
             HoursBreakdownRow(
                 icon = painterResource(Res.drawable.ic_target),
                 title = area.displayName(),
-                hours = hours,
+                hours = hoursBreakdown.specificByArea[area] ?: 0,
+                target = targets.byArea[area],
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -431,6 +441,7 @@ private fun HoursBreakdownRow(
     icon: Painter,
     title: String,
     hours: Int,
+    target: CommitmentTarget?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -450,7 +461,11 @@ private fun HoursBreakdownRow(
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
         )
         Text(
-            text = "${hours}h",
+            text = if (target != null) {
+                "${hours}h / ${target.targetHours.formatHours()}h"
+            } else {
+                "${hours}h"
+            },
             style = MaterialTheme.typography.labelMedium,
         )
     }
