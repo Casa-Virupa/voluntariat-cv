@@ -4,13 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
 import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentPeriod
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentTarget
 import com.casavirupa.voluntariat.shared.model.configuration.InterestLinks
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
+import com.casavirupa.voluntariat.shared.model.user.UserRole
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,6 +37,7 @@ class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     interestLinksRepository: InterestLinksRepository,
+    commitmentRepository: CommitmentRepository,
 ) : ViewModel() {
     private val _currentMonth = MutableStateFlow(Clock.System.now().toDate())
     val currentMonth: StateFlow<LocalDate> = _currentMonth.asStateFlow()
@@ -60,6 +65,48 @@ class ProfileViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = InterestLinks.Empty,
             )
+
+    // Target derived from the dashboard-published commitment_rules. Null means the
+    // user has no commitment for the viewed period (show no target rather than 0 %).
+    // The hardcoded defaults in User.getMonthHours are used only when the collection
+    // could not be read at all (the repository emits null).
+    val commitmentTarget: StateFlow<CommitmentTarget?> =
+        combine(
+            user,
+            currentMonth,
+            quarter,
+            commitmentRepository.getCommitmentRules(),
+        ) { user, month, quarter, rules ->
+            if (user == null) return@combine null
+            val viewedPeriod = if (user.isMitra) CommitmentPeriod.Quarter else CommitmentPeriod.Month
+            val periodStart = if (user.isMitra) {
+                quarter.startDate()
+            } else {
+                LocalDate(month.year, month.month, 1)
+            }
+            if (rules == null) {
+                user.getMonthHours()
+                    .takeIf { it > 0 }
+                    ?.let { hours ->
+                        CommitmentTarget(
+                            targetMinutes = hours * MINUTES_PER_HOUR,
+                            nativePeriod = viewedPeriod,
+                            isScaled = false,
+                        )
+                    }
+            } else {
+                rules.targetFor(
+                    uid = user.id,
+                    volunteerType = (user.role as? UserRole.Volunteer)?.type,
+                    periodStart = periodStart,
+                    viewedPeriod = viewedPeriod,
+                )
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
+        )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val hoursDone: StateFlow<HoursBreakdown> =
@@ -146,10 +193,14 @@ data class HoursBreakdown(
     }
 }
 
+private const val MINUTES_PER_HOUR = 60
+
 data class Quarter(
     val number: Int,
     val year: Int,
 ) {
+    fun startDate() = LocalDate(year, (number - 1) * 3 + 1, 1)
+
     fun nextQuarter(): Quarter {
         val num = if (number == 4) 1 else number + 1
         val year = if (number == 4) year + 1 else year
