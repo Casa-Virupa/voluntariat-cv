@@ -5,15 +5,43 @@
     <string name="hours">Hours</string>
     <string name="days">Days</string>
     <string name="pending_payment">Pending payment</string>
-    <string name="remember_payment">Remember to make the payment for the month. It comes to %1$d€ in total.</string>
+    <string name="remember_payment">You have an outstanding balance of %1$s€.</string>
     <string name="volunteerings_history">Volunteerings history</string>
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
     <string name="specific">Specific</string>
-    <string name="confirm_payment_title">Confirm payment</string>
-    <string name="confirm_payment_description">If you've already made the payment, click “Accept”</string>
     <string name="accept_button">Accept</string>
-    <string name="confirm_pay">Confirm</string>
+    <string name="delete_volunteering_title">Delete volunteering</string>
+    <string name="delete_volunteering_description">Are you sure you want to delete your volunteering for this day? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
     <string name="no_volunteering_title">No volunteer</string>
     <string name="no_volunteering_description">You still need to do this month's volunteer work</string>
+    <string name="payment_detail_button">Detail</string>
+    <string name="payment_detail_title">Payment detail</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">There is nothing pending to pay this month</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 lunch</item>
+        <item quantity="other">%1$d lunches</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 dinner</item>
+        <item quantity="other">%1$d dinners</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 overnight stay</item>
+        <item quantity="other">%1$d overnight stays</item>
+    </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 lunch included (mitra)</item>
+        <item quantity="other">%1$d lunches included (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 dinner included (mitra)</item>
+        <item quantity="other">%1$d dinners included (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 overnight stay included (mitra)</item>
+        <item quantity="other">%1$d overnight stays included (mitra)</item>
+    </plurals>
 </resources>

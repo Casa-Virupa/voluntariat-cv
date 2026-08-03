@@ -3,10 +3,13 @@
     <string name="full_name">Nombre completo</string>
     <string name="email">Correo electrónico</string>
     <string name="commitment_degree">Grado de compromiso</string>
+    <string name="interest_links">Enlaces de interés</string>
+    <string name="last_updated">Última actualización: %1$s</string>
     <string name="quarterly_hours">Horas trimestrales</string>
     <string name="monthly_hours">Horas mensuales</string>
     <string name="no_hours_registered">Sin horas registradas este mes</string>
     <string name="missing_hours">Aún te faltan %1$s horas este mes</string>
+    <string name="general_volunteering">General</string>
     <string name="volunteer_type">Tipo de voluntariado</string>
     <string name="specific_areas">Áreas específicas</string>
     <string name="casa_virupa">Casa Virupa</string>

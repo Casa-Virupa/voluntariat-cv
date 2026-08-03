@@ -1,15 +1,20 @@
 package com.casavirupa.voluntariat.features.history
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
@@ -30,21 +36,25 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
+import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
 import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
-import voluntariatcv.features.history.generated.resources.confirm_pay
-import voluntariatcv.features.history.generated.resources.confirm_payment_description
-import voluntariatcv.features.history.generated.resources.confirm_payment_title
 import voluntariatcv.features.history.generated.resources.days
+import voluntariatcv.features.history.generated.resources.delete
+import voluntariatcv.features.history.generated.resources.delete_volunteering_description
+import voluntariatcv.features.history.generated.resources.delete_volunteering_title
+import voluntariatcv.features.history.generated.resources.dinners_count
 import voluntariatcv.features.history.generated.resources.general
 import voluntariatcv.features.history.generated.resources.hours
 import voluntariatcv.features.history.generated.resources.hours_format
@@ -54,13 +64,23 @@ import voluntariatcv.features.history.generated.resources.ic_arrow_right
 import voluntariatcv.features.history.generated.resources.ic_calendar_today
 import voluntariatcv.features.history.generated.resources.ic_cancel
 import voluntariatcv.features.history.generated.resources.ic_clock
+import voluntariatcv.features.history.generated.resources.ic_delete
 import voluntariatcv.features.history.generated.resources.ic_group
 import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
+import voluntariatcv.features.history.generated.resources.lunches_count
+import voluntariatcv.features.history.generated.resources.mitra_free_dinners_count
+import voluntariatcv.features.history.generated.resources.mitra_free_lunches_count
+import voluntariatcv.features.history.generated.resources.mitra_free_nights_count
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
+import voluntariatcv.features.history.generated.resources.nights_count
 import voluntariatcv.features.history.generated.resources.no_volunteering_description
 import voluntariatcv.features.history.generated.resources.no_volunteering_title
+import voluntariatcv.features.history.generated.resources.nothing_to_pay
+import voluntariatcv.features.history.generated.resources.payment_detail_button
+import voluntariatcv.features.history.generated.resources.payment_detail_title
+import voluntariatcv.features.history.generated.resources.payment_detail_total
 import voluntariatcv.features.history.generated.resources.pending_payment
 import voluntariatcv.features.history.generated.resources.remember_payment
 import voluntariatcv.features.history.generated.resources.specific
@@ -70,24 +90,34 @@ import voluntariatcv.features.history.generated.resources.volunteerings_history
 internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     val currentDate by viewModel.currentDate.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val showPaymentDialog by viewModel.showPaymentDialog.collectAsStateWithLifecycle()
+    val showPaymentDetailDialog by viewModel
+        .showPaymentDetailDialog.collectAsStateWithLifecycle()
+    val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
 
     HistoryContent(
         currentDate = currentDate,
         onPreviousMonth = viewModel::previousMonth,
         onNextMonth = viewModel::nextMonth,
         uiState = uiState,
-        onPayVolunteer = viewModel::showPaymentDialog,
+        onShowPaymentDetail = viewModel::showPaymentDetailDialog,
+        onDeleteVolunteer = viewModel::onDeleteVolunteer,
     )
 
-    if (showPaymentDialog) {
+    if (showDeleteDialog) {
         WarningDialog(
-            onDismiss = viewModel::closePaymentDialog,
-            title = stringResource(Res.string.confirm_payment_title),
-            description = stringResource(Res.string.confirm_payment_description),
-            onCancel = viewModel::closePaymentDialog,
-            confirmText = stringResource(Res.string.accept_button),
-            onConfirm = viewModel::confirmPayment,
+            onDismiss = viewModel::onCloseDeleteDialog,
+            title = stringResource(Res.string.delete_volunteering_title),
+            description = stringResource(Res.string.delete_volunteering_description),
+            onCancel = viewModel::onCloseDeleteDialog,
+            confirmText = stringResource(Res.string.delete),
+            onConfirm = viewModel::deleteVolunteer,
+        )
+    }
+
+    if (showPaymentDetailDialog) {
+        PaymentDetailDialog(
+            detail = uiState.paymentDetail,
+            onDismiss = viewModel::closePaymentDetailDialog,
         )
     }
 }
@@ -98,7 +128,8 @@ private fun HistoryContent(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     uiState: HistoryUiState,
-    onPayVolunteer: () -> Unit,
+    onShowPaymentDetail: () -> Unit,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -121,20 +152,26 @@ private fun HistoryContent(
                 info = uiState.summary,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            when (val state = uiState.paymentUiState) {
-                PaymentUiState.NotFound -> PaymentMessage(
+            if (uiState.showNoVolunteeringMessage) {
+                PaymentMessage(
                     title = stringResource(Res.string.no_volunteering_title),
                     description = stringResource(Res.string.no_volunteering_description),
                 )
-                PaymentUiState.Paid -> {}
-                is PaymentUiState.NotPaid -> PaymentMessage(
+            }
+            when (val state = uiState.paymentUiState) {
+                PaymentUiState.Hidden -> {}
+                is PaymentUiState.Pending -> PaymentMessage(
                     title = stringResource(Res.string.pending_payment),
-                    description = stringResource(Res.string.remember_payment, state.amount),
-                    onClickPay = onPayVolunteer,
+                    description = stringResource(
+                        Res.string.remember_payment,
+                        state.amount.toAmountString(),
+                    ),
+                    onClickDetail = onShowPaymentDetail,
                 )
             }
             HistoryList(
                 history = uiState.volunteers,
+                onDeleteVolunteer = onDeleteVolunteer,
                 modifier = Modifier.padding(bottom = 24.dp),
             )
         }
@@ -312,7 +349,7 @@ private fun PaymentMessage(
     title: String,
     description: String,
     modifier: Modifier = Modifier,
-    onClickPay: (() -> Unit)? = null,
+    onClickDetail: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
@@ -322,7 +359,7 @@ private fun PaymentMessage(
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -347,9 +384,14 @@ private fun PaymentMessage(
                     ),
                 )
             }
-            if (onClickPay != null) {
-                TextButton(onClick = onClickPay) {
-                    Text(text = stringResource(Res.string.confirm_pay))
+            if (onClickDetail != null) {
+                Column(horizontalAlignment = Alignment.End) {
+                    TextButton(
+                        onClick = onClickDetail,
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text(text = stringResource(Res.string.payment_detail_button))
+                    }
                 }
             }
         }
@@ -359,6 +401,7 @@ private fun PaymentMessage(
 @Composable
 private fun HistoryList(
     history: List<VolunteerHistoryItem>,
+    onDeleteVolunteer: (VolunteerId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -369,7 +412,10 @@ private fun HistoryList(
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             history.forEach {
-                HistoryItem(it)
+                HistoryItem(
+                    volunteer = it,
+                    onClickDelete = { onDeleteVolunteer(it.id) },
+                )
             }
         }
     }
@@ -378,6 +424,7 @@ private fun HistoryList(
 @Composable
 private fun HistoryItem(
     volunteer: VolunteerHistoryItem,
+    onClickDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -385,7 +432,10 @@ private fun HistoryItem(
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = volunteer.date.format("d MMMM"),
@@ -399,9 +449,159 @@ private fun HistoryItem(
             Column {
                 ShiftTags(shifts = volunteer.shifts)
             }
+            if (volunteer.canBeDeleted) {
+                IconButton(onClick = onClickDelete) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_delete),
+                        contentDescription = null,
+                    )
+                }
+            }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PaymentDetailDialog(
+    detail: PaymentDetail,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.clip(RoundedCornerShape(12.dp)),
+    ) {
+        Column(
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+        ) {
+            Text(
+                text = stringResource(Res.string.payment_detail_title),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(24.dp),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (detail.lunches > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.lunches_count,
+                            detail.lunches,
+                            detail.lunches,
+                        ),
+                        amount = detail.lunchesAmount,
+                    )
+                }
+                if (detail.freeLunches > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.mitra_free_lunches_count,
+                            detail.freeLunches,
+                            detail.freeLunches,
+                        ),
+                        amount = -detail.lunchesDiscount,
+                    )
+                }
+                if (detail.dinners > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.dinners_count,
+                            detail.dinners,
+                            detail.dinners,
+                        ),
+                        amount = detail.dinnersAmount,
+                    )
+                }
+                if (detail.freeDinners > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.mitra_free_dinners_count,
+                            detail.freeDinners,
+                            detail.freeDinners,
+                        ),
+                        amount = -detail.dinnersDiscount,
+                    )
+                }
+                if (detail.nights > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.nights_count,
+                            detail.nights,
+                            detail.nights,
+                        ),
+                        amount = detail.nightsAmount,
+                    )
+                }
+                if (detail.freeNights > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.mitra_free_nights_count,
+                            detail.freeNights,
+                            detail.freeNights,
+                        ),
+                        amount = -detail.nightsDiscount,
+                    )
+                }
+                if (detail.total == 0.0) {
+                    Text(
+                        text = stringResource(Res.string.nothing_to_pay),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                } else {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    PaymentDetailRow(
+                        concept = stringResource(Res.string.payment_detail_total),
+                        amount = detail.total,
+                        emphasized = true,
+                    )
+                }
+                CVButton(
+                    text = stringResource(Res.string.accept_button),
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaymentDetailRow(
+    concept: String,
+    amount: Double,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+) {
+    val style = if (emphasized) {
+        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+    } else {
+        MaterialTheme.typography.bodyMedium
+    }
+    Row(modifier = modifier) {
+        Text(
+            text = concept,
+            modifier = Modifier.weight(1f),
+            style = style,
+        )
+        Text(
+            text = "${amount.toAmountString()}€",
+            style = style,
+        )
+    }
+}
+
+private fun Double.toAmountString(): String =
+    if (this % 1.0 == 0.0) toInt().toString() else formatString(2)
 
 @Composable
 private fun ShiftTags(

@@ -5,19 +5,23 @@ import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
-import com.casavirupa.voluntariat.shared.domain.PaymentRepository
+import com.casavirupa.voluntariat.shared.domain.LedgerRepository
+import com.casavirupa.voluntariat.shared.domain.PriceRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
-import com.casavirupa.voluntariat.shared.model.payment.PaymentId
+import com.casavirupa.voluntariat.shared.model.payment.PriceRules
+import com.casavirupa.voluntariat.shared.model.payment.calculateMonthlyCharge
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -26,7 +30,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
@@ -34,58 +37,81 @@ import kotlin.math.abs
 import kotlin.time.Clock
 
 class HistoryViewModel(
-    volunteerRepository: VolunteerRepository,
+    private val volunteerRepository: VolunteerRepository,
     authRepository: AuthRepository,
-    private val paymentRepository: PaymentRepository,
+    priceRepository: PriceRepository,
+    ledgerRepository: LedgerRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
     val currentDate: StateFlow<LocalDate> = _currentDate.asStateFlow()
 
+    private val user = authRepository.getCurrentUserFlow()
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val volunteersUiState =
+    private val monthData: StateFlow<MonthData?> =
         combine(
             currentDate,
-            authRepository.getCurrentUserFlow(),
+            user,
         ) { date, user ->
             date to user
         }.flatMapLatest { (date, user) ->
-            volunteerRepository.getVolunteersByUserAndMonth(
-                id = user.id,
-                monthNumber = date.month.number,
-                year = date.year
-            )
-        }.map { volunteers ->
-            volunteers.toUiModel()
-        }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val paymentUiState: StateFlow<PaymentUiState> =
-        combine(currentDate, authRepository.getCurrentUserFlow()) { date, user ->
-            date to user
-        }.flatMapLatest { (date, user) ->
-            paymentRepository.getPaymentByYearMonth(user.id, date.toYearMonth())
-        }.map { payment ->
-            when {
-                payment == null -> PaymentUiState.NotFound
-                payment.paid -> PaymentUiState.Paid
-                else -> PaymentUiState.NotPaid(payment.id, payment.amount)
+            combine(
+                volunteerRepository.getVolunteersByUserAndMonth(
+                    id = user.id,
+                    monthNumber = date.month.number,
+                    year = date.year
+                ),
+                priceRepository.getPriceRules(),
+            ) { volunteers, priceRules ->
+                MonthData(volunteers, priceRules, user.isMitra)
             }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = PaymentUiState.NotFound,
+            initialValue = null,
         )
 
+    // Global outstanding balance: charges over ALL the user's bookings (past and
+    // future) minus everything the admin has recorded in the ledger. Charges are
+    // netted per calendar month so the mitra allowance never carries over. Null
+    // until all three sources have emitted, so the UI never shows a wrong amount.
     @OptIn(ExperimentalCoroutinesApi::class)
+    private val pendingBalance: StateFlow<Double?> =
+        user.flatMapLatest { user ->
+            combine(
+                volunteerRepository.getVolunteersByUserFlow(user.id),
+                priceRepository.getPriceRules(),
+                ledgerRepository.getEntriesByUser(user.id),
+            ) { allVolunteers, priceRules, ledger ->
+                allVolunteers
+                    .groupBy { it.date.year to it.date.month }
+                    .values
+                    .sumOf { monthVolunteers ->
+                        calculateMonthlyCharge(monthVolunteers, priceRules, user.isMitra).total
+                    } - ledger.sumOf { it.amount }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
+        )
+
     val uiState: StateFlow<HistoryUiState> =
         combine(
-            volunteersUiState,
-            paymentUiState,
-        ) { volunteers, paymentState ->
+            monthData.filterNotNull(),
+            pendingBalance,
+        ) { data, balance ->
+            val volunteers = data.volunteers.toUiModel()
             HistoryUiState(
                 summary = MonthSummary(volunteers),
                 volunteers = volunteers,
-                paymentUiState = paymentState,
+                showNoVolunteeringMessage = data.volunteers.isEmpty(),
+                paymentUiState = if (balance != null && balance > AMOUNT_TOLERANCE) {
+                    PaymentUiState.Pending(balance)
+                } else {
+                    PaymentUiState.Hidden
+                },
+                paymentDetail = PaymentDetail(data.volunteers, data.priceRules, data.isMitra),
             )
         }.stateIn(
             scope = viewModelScope,
@@ -93,8 +119,44 @@ class HistoryViewModel(
             initialValue = HistoryUiState.Empty,
         )
 
-    private val _showPaymentDialog = MutableStateFlow(false)
-    val showPaymentDialog: StateFlow<Boolean> = _showPaymentDialog.asStateFlow()
+    private val _showDeleteDialog = MutableStateFlow(false)
+    val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
+
+    private var selectedVolunteerToDelete: VolunteerId? = null
+
+    fun onDeleteVolunteer(id: VolunteerId) {
+        selectedVolunteerToDelete = id
+        _showDeleteDialog.update { true }
+    }
+
+    fun onCloseDeleteDialog() {
+        selectedVolunteerToDelete = null
+        _showDeleteDialog.update { false }
+    }
+
+    fun deleteVolunteer() {
+        val volunteerId = selectedVolunteerToDelete ?: return
+        viewModelScope.launch {
+            volunteerRepository
+                .deleteVolunteer(volunteerId)
+                .onSuccess {
+                    onCloseDeleteDialog()
+                }.onFailure {
+                    // TODO: Handle the failure
+                }
+        }
+    }
+
+    private val _showPaymentDetailDialog = MutableStateFlow(false)
+    val showPaymentDetailDialog: StateFlow<Boolean> = _showPaymentDetailDialog.asStateFlow()
+
+    fun showPaymentDetailDialog() {
+        _showPaymentDetailDialog.update { true }
+    }
+
+    fun closePaymentDetailDialog() {
+        _showPaymentDetailDialog.update { false }
+    }
 
     fun nextMonth() {
         _currentDate.update { it.plus(DatePeriod(months = 1)) }
@@ -104,50 +166,86 @@ class HistoryViewModel(
         _currentDate.update { it.minus(DatePeriod(months = 1)) }
     }
 
-    fun showPaymentDialog() {
-        _showPaymentDialog.update { true }
-    }
-
-    fun closePaymentDialog() {
-        _showPaymentDialog.update { false }
-    }
-
-    fun confirmPayment() {
-        viewModelScope.launch {
-            val paymentState = paymentUiState.value
-            if (paymentState !is PaymentUiState.NotPaid) {
-                return@launch
-            }
-            paymentRepository.pay(
-                id = paymentState.id,
-                yearMonth = currentDate.value.toYearMonth(),
-            )
-            closePaymentDialog()
-        }
-    }
-
-    private fun List<Volunteer>.toUiModel() =
-        map {
+    private fun List<Volunteer>.toUiModel(): List<VolunteerHistoryItem> {
+        val today = Clock.System.now().toDate()
+        return map {
             VolunteerHistoryItem(
+                id = it.id,
                 date = it.date,
                 hours = it.shifts.sumOf { it.getTotalHour() }.toInt(),
                 shifts = it.shifts,
                 meals = it.meals,
+                sleep = it.sleep,
+                canBeDeleted = it.date > today,
             )
         }
+    }
 }
 
 data class HistoryUiState(
     val summary: MonthSummary,
     val volunteers: List<VolunteerHistoryItem>,
+    val showNoVolunteeringMessage: Boolean,
     val paymentUiState: PaymentUiState,
+    val paymentDetail: PaymentDetail,
 ) {
     companion object {
         val Empty = HistoryUiState(
             summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
             volunteers = emptyList(),
-            paymentUiState = PaymentUiState.NotFound,
+            showNoVolunteeringMessage = false,
+            paymentUiState = PaymentUiState.Hidden,
+            paymentDetail = PaymentDetail.Empty,
         )
+    }
+}
+
+private data class MonthData(
+    val volunteers: List<Volunteer>,
+    val priceRules: PriceRules,
+    val isMitra: Boolean,
+)
+
+data class PaymentDetail(
+    val lunches: Int,
+    val dinners: Int,
+    val nights: Int,
+    val lunchesAmount: Double,
+    val dinnersAmount: Double,
+    val nightsAmount: Double,
+    val freeLunches: Int,
+    val freeDinners: Int,
+    val freeNights: Int,
+    val lunchesDiscount: Double,
+    val dinnersDiscount: Double,
+    val nightsDiscount: Double,
+    val total: Double,
+) {
+    companion object {
+        val Empty = PaymentDetail(0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0)
+
+        operator fun invoke(
+            volunteers: List<Volunteer>,
+            priceRules: PriceRules,
+            isMitra: Boolean,
+        ): PaymentDetail {
+            val breakdown = calculateMonthlyCharge(volunteers, priceRules, isMitra)
+            return PaymentDetail(
+                lunches = breakdown.lunches,
+                dinners = breakdown.dinners,
+                nights = breakdown.nights,
+                lunchesAmount = breakdown.lunchesAmount,
+                dinnersAmount = breakdown.dinnersAmount,
+                nightsAmount = breakdown.nightsAmount,
+                freeLunches = breakdown.freeLunchesUsed,
+                freeDinners = breakdown.freeDinnersUsed,
+                freeNights = breakdown.freeNightsUsed,
+                lunchesDiscount = breakdown.lunchesDiscount,
+                dinnersDiscount = breakdown.dinnersDiscount,
+                nightsDiscount = breakdown.nightsDiscount,
+                total = breakdown.total,
+            )
+        }
     }
 }
 
@@ -219,19 +317,18 @@ data class DetailedSummary(
 }
 
 data class VolunteerHistoryItem(
+    val id: VolunteerId,
     val date: LocalDate,
     val hours: Int,
     val shifts: List<Shift>,
-    val meals: List<Meal>
+    val meals: List<Meal>,
+    val sleep: Boolean,
+    val canBeDeleted: Boolean = false,
 )
 
 sealed class PaymentUiState {
-    data object Paid : PaymentUiState()
-    data class NotPaid(
-        val id: PaymentId,
-        val amount: Double,
-    ) : PaymentUiState()
-    data object NotFound : PaymentUiState()
+    data object Hidden : PaymentUiState()
+    data class Pending(val amount: Double) : PaymentUiState()
 }
 
 private fun Shift.getTotalHour() =
@@ -263,11 +360,6 @@ private operator fun LocalTime.minus(other: LocalTime): Double {
     return abs(diffSeconds) / 3600.0
 }
 
-private fun LocalDate.toYearMonth() =
-    YearMonth(
-        year = this.year,
-        month = this.month,
-    )
-
-
 private const val ALL_DAY_DIVIDER = 8.0
+
+private const val AMOUNT_TOLERANCE = 0.001

@@ -7,26 +7,20 @@ data class User(
     val name: String,
     val email: String,
     val role: UserRole,
+    // Kept independently of role, mirroring the dashboard: an admin/coordinator can
+    // still be a mitra and commitments/allowances are keyed on the raw volunteer_type
+    val volunteerType: UserVolunteerType?,
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
     val isMember: Boolean,
 ) {
-    val isMitra: Boolean =
-        when (role) {
-            is UserRole.Volunteer -> role.type == UserVolunteerType.Mitra
-            else -> false
-        }
+    val isMitra: Boolean = volunteerType == UserVolunteerType.Mitra
 
     fun getMonthHours(): Int =
-        when (this.role) {
-            is UserRole.Volunteer -> {
-                if (role.type == UserVolunteerType.Mitra) {
-                    MITRA_HOURS
-                } else {
-                    HABITUAL_HOURS
-                }
-            }
-            else -> 0
+        when (volunteerType) {
+            UserVolunteerType.Mitra -> MITRA_HOURS
+            UserVolunteerType.Habitual -> HABITUAL_HOURS
+            null -> 0
         }
 
     companion object {

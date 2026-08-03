@@ -272,13 +272,24 @@ private fun VolunteerShiftItem(
                 .fillMaxWidth()
         ) {
             Row {
-                Text(
-                    text = volunteer.name,
+                FlowRow(
                     modifier = Modifier
                         .weight(1f)
                         .padding(bottom = 8.dp),
-                    style = MaterialTheme.typography.titleLarge,
-                )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = volunteer.name,
+                        modifier = Modifier.alignByBaseline(),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = volunteer.schedule,
+                        modifier = Modifier.alignByBaseline(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (volunteer.canBeDeleted) {
                     IconButton(onClick = onClickDelete) {
                         Icon(

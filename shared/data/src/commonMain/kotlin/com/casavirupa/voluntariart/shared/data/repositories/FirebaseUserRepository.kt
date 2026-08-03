@@ -24,6 +24,7 @@ private fun FirestoreUser.toDomainModel(docId: String) =
         name = name,
         email = email,
         role = role.toUserRole(volunteerType),
+        volunteerType = volunteerType.toVolunteerType(),
         hasOnboardingCompleted = hasOnboardingCompleted,
         specificAreas = specificAreas.map { it.toSpecificArea() },
         isMember = isMember,

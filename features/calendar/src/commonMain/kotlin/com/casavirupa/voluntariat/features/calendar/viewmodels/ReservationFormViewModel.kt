@@ -9,7 +9,6 @@ import com.casavirupa.voluntariat.shared.core.utils.getLastDayOfMonth
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.domain.PaymentRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -32,9 +31,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
@@ -60,7 +59,6 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
-    private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -185,14 +183,29 @@ class ReservationFormViewModel(
             _showRemoteWorkDialog.update { true }
             temporalDate = date
         } else {
-            _date.update { date }
+            applySelectedDate(date)
         }
     }
 
     fun workOnRemoteOnDate() {
-        _date.update { temporalDate }
+        temporalDate?.let { applySelectedDate(it) }
         temporalDate = null
         closeRemoteWorkDialog()
+    }
+
+    private fun applySelectedDate(date: LocalDate) {
+        _date.update { date }
+        applyDefaultTimeRanges(date)
+    }
+
+    private fun applyDefaultTimeRanges(date: LocalDate) {
+        val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
+        if (_shiftsInfo.value.none { it.shift == ShiftUi.Morning }) {
+            _morningTimeRange.update { TimeRange.defaultMorning(isSunday) }
+        }
+        if (_shiftsInfo.value.none { it.shift == ShiftUi.Afternoon }) {
+            _afternoonTimeRange.update { TimeRange.defaultAfternoon(isSunday) }
+        }
     }
 
     fun onShiftSelected(shift: ShiftUi) {
@@ -330,13 +343,7 @@ class ReservationFormViewModel(
                     .onSuccess { user ->
                         volunteerRepository
                             .reserveDay(user.id, volunteer)
-                            .mapCatching {
-                                paymentRepository.addPayment(
-                                    userId = user.id,
-                                    yearMonth = date.value!!.toYearMonth(),
-                                    amount = volunteer.calculateTotalToPay().toDouble(),
-                                )
-                            }.onSuccess {
+                            .onSuccess {
                                 navigateBack()
                             }.onFailure {
                                 // TODO: Show error
@@ -584,11 +591,5 @@ data class ShiftInfoSummary(
     val type: FormVolunteerTypeUi,
     val specificArea: SpecificArea? = null,
 )
-
-private fun LocalDate.toYearMonth() =
-    YearMonth(
-        year = this.year,
-        month = this.month,
-    )
 
 private const val LOG_TAG = "ReservationFormViewModel"

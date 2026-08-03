@@ -4,7 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
+import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
+import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentArea
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentPeriod
+import com.casavirupa.voluntariat.shared.model.commitment.CommitmentTarget
+import com.casavirupa.voluntariat.shared.model.configuration.InterestLinks
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.User
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +36,8 @@ import kotlin.time.Clock
 class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
+    interestLinksRepository: InterestLinksRepository,
+    commitmentRepository: CommitmentRepository,
 ) : ViewModel() {
     private val _currentMonth = MutableStateFlow(Clock.System.now().toDate())
     val currentMonth: StateFlow<LocalDate> = _currentMonth.asStateFlow()
@@ -46,12 +57,80 @@ class ProfileViewModel(
                 initialValue = null,
             )
 
+    val interestLinks: StateFlow<InterestLinks> =
+        interestLinksRepository
+            .getInterestLinks()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = InterestLinks.Empty,
+            )
+
+    // Targets derived from the dashboard-published commitment_rules. A null total means
+    // the user has no overall commitment for the viewed period (show no target rather
+    // than 0 %). The hardcoded defaults in User.getMonthHours are used only when the
+    // collection could not be read at all (the repository emits null).
+    val commitmentTargets: StateFlow<CommitmentTargets> =
+        combine(
+            user,
+            currentMonth,
+            quarter,
+            commitmentRepository.getCommitmentRules(),
+        ) { user, month, quarter, rules ->
+            if (user == null) return@combine CommitmentTargets.Empty
+            val viewedPeriod = if (user.isMitra) CommitmentPeriod.Quarter else CommitmentPeriod.Month
+            val periodStart = if (user.isMitra) {
+                quarter.startDate()
+            } else {
+                LocalDate(month.year, month.month, 1)
+            }
+            if (rules == null) {
+                val fallbackTotal = user.getMonthHours()
+                    .takeIf { it > 0 }
+                    ?.let { hours ->
+                        CommitmentTarget(
+                            targetMinutes = hours * MINUTES_PER_HOUR,
+                            nativePeriod = viewedPeriod,
+                            isScaled = false,
+                        )
+                    }
+                CommitmentTargets(total = fallbackTotal, general = null, byArea = emptyMap())
+            } else {
+                val volunteerType = user.volunteerType
+                val areaTargets = rules.areaTargetsFor(
+                    uid = user.id,
+                    volunteerType = volunteerType,
+                    periodStart = periodStart,
+                    viewedPeriod = viewedPeriod,
+                )
+                CommitmentTargets(
+                    total = rules.targetFor(
+                        uid = user.id,
+                        volunteerType = volunteerType,
+                        periodStart = periodStart,
+                        viewedPeriod = viewedPeriod,
+                    ),
+                    general = areaTargets[CommitmentArea.General],
+                    byArea = areaTargets
+                        .mapNotNull { (area, target) ->
+                            (area as? CommitmentArea.Specific)?.let { it.area to target }
+                        }.toMap(),
+                )
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = CommitmentTargets.Empty,
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    val hoursDone: StateFlow<Int> =
+    val hoursDone: StateFlow<HoursBreakdown> =
         combine(user, currentMonth, quarter) { user, month, quarter ->
             Triple(user, month, quarter)
         }.flatMapLatest { (user, month, quarter) ->
-            if (user == null) return@flatMapLatest kotlinx.coroutines.flow.flowOf(0)
+            if (user == null) {
+                return@flatMapLatest kotlinx.coroutines.flow.flowOf(HoursBreakdown())
+            }
 
             if (user.isMitra) {
                 volunteerRepository.getVolunteersByUserAndQuarter(
@@ -66,12 +145,12 @@ class ProfileViewModel(
                     year = month.year
                 )
             }.map { volunteers ->
-                volunteers.sumOf { it.calculateHours() }
+                HoursBreakdown(volunteers)
             }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = 0,
+            initialValue = HoursBreakdown(),
         )
 
     fun logOut() {
@@ -105,10 +184,48 @@ class ProfileViewModel(
 
 data class ProfileUiState(val navigateToSignIn: Boolean = false)
 
+data class CommitmentTargets(
+    val total: CommitmentTarget?,
+    val general: CommitmentTarget?,
+    val byArea: Map<SpecificArea, CommitmentTarget>,
+) {
+    companion object {
+        val Empty = CommitmentTargets(total = null, general = null, byArea = emptyMap())
+    }
+}
+
+data class HoursBreakdown(
+    val total: Int = 0,
+    val general: Int = 0,
+    val specificByArea: Map<SpecificArea, Int> = emptyMap(),
+) {
+    companion object {
+        operator fun invoke(volunteers: List<Volunteer>): HoursBreakdown {
+            val shifts = volunteers.flatMap { it.shifts }
+            return HoursBreakdown(
+                total = shifts.sumOf { it.getHour() },
+                general = shifts
+                    .filter { it.type is VolunteerType.General }
+                    .sumOf { it.getHour() },
+                specificByArea = shifts
+                    .mapNotNull { shift ->
+                        (shift.type as? VolunteerType.Specific)
+                            ?.let { it.specificArea to shift.getHour() }
+                    }.groupBy({ it.first }, { it.second })
+                    .mapValues { (_, hours) -> hours.sum() },
+            )
+        }
+    }
+}
+
+private const val MINUTES_PER_HOUR = 60
+
 data class Quarter(
     val number: Int,
     val year: Int,
 ) {
+    fun startDate() = LocalDate(year, (number - 1) * 3 + 1, 1)
+
     fun nextQuarter(): Quarter {
         val num = if (number == 4) 1 else number + 1
         val year = if (number == 4) year + 1 else year

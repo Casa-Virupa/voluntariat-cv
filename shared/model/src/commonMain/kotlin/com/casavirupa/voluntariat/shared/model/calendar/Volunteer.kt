@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.model.calendar
 
+import com.casavirupa.voluntariat.shared.model.payment.Prices
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
@@ -13,18 +14,20 @@ data class Volunteer(
     val meals: List<Meal>,
     val sleep: Boolean,
 ) {
-    fun calculateTotalToPay(): Int {
-        val mealsTotal = meals.filter { it != Meal.Breakfast }.size * MEAL_PRICE
-        val sleepTotal = if (sleep) SLEEP_PRICE else 0
+    fun calculateTotalToPay(prices: Prices = Prices.Default): Double {
+        val mealsTotal = meals.sumOf { meal ->
+            when (meal) {
+                Meal.Breakfast -> prices.breakfast
+                Meal.Lunch -> prices.lunch
+                Meal.Dinner -> prices.dinner
+                Meal.Unknown -> 0.0
+            }
+        }
+        val sleepTotal = if (sleep) prices.sleep else 0.0
         return mealsTotal + sleepTotal
     }
 
     fun calculateHours(): Int = shifts.sumOf { it.getHour() }
-
-    companion object {
-        const val MEAL_PRICE = 8
-        const val SLEEP_PRICE = 10
-    }
 }
 
 data class VolunteerId(val value: String) {
@@ -67,6 +70,20 @@ data class TimeRange(
             start = LocalTime(16, 30),
             end = LocalTime(20, 30),
         )
+        val SundayMorning = TimeRange(
+            start = LocalTime(9, 0),
+            end = LocalTime(14, 0),
+        )
+        val SundayAfternoon = TimeRange(
+            start = LocalTime(16, 30),
+            end = LocalTime(19, 30),
+        )
+
+        fun defaultMorning(isSunday: Boolean) =
+            if (isSunday) SundayMorning else DefaultMorning
+
+        fun defaultAfternoon(isSunday: Boolean) =
+            if (isSunday) SundayAfternoon else DefaultAfternoon
     }
 }
 

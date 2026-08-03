@@ -4,10 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class FirebasePayment(
-    @SerialName("user_id") val userId: String,
-    val year: Int,
-    val month: Int,
-    val paid: Boolean,
+data class FirebaseLedgerEntry(
+    @SerialName("user_id") val userId: String = "",
+    val date: String = "",
     val amount: Double = 0.0,
+    val kind: String = "payment",
+    val note: String? = null,
 )

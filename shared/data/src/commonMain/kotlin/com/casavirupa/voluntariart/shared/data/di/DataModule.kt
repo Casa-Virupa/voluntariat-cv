@@ -1,13 +1,19 @@
 package com.casavirupa.voluntariart.shared.data.di
 
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseAuthRepository
-import com.casavirupa.voluntariart.shared.data.repositories.FirebasePaymentRepository
+import com.casavirupa.voluntariart.shared.data.repositories.FirebaseCommitmentRepository
+import com.casavirupa.voluntariart.shared.data.repositories.FirebaseInterestLinksRepository
+import com.casavirupa.voluntariart.shared.data.repositories.FirebaseLedgerRepository
+import com.casavirupa.voluntariart.shared.data.repositories.FirebasePriceRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseUserRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseVolunteerRepository
 import com.casavirupa.voluntariart.shared.data.repositories.GoogleCalendarRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
-import com.casavirupa.voluntariat.shared.domain.PaymentRepository
+import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
+import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
+import com.casavirupa.voluntariat.shared.domain.LedgerRepository
+import com.casavirupa.voluntariat.shared.domain.PriceRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import dev.gitlive.firebase.Firebase
@@ -27,5 +33,8 @@ val dataModule = module {
     singleOf(::GoogleCalendarRepository) bind CalendarRepository::class
     singleOf(::FirebaseUserRepository) bind UserRepository::class
     singleOf(::FirebaseVolunteerRepository) bind VolunteerRepository::class
-    singleOf(::FirebasePaymentRepository) bind PaymentRepository::class
+    singleOf(::FirebasePriceRepository) bind PriceRepository::class
+    singleOf(::FirebaseCommitmentRepository) bind CommitmentRepository::class
+    singleOf(::FirebaseLedgerRepository) bind LedgerRepository::class
+    singleOf(::FirebaseInterestLinksRepository) bind InterestLinksRepository::class
 }
