@@ -33,6 +33,7 @@ private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
 
 private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: String) {
     listOf(
+        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -40,8 +41,6 @@ private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: Strin
             baseName = "Shared"
             isStatic = true
             binaryOption("bundleId", bundleId)
-
-            export(project.libs.findLibrary("calf.ui").get())
         }
     }
 }
