@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
@@ -39,6 +40,7 @@ import platform.UIKit.UIDatePickerMode
 import platform.UIKit.UIDatePickerStyle
 import platform.UIKit.UIDevice
 import platform.UIKit.UIFontDescriptorSystemDesignRounded
+import platform.UIKit.UIUserInterfaceStyle
 import platform.darwin.NSObject
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -72,19 +74,20 @@ actual fun NativeDatePicker(
             UIKitView(
                 factory = {
                     UICalendarView().apply {
-                        this.calendar =
+                        calendar =
                             NSCalendar(calendarIdentifier = NSCalendarIdentifierGregorian).apply {
                                 firstWeekday = 2u // 1 is Sunday, 2 is Monday
                             }
-                        this.fontDesign = UIFontDescriptorSystemDesignRounded
-                        this.delegate = coordinator
+                        fontDesign = UIFontDescriptorSystemDesignRounded
+                        delegate = coordinator
                         this.selectionBehavior = selectionBehavior
-                        this.backgroundColor = UIColor.whiteColor
+                        backgroundColor = UIColor.whiteColor
+                        overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
                     }
                 },
                 properties = UIKitInteropProperties(
                     interactionMode = UIKitInteropInteractionMode.NonCooperative,
-                    placedAsOverlay = true
+                    placedAsOverlay = true,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,7 +145,6 @@ actual fun NativeTimePicker(
     ) {
         Surface(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
             color = Color.White,
             shadowElevation = 6.dp,
         ) {
@@ -150,10 +152,9 @@ actual fun NativeTimePicker(
                 factory = {
                     UIDatePicker().apply {
                         datePickerMode = UIDatePickerMode.UIDatePickerModeTime
-                        if (UIDevice.currentDevice.systemVersion.toDouble() >= 14.0) {
-                            preferredDatePickerStyle = UIDatePickerStyle.UIDatePickerStyleWheels
-                        }
+                        preferredDatePickerStyle = UIDatePickerStyle.UIDatePickerStyleWheels
                         backgroundColor = UIColor.whiteColor
+                        overrideUserInterfaceStyle = UIUserInterfaceStyle.UIUserInterfaceStyleLight
 
                         val initialOrNow = initialTime ?: currentTimeAsLocalTime()
                         date = NSCalendar
@@ -169,7 +170,7 @@ actual fun NativeTimePicker(
                     }
                 },
                 properties = UIKitInteropProperties(
-                    interactionMode = UIKitInteropInteractionMode.NonCooperative,
+                    interactionMode = UIKitInteropInteractionMode.Cooperative(),
                     placedAsOverlay = true
                 ),
                 modifier = Modifier

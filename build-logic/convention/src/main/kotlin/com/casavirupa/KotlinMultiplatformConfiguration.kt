@@ -4,6 +4,7 @@ import com.android.build.api.dsl.androidLibrary
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import kotlin.text.get
 
 internal fun Project.configureKotlinMultiplatform(
     extension: KotlinMultiplatformExtension
