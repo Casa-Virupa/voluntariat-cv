@@ -1,19 +1,27 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import co.touchlab.kermit.Logger
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 
-class CalendarFiltersViewModel : ViewModel() {
-    val text = MutableStateFlow("Test").asStateFlow()
+class CalendarFiltersViewModel(
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+    val allFilters = CalendarFilter.entries.toList()
 
-    init {
-        Logger.d("asdd") { "Entered to CalendarFiltersViewModel" }
+    val currentFilter = savedStateHandle.getStateFlow(
+        key = FILTERS_KEY,
+        initialValue = CalendarFilter.SeeAll,
+    )
+
+    fun selectFilter(filter: CalendarFilter) {
+        if (filter == currentFilter.value) {
+            return
+        }
+        savedStateHandle[FILTERS_KEY] = filter
     }
 
-    override fun onCleared() {
-        Logger.d("asdd") { "Exit from CalendarFiltersViewModel" }
+    companion object {
+        private const val FILTERS_KEY = "calendar_filters_key"
     }
 }

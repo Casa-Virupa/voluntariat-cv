@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
@@ -52,6 +51,7 @@ import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
+import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
 import kotlinx.datetime.LocalDate
@@ -104,15 +104,15 @@ internal fun CalendarScreen(
 
     if (showFilters) {
         ComponentViewModelScope(key = "filters") {
-            ModalBottomSheet(
-                onDismissRequest = viewModel::closeFiltersMenu,
-            ) {
-                val filtersViewModel = koinViewModel<CalendarFiltersViewModel>()
+            val filtersViewModel = koinViewModel<CalendarFiltersViewModel>()
 
-                val text by filtersViewModel.text.collectAsStateWithLifecycle()
+            val currentFilter by filtersViewModel.currentFilter.collectAsStateWithLifecycle()
 
-                Text(text)
-            }
+            CalendarFiltersModal(
+                allFilters = filtersViewModel.allFilters,
+                currentFilter = currentFilter,
+                onSelectFilter = filtersViewModel::selectFilter,
+            )
         }
     }
 }
@@ -499,6 +499,16 @@ private fun ComponentViewModelScope(
             content()
         }
     }
+}
+
+@Composable
+private fun CalendarFiltersModal(
+    allFilters: List<CalendarFilter>,
+    currentFilter: CalendarFilter,
+    onSelectFilter: (CalendarFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
