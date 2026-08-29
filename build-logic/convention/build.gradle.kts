@@ -54,3 +54,11 @@ gradlePlugin {
         }
     }
 }
+
+configurations.all {
+    resolutionStrategy {
+        force("com.android.tools.build:gradle-api:9.1.0")
+        force("com.android.tools.build:builder-model:9.1.0")
+        force("com.android.tools.build:gradle:9.1.0")
+    }
+}

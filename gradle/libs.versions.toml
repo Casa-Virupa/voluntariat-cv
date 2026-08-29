@@ -1,8 +1,8 @@
 [versions]
-androidGradlePlugin = "8.13.2"
+androidGradlePlugin = "9.1.0"
 androidxComposeBom = "2026.01.00"
 androidxActivity = "1.12.2"
-androidxLifecycle = "2.9.6"
+androidxLifecycle = "2.11.0"
 androidxSplashscreen = "1.2.0"
 composeLifecycle = "2.10.0-alpha05"
 composeMultiplatform = "1.10.0"
@@ -14,7 +14,7 @@ gitlive = "2.6.0"
 googleServices = "4.4.4"
 kermit = "2.0.8"
 koin = "4.1.1"
-kotlin = "2.3.10"
+kotlin = "2.4.10"
 kotlinAtomicfu = "0.32.1"
 kotlinxCoroutines = "1.10.2"
 kotlinxDatetime = "0.7.1"
@@ -30,8 +30,8 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom-alpha",
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
-androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-viewmodelCompose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtimeCompose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxSplashscreen" }
 compose-gradlePlugin = { group = "org.jetbrains.compose", name = "org.jetbrains.compose.gradle.plugin", version.ref = "composeMultiplatform" }
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }

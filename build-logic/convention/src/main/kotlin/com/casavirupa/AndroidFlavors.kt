@@ -38,13 +38,13 @@ enum class VoluntariatFlavor(
 }
 
 @OptIn(ExperimentalStdlibApi::class)
-fun configureFlavors(commonExtension: CommonExtension<*, *, *, *, *, *>) {
+fun configureFlavors(commonExtension: CommonExtension) {
     commonExtension.apply {
         FlavorDimension.values().forEach { flavorDimension ->
             flavorDimensions += flavorDimension.name
         }
 
-        productFlavors {
+        productFlavors.apply {
             VoluntariatFlavor.values().forEach { flavor ->
                 register(flavor.flavorName) {
                     dimension = flavor.dimension.name

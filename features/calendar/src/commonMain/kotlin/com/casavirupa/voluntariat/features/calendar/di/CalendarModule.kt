@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.di
 
+import com.casavirupa.voluntariat.features.calendar.screens.CalendarFiltersViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
@@ -10,4 +11,5 @@ val calendarModule = module {
     viewModelOf(::CalendarViewModel)
     viewModelOf(::ReservationFormViewModel)
     viewModelOf(::DayDetailViewModel)
+    viewModelOf(::CalendarFiltersViewModel)
 }

@@ -18,15 +18,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -38,7 +43,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
@@ -67,6 +75,7 @@ import voluntariatcv.features.calendar.generated.resources.tuesday_short
 import voluntariatcv.features.calendar.generated.resources.volunteers_count
 import voluntariatcv.features.calendar.generated.resources.wednesday_short
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CalendarScreen(
     onNavToReservationForm: () -> Unit,
@@ -76,6 +85,7 @@ internal fun CalendarScreen(
     val volunteers by viewModel.volunteers.collectAsStateWithLifecycle()
     val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
+    val showFilters by viewModel.showFilters.collectAsStateWithLifecycle()
 
     CalendarContent(
         volunteers = volunteers,
@@ -86,8 +96,25 @@ internal fun CalendarScreen(
         onNextMonth = viewModel::onNextMonth,
         onYearMonthChanged = viewModel::onYearMonthChanged,
         onNavToReservationForm = onNavToReservationForm,
+        onOpenFilters = viewModel::showFiltersMenu,
         onDayClick = onDayClick,
     )
+
+
+
+    if (showFilters) {
+        ComponentViewModelScope(key = "filters") {
+            ModalBottomSheet(
+                onDismissRequest = viewModel::closeFiltersMenu,
+            ) {
+                val filtersViewModel = koinViewModel<CalendarFiltersViewModel>()
+
+                val text by filtersViewModel.text.collectAsStateWithLifecycle()
+
+                Text(text)
+            }
+        }
+    }
 }
 
 @Composable
@@ -101,6 +128,7 @@ private fun CalendarContent(
     onYearMonthChanged: (YearMonth) -> Unit,
     onNavToReservationForm: () -> Unit,
     onDayClick: (LocalDate) -> Unit,
+    onOpenFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -110,6 +138,7 @@ private fun CalendarContent(
                 currentMonth = yearMonth.month,
                 onPreviousMonth = onPreviousMonth,
                 onNextMonth = onNextMonth,
+                onOpenFilters = onOpenFilters,
             )
         },
         floatingActionButton = {
@@ -165,6 +194,7 @@ private fun CalendarTopBar(
     currentMonth: Month,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
+    onOpenFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -182,6 +212,13 @@ private fun CalendarTopBar(
                 .weight(1f)
                 .padding(start = 8.dp)
         )
+        IconButton(onClick = onOpenFilters) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_add),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.inverseOnSurface,
+            )
+        }
     }
 }
 
@@ -448,6 +485,20 @@ private fun CalendarEvent(
         overflow = TextOverflow.Ellipsis,
         maxLines = 1,
     )
+}
+
+@Composable
+private fun ComponentViewModelScope(
+    key: Any,
+    saveableStateHolder: SaveableStateHolder = rememberSaveableStateHolder(),
+    content: @Composable () -> Unit,
+) {
+    saveableStateHolder.SaveableStateProvider(key) {
+        val storeOwner = rememberViewModelStoreOwner()
+        CompositionLocalProvider(LocalViewModelStoreOwner provides storeOwner) {
+            content()
+        }
+    }
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42

@@ -70,6 +70,9 @@ class CalendarViewModel(
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
 
+    private val _showFilters = MutableStateFlow(false)
+    val showFilters: StateFlow<Boolean> = _showFilters.asStateFlow()
+
     fun onNextMonth() {
         _yearMonth.update { current ->
             current.copy(
@@ -90,5 +93,13 @@ class CalendarViewModel(
 
     fun onYearMonthChanged(newYearMonth: YearMonth) {
         _yearMonth.update { newYearMonth }
+    }
+
+    fun showFiltersMenu() {
+        _showFilters.update { true }
+    }
+
+    fun closeFiltersMenu() {
+        _showFilters.update { false }
     }
 }

@@ -1,10 +1,12 @@
 package com.casavirupa
 
-import com.android.build.api.dsl.androidLibrary
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.api.dsl.LibraryExtension
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import kotlin.text.get
 
 internal fun Project.configureKotlinMultiplatform(
     extension: KotlinMultiplatformExtension
@@ -18,22 +20,28 @@ internal fun Project.configureKotlinMultiplatform(
 }
 
 private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
-    androidLibrary {
-        compileSdk = 36
-        minSdk = 24
+    targets
+        .withType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+        .configureEach {
+            namespace = "com.bibbib.${project.name.replace("-", ".")}"
+            compileSdk = 37
+            minSdk = 24
 
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_17)
+            }
+            androidResources {
+                enable = true
+            }
+            withHostTest {
+                isIncludeAndroidResources = true
+            }
         }
-        androidResources {
-            enable = true
-        }
-    }
 }
 
 private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: String) {
     listOf(
-        iosX64(),
+        // iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
