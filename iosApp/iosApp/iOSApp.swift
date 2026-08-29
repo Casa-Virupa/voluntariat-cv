@@ -17,7 +17,7 @@ struct iOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
-        InitKoinIosKt.doInitKoinIOS(
+        InitKoinIosKt.doInitIOS(
             buildEnvironment: EnvironmentConfig.getBuildEnvironment()
         )
     }

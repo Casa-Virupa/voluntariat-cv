@@ -17,6 +17,9 @@ kotlin {
             implementation(projects.shared.core)
             implementation(projects.shared.dependencies)
             implementation(projects.shared.designsystem)
+
+            api(project.dependencies.platform(libs.firebase.bom))
+            api(libs.gitlive.firebase.crashlytics)
         }
         iosMain.dependencies {
             implementation(projects.shared.dependencies)

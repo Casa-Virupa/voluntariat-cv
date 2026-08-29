@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.voluntariatcv.android.application.compose)
     alias(libs.plugins.voluntariatcv.android.application.flavors)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -11,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.casavirupa.voluntariat.android"
         versionCode = 1
-        versionName = "1.0.12"
+        versionName = "1.0.11"
     }
 
     buildTypes {
@@ -36,5 +37,6 @@ dependencies {
     implementation(libs.androidx.splashscreen)
     implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.koin.android)
 }
