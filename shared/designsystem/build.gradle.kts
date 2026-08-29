@@ -9,6 +9,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            api(libs.calf.ui)
             implementation(projects.shared.core)
             implementation(libs.kotlinx.datetime)
         }

@@ -4,6 +4,7 @@ import com.android.build.api.dsl.androidLibrary
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import kotlin.text.get
 
 internal fun Project.configureKotlinMultiplatform(
     extension: KotlinMultiplatformExtension
@@ -32,7 +33,6 @@ private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
 
 private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: String) {
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -40,6 +40,8 @@ private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: Strin
             baseName = "Shared"
             isStatic = true
             binaryOption("bundleId", bundleId)
+
+            export(project.libs.findLibrary("calf.ui").get())
         }
     }
 }
