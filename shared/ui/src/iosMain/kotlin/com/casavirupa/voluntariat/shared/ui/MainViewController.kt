@@ -14,6 +14,8 @@ import androidx.compose.ui.window.ComposeUIViewController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.common.AppViewModel
 import com.casavirupa.voluntariat.shared.designsystem.theme.VoluntariatCVTheme
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.crashlytics.crashlytics
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import voluntariatcv.shared.ui.generated.resources.Res

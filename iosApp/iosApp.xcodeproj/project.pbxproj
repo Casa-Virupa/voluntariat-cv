@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0DF4C1DE3042F909008E4755 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0DF4C1DD3042F909008E4755 /* FirebaseCrashlytics */; };
 		78717A672F26A007006E16FB /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A662F26A007006E16FB /* FirebaseAnalytics */; };
 		78717A692F26A007006E16FB /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A682F26A007006E16FB /* FirebaseAuth */; };
 		78717A822F292E4D006E16FB /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 78717A812F292E4D006E16FB /* FirebaseFirestore */; };
@@ -49,6 +50,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				78717A672F26A007006E16FB /* FirebaseAnalytics in Frameworks */,
+				0DF4C1DE3042F909008E4755 /* FirebaseCrashlytics in Frameworks */,
 				78717A692F26A007006E16FB /* FirebaseAuth in Frameworks */,
 				78717A822F292E4D006E16FB /* FirebaseFirestore in Frameworks */,
 			);
@@ -94,6 +96,7 @@
 				60C4EE53CBDB312B956EB1A4 /* Sources */,
 				E3CDA022D814FE4134DBAB5D /* Frameworks */,
 				EA28D1F56C26BD0C4F15E17C /* Resources */,
+				0DF4C1DF3042FE5F008E4755 /* Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -107,6 +110,7 @@
 				78717A662F26A007006E16FB /* FirebaseAnalytics */,
 				78717A682F26A007006E16FB /* FirebaseAuth */,
 				78717A812F292E4D006E16FB /* FirebaseFirestore */,
+				0DF4C1DD3042F909008E4755 /* FirebaseCrashlytics */,
 			);
 			productName = iosApp;
 			productReference = 6DCD8797A2A4BE1A84F155B9 /* Voluntariat Casa Virupa Dev.app */;
@@ -160,6 +164,26 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		0DF4C1DF3042FE5F008E4755 /* Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
+				"${SRCROOT}/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = Crashlytics;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\"${BUILD_DIR%Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
 		3179A80E56D4B8B84F6E0227 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -655,6 +679,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0DF4C1DD3042F909008E4755 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
 		78717A662F26A007006E16FB /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 78717A652F26A007006E16FB /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
