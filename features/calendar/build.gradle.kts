@@ -4,9 +4,6 @@ plugins {
 }
 
 kotlin {
-    androidLibrary {
-        namespace = "com.casavirupa.voluntariat.features.calendar"
-    }
     sourceSets {
         commonMain.dependencies {
             implementation(projects.shared.common)
@@ -14,6 +11,7 @@ kotlin {
             implementation(projects.shared.designsystem)
             implementation(projects.shared.domain)
 
+            implementation(libs.calf.ui)
             implementation(libs.kotlinx.datetime)
         }
     }

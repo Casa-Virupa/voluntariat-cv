@@ -7,14 +7,18 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import kotlin.text.get
 
 internal fun Project.configureKotlinMultiplatform(
     extension: KotlinMultiplatformExtension
 ) {
     extension.apply {
+        applyDefaultHierarchyTemplate()
+
         androidLibraryConfiguration()
         iosLibraryConfiguration(
             bundleId = "com.casavirupa.voluntariat${path.replace(':', '.')}",
+            project = this@configureKotlinMultiplatform,
         )
     }
 }
@@ -39,9 +43,11 @@ private fun KotlinMultiplatformExtension.androidLibraryConfiguration() {
         }
 }
 
-private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: String) {
+private fun KotlinMultiplatformExtension.iosLibraryConfiguration(
+    bundleId: String,
+    project: Project,
+) {
     listOf(
-        // iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -49,6 +55,8 @@ private fun KotlinMultiplatformExtension.iosLibraryConfiguration(bundleId: Strin
             baseName = "Shared"
             isStatic = true
             binaryOption("bundleId", bundleId)
+
+            export(project.libs.findLibrary("calf.ui").get())
         }
     }
 }

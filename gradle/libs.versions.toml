@@ -4,6 +4,7 @@ androidxComposeBom = "2026.01.00"
 androidxActivity = "1.12.2"
 androidxLifecycle = "2.11.0"
 androidxSplashscreen = "1.2.0"
+calf = "0.13.0"
 composeLifecycle = "2.10.0-alpha05"
 composeMultiplatform = "1.10.0"
 composeNavigation = "2.9.1"
@@ -33,6 +34,7 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-lifecycle-viewmodelCompose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtimeCompose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxSplashscreen" }
+calf-ui = { group = "com.mohamedrejeb.calf", name = "calf-ui", version.ref = "calf" }
 compose-gradlePlugin = { group = "org.jetbrains.compose", name = "org.jetbrains.compose.gradle.plugin", version.ref = "composeMultiplatform" }
 compose-navigation = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "composeNavigation" }
 compose-navigation3 = { group = "org.jetbrains.androidx.navigation3", name = "navigation3-ui", version.ref = "composeNavigation3" }

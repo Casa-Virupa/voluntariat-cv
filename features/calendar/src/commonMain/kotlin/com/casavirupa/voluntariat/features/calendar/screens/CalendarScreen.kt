@@ -54,6 +54,8 @@ import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
+import com.mohamedrejeb.calf.ui.sheet.AdaptiveBottomSheet
+import com.mohamedrejeb.calf.ui.sheet.rememberAdaptiveSheetState
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -112,6 +114,7 @@ internal fun CalendarScreen(
                 allFilters = filtersViewModel.allFilters,
                 currentFilter = currentFilter,
                 onSelectFilter = filtersViewModel::selectFilter,
+                onCloseFilters = viewModel::closeFiltersMenu,
             )
         }
     }
@@ -501,14 +504,26 @@ private fun ComponentViewModelScope(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CalendarFiltersModal(
     allFilters: List<CalendarFilter>,
     currentFilter: CalendarFilter,
     onSelectFilter: (CalendarFilter) -> Unit,
+    onCloseFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val sheetState = rememberAdaptiveSheetState()
 
+    AdaptiveBottomSheet(
+        onDismissRequest = onCloseFilters,
+        modifier = modifier,
+        adaptiveSheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Text("Hola\nHola\nHola")
+    }
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
