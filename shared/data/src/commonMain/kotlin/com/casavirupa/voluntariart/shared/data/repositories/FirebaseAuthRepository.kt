@@ -14,6 +14,7 @@ import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.datetime.LocalDate
 
 class FirebaseAuthRepository(
     val auth: FirebaseAuth,
@@ -105,7 +106,12 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         hasOnboardingCompleted = hasOnboardingCompleted,
         specificAreas = specificAreas.map { it.toSpecificArea() },
         isMember = isMember,
+        stayStart = stayStart.toLocalDateOrNull(),
+        stayEnd = stayEnd.toLocalDateOrNull(),
     )
+
+fun String?.toLocalDateOrNull(): LocalDate? =
+    this?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
 
 fun String.toUserRole(volunteerType: String?) =
     when (this) {
@@ -126,6 +132,7 @@ fun String?.toVolunteerType() =
     when (this) {
         "habitual" -> UserVolunteerType.Habitual
         "mitra" -> UserVolunteerType.Mitra
+        "long_stay" -> UserVolunteerType.LongStay
         else -> null
     }
 

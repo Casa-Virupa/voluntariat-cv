@@ -21,4 +21,8 @@
     <string name="second_quarter">2n trimestre %1$d</string>
     <string name="third_quarter">3r trimestre %1$d</string>
     <string name="fourth_quarter">4t trimestre %1$d</string>
+    <string name="long_stay">Llarga estada</string>
+    <string name="stay_period">Del %1$s al %2$s</string>
+    <string name="stay_from">Des del %1$s</string>
+    <string name="stay_until">Fins al %1$s</string>
 </resources>

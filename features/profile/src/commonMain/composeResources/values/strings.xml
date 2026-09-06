@@ -21,4 +21,8 @@
     <string name="second_quarter">2nd quarter %1$d</string>
     <string name="third_quarter">3rd quarter %1$d</string>
     <string name="fourth_quarter">4th quarter %1$d</string>
+    <string name="long_stay">Long stay</string>
+    <string name="stay_period">From %1$s to %2$s</string>
+    <string name="stay_from">From %1$s</string>
+    <string name="stay_until">Until %1$s</string>
 </resources>

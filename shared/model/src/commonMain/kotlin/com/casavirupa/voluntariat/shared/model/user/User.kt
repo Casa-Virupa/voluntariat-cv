@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.model.user
 
+import kotlinx.datetime.LocalDate
 import kotlin.jvm.JvmInline
 
 data class User(
@@ -13,14 +14,25 @@ data class User(
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
     val isMember: Boolean,
+    // Long-stay volunteers only: the period they live at the house (set by the dashboard)
+    val stayStart: LocalDate? = null,
+    val stayEnd: LocalDate? = null,
 ) {
     val isMitra: Boolean = volunteerType == UserVolunteerType.Mitra
 
+    val isLongStay: Boolean = volunteerType == UserVolunteerType.LongStay
+
+    // Long-stay volunteers live at the house: meals and nights are never charged and
+    // they can't book them, so the app shows them no payment information at all.
+    val paysForServices: Boolean = !isLongStay
+
+    // Fallback used only when commitment_rules can't be read; long-stay targets are
+    // always dashboard-defined, so there is no hardcoded default for them.
     fun getMonthHours(): Int =
         when (volunteerType) {
             UserVolunteerType.Mitra -> MITRA_HOURS
             UserVolunteerType.Habitual -> HABITUAL_HOURS
-            null -> 0
+            UserVolunteerType.LongStay, null -> 0
         }
 
     companion object {
@@ -49,4 +61,5 @@ sealed class UserRole {
 enum class UserVolunteerType {
     Habitual,
     Mitra,
+    LongStay,
 }

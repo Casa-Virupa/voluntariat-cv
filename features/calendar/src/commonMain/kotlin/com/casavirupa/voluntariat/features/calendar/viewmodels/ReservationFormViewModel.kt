@@ -76,6 +76,7 @@ class ReservationFormViewModel(
             authRepository.getCurrentUserFlow(),
             _additionalOptionsSelected,
         ) { user, selected ->
+            if (!user.paysForServices) return@combine emptyList()
             AdditionalOption.entries.filter { option ->
                 when (option) {
                     AdditionalOption.Sleep -> user.isMember

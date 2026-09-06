@@ -28,4 +28,6 @@ private fun FirestoreUser.toDomainModel(docId: String) =
         hasOnboardingCompleted = hasOnboardingCompleted,
         specificAreas = specificAreas.map { it.toSpecificArea() },
         isMember = isMember,
+        stayStart = stayStart.toLocalDateOrNull(),
+        stayEnd = stayEnd.toLocalDateOrNull(),
     )

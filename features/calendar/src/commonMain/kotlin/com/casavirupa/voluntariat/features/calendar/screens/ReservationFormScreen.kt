@@ -300,15 +300,18 @@ private fun ReservationForm(
                 onEditInfo = onEditShiftInfo,
             )
         }
-        FormSection(
-            title = stringResource(Res.string.additional_options),
-            icon = painterResource(Res.drawable.ic_calendar_today),
-        ) {
-            AdditionalOptionsSelector(
-                options = options,
-                optionsSelected = optionsSelected,
-                onSelectOption = onAdditionalOptionSelected,
-            )
+        // Long-stay volunteers have no meals or nights to book, so the section is hidden
+        if (options.isNotEmpty()) {
+            FormSection(
+                title = stringResource(Res.string.additional_options),
+                icon = painterResource(Res.drawable.ic_calendar_today),
+            ) {
+                AdditionalOptionsSelector(
+                    options = options,
+                    optionsSelected = optionsSelected,
+                    onSelectOption = onAdditionalOptionSelected,
+                )
+            }
         }
         Spacer(Modifier.height(80.dp))
     }

@@ -88,6 +88,7 @@ import voluntariatcv.features.profile.generated.resources.ic_target
 import voluntariatcv.features.profile.generated.resources.interest_links
 import voluntariatcv.features.profile.generated.resources.last_updated
 import voluntariatcv.features.profile.generated.resources.log_out
+import voluntariatcv.features.profile.generated.resources.long_stay
 import voluntariatcv.features.profile.generated.resources.member_of_casa_virupa
 import voluntariatcv.features.profile.generated.resources.missing_hours
 import voluntariatcv.features.profile.generated.resources.mitra
@@ -97,6 +98,9 @@ import voluntariatcv.features.profile.generated.resources.profile_title
 import voluntariatcv.features.profile.generated.resources.quarterly_hours
 import voluntariatcv.features.profile.generated.resources.second_quarter
 import voluntariatcv.features.profile.generated.resources.specific_areas
+import voluntariatcv.features.profile.generated.resources.stay_from
+import voluntariatcv.features.profile.generated.resources.stay_period
+import voluntariatcv.features.profile.generated.resources.stay_until
 import voluntariatcv.features.profile.generated.resources.third_quarter
 import voluntariatcv.features.profile.generated.resources.volunteer_type
 
@@ -187,7 +191,11 @@ private fun ProfileContent(
                 InterestLinksSection(interestLinks = interestLinks)
             }
             if (user.role is UserRole.Volunteer) {
-                VolunteerType(volunteerRole = user.role as UserRole.Volunteer)
+                VolunteerType(
+                    volunteerRole = user.role as UserRole.Volunteer,
+                    stayStart = user.stayStart,
+                    stayEnd = user.stayEnd,
+                )
                 SpecificAreas(specificAreas = user.specificAreas)
             }
             if (user.isMember) {
@@ -596,6 +604,8 @@ private fun linkifiedText(text: String) = buildAnnotatedString {
 @Composable
 private fun VolunteerType(
     volunteerRole: UserRole.Volunteer,
+    stayStart: LocalDate?,
+    stayEnd: LocalDate?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -617,12 +627,16 @@ private fun VolunteerType(
                         text = volunteerRole.getVolunteerType(),
                         style = MaterialTheme.typography.titleLarge,
                     )
-                    /*
-                    Text(
-                        text = stringResource(Res.string.volunteer_dedication_description),
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                    */
+                    if (volunteerRole.type == UserVolunteerType.LongStay) {
+                        stayPeriodText(stayStart, stayEnd)?.let { period ->
+                            Text(
+                                text = period,
+                                modifier = Modifier.padding(top = 4.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -751,8 +765,23 @@ private fun Double.formatHours(): String =
 private fun UserRole.Volunteer.getVolunteerType() =
     when (type) {
         UserVolunteerType.Habitual -> stringResource(Res.string.habitual)
-        else -> stringResource(Res.string.mitra)
+        UserVolunteerType.Mitra -> stringResource(Res.string.mitra)
+        UserVolunteerType.LongStay -> stringResource(Res.string.long_stay)
     }
+
+@Composable
+private fun stayPeriodText(start: LocalDate?, end: LocalDate?): String? {
+    val startText = start?.format(STAY_DATE_PATTERN)
+    val endText = end?.format(STAY_DATE_PATTERN)
+    return when {
+        startText != null && endText != null -> stringResource(Res.string.stay_period, startText, endText)
+        startText != null -> stringResource(Res.string.stay_from, startText)
+        endText != null -> stringResource(Res.string.stay_until, endText)
+        else -> null
+    }
+}
+
+private const val STAY_DATE_PATTERN = "d MMMM yyyy"
 
 @Composable
 private fun Quarter.getTitle() =

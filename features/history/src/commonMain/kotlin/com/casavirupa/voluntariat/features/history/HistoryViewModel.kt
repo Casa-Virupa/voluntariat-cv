@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -63,7 +64,7 @@ class HistoryViewModel(
                 ),
                 priceRepository.getPriceRules(),
             ) { volunteers, priceRules ->
-                MonthData(volunteers, priceRules, user.isMitra)
+                MonthData(volunteers, priceRules, user.isMitra, user.paysForServices)
             }
         }.stateIn(
             scope = viewModelScope,
@@ -78,6 +79,7 @@ class HistoryViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     private val pendingBalance: StateFlow<Double?> =
         user.flatMapLatest { user ->
+            if (!user.paysForServices) return@flatMapLatest flowOf(0.0)
             combine(
                 volunteerRepository.getVolunteersByUserFlow(user.id),
                 priceRepository.getPriceRules(),
@@ -111,7 +113,11 @@ class HistoryViewModel(
                 } else {
                     PaymentUiState.Hidden
                 },
-                paymentDetail = PaymentDetail(data.volunteers, data.priceRules, data.isMitra),
+                paymentDetail = if (data.paysForServices) {
+                    PaymentDetail(data.volunteers, data.priceRules, data.isMitra)
+                } else {
+                    PaymentDetail.Empty
+                },
             )
         }.stateIn(
             scope = viewModelScope,
@@ -204,6 +210,7 @@ private data class MonthData(
     val volunteers: List<Volunteer>,
     val priceRules: PriceRules,
     val isMitra: Boolean,
+    val paysForServices: Boolean,
 )
 
 data class PaymentDetail(
