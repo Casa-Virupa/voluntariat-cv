@@ -85,12 +85,14 @@ internal fun CalendarScreen(
     viewModel: CalendarViewModel = koinViewModel()
 ) {
     val volunteers by viewModel.volunteers.collectAsStateWithLifecycle()
+    val myVolunteerDates by viewModel.myVolunteerDates.collectAsStateWithLifecycle()
     val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
 
     CalendarContent(
         volunteers = volunteers,
+        myVolunteerDates = myVolunteerDates,
         googleCalendarEvents = googleCalendarEvents,
         yearMonth = currentMonth,
         today = viewModel.todayDate,
@@ -107,6 +109,7 @@ internal fun CalendarScreen(
 @Composable
 private fun CalendarContent(
     volunteers: Map<LocalDate, Int>,
+    myVolunteerDates: Set<LocalDate>,
     googleCalendarEvents: List<GoogleCalendarEvent>,
     yearMonth: YearMonth,
     today: LocalDate,
@@ -175,6 +178,7 @@ private fun CalendarContent(
                     googleCalendarEvents = googleCalendarEvents,
                     onDayClick = onDayClick,
                     volunteers = volunteers,
+                    myVolunteerDates = myVolunteerDates,
                 )
             }
         }
@@ -353,6 +357,7 @@ private fun MonthGrid(
     today: LocalDate,
     googleCalendarEvents: List<GoogleCalendarEvent>,
     volunteers: Map<LocalDate, Int>,
+    myVolunteerDates: Set<LocalDate>,
     modifier: Modifier = Modifier,
 ) {
     val calendarDays = remember(yearMonth) {
@@ -398,6 +403,7 @@ private fun MonthGrid(
                             googleCalendarEvents = googleCalendarEventsForDay,
                             cellSize = dayCellSize,
                             numOfVolunteers = volunteers[date],
+                            isMine = date in myVolunteerDates,
                             onClick = { onDayClick(date) }
                         )
                     }
@@ -417,6 +423,7 @@ private fun DayCell(
     googleCalendarEvents: List<GoogleCalendarEvent>,
     onClick: () -> Unit,
     numOfVolunteers: Int?,
+    isMine: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val isToday = date == today
@@ -428,11 +435,16 @@ private fun DayCell(
     val isFullyUnavailable = unavailability == DayCoverage.WholeDay
     val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     val unavailableColor = Color.Gray.copy(alpha = 0.1f)
+    // The viewer's own volunteering days are tinted lilac (tertiary)
+    val mineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f)
 
     Box(
         modifier = modifier
             .size(cellSize)
             .drawBehind {
+                if (isMine) {
+                    drawRect(color = mineColor)
+                }
                 if (!isPast) {
                     when (unavailability) {
                         DayCoverage.WholeDay -> drawRect(color = unavailableColor)
@@ -493,8 +505,9 @@ private fun DayCell(
                 style = MaterialTheme.typography.titleSmall,
                 color =
                     when {
-                        isFullyUnavailable -> MaterialTheme.colorScheme.onSurfaceVariant
                         isToday -> MaterialTheme.colorScheme.onPrimary
+                        isMine -> MaterialTheme.colorScheme.tertiary
+                        isFullyUnavailable -> MaterialTheme.colorScheme.onSurfaceVariant
                         isPast -> MaterialTheme.colorScheme.onSurfaceVariant
                         isCurrentMonth -> MaterialTheme.colorScheme.onSurface
                         else -> MaterialTheme.colorScheme.onSurfaceVariant

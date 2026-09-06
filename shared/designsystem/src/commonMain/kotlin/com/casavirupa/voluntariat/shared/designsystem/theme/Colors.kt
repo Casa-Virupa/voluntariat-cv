@@ -15,3 +15,5 @@ internal val DarkGray = Color(0xFF1C1917)
 internal val LightGray = Color(0xFFE7E5E4)
 
 internal val Red = Color(0xFFB42222)
+
+internal val Lilac = Color(0xFF9B7BB8)

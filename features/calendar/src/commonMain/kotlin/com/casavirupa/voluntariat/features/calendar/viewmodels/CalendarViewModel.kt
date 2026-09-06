@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DateTimeUnit
@@ -60,7 +61,11 @@ class CalendarViewModel(
                         monthNumber = it.month.number,
                         currentDate = todayDate,
                     )
-            }
+            }.shareIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                replay = 1,
+            )
 
     // Per-day count of the volunteers the viewer is allowed to see (same rules as the day
     // detail), narrowed further by the active filter. Nothing is counted until the viewer
@@ -73,10 +78,22 @@ class CalendarViewModel(
                 .groupBy { it.date }
                 .mapValues { (_, volunteers) -> volunteers.size }
         }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = emptyMap(),
-            )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyMap(),
+        )
+
+    // Days with a booking of the viewer's own, highlighted regardless of the active filter.
+    val myVolunteerDates: StateFlow<Set<LocalDate>> =
+        combine(monthVolunteers, currentUser) { volunteers, user ->
+            if (user == null) return@combine emptySet()
+            volunteers.filter { it.isOwnedBy(user) }.map { it.date }.toSet()
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptySet(),
+        )
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val googleCalendarEvents: StateFlow<List<GoogleCalendarEvent>> =
         yearMonth.flatMapLatest { ym ->
@@ -89,7 +106,6 @@ class CalendarViewModel(
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = emptyList(),
         )
-
 
     val todayDate
         get() = Clock.System.now()

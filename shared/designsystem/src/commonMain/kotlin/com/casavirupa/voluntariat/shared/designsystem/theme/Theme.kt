@@ -10,6 +10,9 @@ val voluntariatCVColorScheme = lightColorScheme(
     onPrimary = Color.White,
     primaryContainer = LightOrange100,
     onPrimaryContainer = DarkGrayBrown,
+    // Used to highlight the viewer's own volunteering days in the calendar
+    tertiary = Lilac,
+    onTertiary = Color.White,
     surfaceContainerLowest = LightOrange50,
     surfaceContainerLow = LightOrange200,
     surface = Color.White,
