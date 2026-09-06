@@ -105,6 +105,8 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         hasOnboardingCompleted = hasOnboardingCompleted,
         specificAreas = specificAreas.map { it.toSpecificArea() },
         isMember = isMember,
+        phone = phone,
+        address = address,
     )
 
 fun String.toUserRole(volunteerType: String?) =

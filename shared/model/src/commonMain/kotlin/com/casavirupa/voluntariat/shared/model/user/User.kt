@@ -13,6 +13,9 @@ data class User(
     val hasOnboardingCompleted: Boolean,
     val specificAreas: List<SpecificArea>,
     val isMember: Boolean,
+    // Contact details the volunteer fills in from the profile screen (issue #42).
+    val phone: String? = null,
+    val address: String? = null,
 ) {
     val isMitra: Boolean = volunteerType == UserVolunteerType.Mitra
 

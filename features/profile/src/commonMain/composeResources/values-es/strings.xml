@@ -21,4 +21,17 @@
     <string name="second_quarter">2º trimestre %1$d</string>
     <string name="third_quarter">3er trimestre %1$d</string>
     <string name="fourth_quarter">4º trimestre %1$d</string>
+    <string name="contact_details">Datos de contacto</string>
+    <string name="phone">Teléfono</string>
+    <string name="address">Dirección</string>
+    <string name="not_specified">Sin especificar</string>
+    <string name="edit_contact_details">Editar datos de contacto</string>
+    <string name="contact_details_description">Estos datos solo los ve el equipo de coordinación para poder contactar contigo si hace falta.</string>
+    <string name="phone_placeholder">+34 600 000 000</string>
+    <string name="address_placeholder">Calle, número, población</string>
+    <string name="invalid_phone_error">Introduce un número de teléfono válido</string>
+    <string name="contact_save_error">No se han podido guardar los datos. Vuelve a intentarlo.</string>
+    <string name="save">Guardar</string>
+    <string name="saving">Guardando…</string>
+    <string name="cancel">Cancelar</string>
 </resources>

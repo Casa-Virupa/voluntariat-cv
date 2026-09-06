@@ -13,4 +13,6 @@ data class FirestoreUser(
     @SerialName("onboarding_completed") val hasOnboardingCompleted: Boolean,
     @SerialName("specific_areas") val specificAreas: List<String>,
     @SerialName("is_member") val isMember: Boolean,
+    val phone: String? = null,
+    val address: String? = null,
 )

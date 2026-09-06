@@ -21,4 +21,17 @@
     <string name="second_quarter">2nd quarter %1$d</string>
     <string name="third_quarter">3rd quarter %1$d</string>
     <string name="fourth_quarter">4th quarter %1$d</string>
+    <string name="contact_details">Contact details</string>
+    <string name="phone">Phone</string>
+    <string name="address">Address</string>
+    <string name="not_specified">Not specified</string>
+    <string name="edit_contact_details">Edit contact details</string>
+    <string name="contact_details_description">These details are only visible to the coordination team so they can reach you if needed.</string>
+    <string name="phone_placeholder">+34 600 000 000</string>
+    <string name="address_placeholder">Street, number, town</string>
+    <string name="invalid_phone_error">Enter a valid phone number</string>
+    <string name="contact_save_error">The details could not be saved. Try again.</string>
+    <string name="save">Save</string>
+    <string name="saving">Saving…</string>
+    <string name="cancel">Cancel</string>
 </resources>

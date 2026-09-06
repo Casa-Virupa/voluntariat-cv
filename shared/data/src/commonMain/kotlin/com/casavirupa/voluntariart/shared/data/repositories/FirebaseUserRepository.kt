@@ -16,6 +16,20 @@ class FirebaseUserRepository(
             .documents
             .map { it.data<FirestoreUser>().toDomainModel(it.id) }
     }
+
+    override suspend fun updateContactDetails(
+        userId: UserId,
+        phone: String?,
+        address: String?,
+    ): Result<Unit> = runCatching {
+        firestore
+            .collection("users")
+            .document(userId.value)
+            .updateFields {
+                "phone" to phone?.trim()?.ifBlank { null }
+                "address" to address?.trim()?.ifBlank { null }
+            }
+    }
 }
 
 private fun FirestoreUser.toDomainModel(docId: String) =
@@ -28,4 +42,6 @@ private fun FirestoreUser.toDomainModel(docId: String) =
         hasOnboardingCompleted = hasOnboardingCompleted,
         specificAreas = specificAreas.map { it.toSpecificArea() },
         isMember = isMember,
+        phone = phone,
+        address = address,
     )

@@ -21,4 +21,17 @@
     <string name="second_quarter">2n trimestre %1$d</string>
     <string name="third_quarter">3r trimestre %1$d</string>
     <string name="fourth_quarter">4t trimestre %1$d</string>
+    <string name="contact_details">Dades de contacte</string>
+    <string name="phone">Telèfon</string>
+    <string name="address">Adreça</string>
+    <string name="not_specified">Sense especificar</string>
+    <string name="edit_contact_details">Editar dades de contacte</string>
+    <string name="contact_details_description">Aquestes dades només les veu l\'equip de coordinació per poder contactar amb tu si cal.</string>
+    <string name="phone_placeholder">+34 600 000 000</string>
+    <string name="address_placeholder">Carrer, número, població</string>
+    <string name="invalid_phone_error">Introdueix un número de telèfon vàlid</string>
+    <string name="contact_save_error">No s\'han pogut desar les dades. Torna-ho a provar.</string>
+    <string name="save">Desar</string>
+    <string name="saving">Desant…</string>
+    <string name="cancel">Cancel·lar</string>
 </resources>

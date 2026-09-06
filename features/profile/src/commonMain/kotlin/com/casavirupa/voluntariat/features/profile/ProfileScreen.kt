@@ -15,13 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,6 +45,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
@@ -53,7 +58,9 @@ import androidx.lifecycle.flowWithLifecycle
 import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
+import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVOutlinedButton
+import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentTarget
@@ -67,6 +74,22 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.profile.generated.resources.Res
+import voluntariatcv.features.profile.generated.resources.address
+import voluntariatcv.features.profile.generated.resources.address_placeholder
+import voluntariatcv.features.profile.generated.resources.cancel
+import voluntariatcv.features.profile.generated.resources.contact_details
+import voluntariatcv.features.profile.generated.resources.contact_details_description
+import voluntariatcv.features.profile.generated.resources.contact_save_error
+import voluntariatcv.features.profile.generated.resources.edit_contact_details
+import voluntariatcv.features.profile.generated.resources.ic_edit
+import voluntariatcv.features.profile.generated.resources.ic_location
+import voluntariatcv.features.profile.generated.resources.ic_phone
+import voluntariatcv.features.profile.generated.resources.invalid_phone_error
+import voluntariatcv.features.profile.generated.resources.not_specified
+import voluntariatcv.features.profile.generated.resources.phone
+import voluntariatcv.features.profile.generated.resources.phone_placeholder
+import voluntariatcv.features.profile.generated.resources.save
+import voluntariatcv.features.profile.generated.resources.saving
 import voluntariatcv.features.profile.generated.resources.casa_virupa
 import voluntariatcv.features.profile.generated.resources.commitment_degree
 import voluntariatcv.features.profile.generated.resources.email
@@ -111,11 +134,13 @@ internal fun ProfileScreen(
     val hoursDone by viewModel.hoursDone.collectAsStateWithLifecycle()
     val commitmentTargets by viewModel.commitmentTargets.collectAsStateWithLifecycle()
     val interestLinks by viewModel.interestLinks.collectAsStateWithLifecycle()
+    val contactEditor by viewModel.contactEditor.collectAsStateWithLifecycle()
 
     user?.let {
         ProfileContent(
             user = it,
             onLogOut = viewModel::logOut,
+            onEditContact = viewModel::openContactEditor,
             currentMonth = currentMonth,
             quarter = quarter,
             hoursDone = hoursDone,
@@ -125,6 +150,16 @@ internal fun ProfileScreen(
             onPreviousMonth = viewModel::previousMonth,
             onNextQuarter = viewModel::nextQuarter,
             onPreviousQuarter = viewModel::previousQuarter,
+        )
+    }
+
+    if (contactEditor.isVisible) {
+        ContactEditorSheet(
+            state = contactEditor,
+            onPhoneChanged = viewModel::onContactPhoneChanged,
+            onAddressChanged = viewModel::onContactAddressChanged,
+            onSave = viewModel::saveContactDetails,
+            onDismiss = viewModel::closeContactEditor,
         )
     }
 
@@ -155,6 +190,7 @@ private fun ProfileContent(
     onNextQuarter: () -> Unit,
     onPreviousQuarter: () -> Unit,
     onLogOut: () -> Unit,
+    onEditContact: () -> Unit,
 ) {
     Scaffold(
         topBar = { Header(name = user.name) },
@@ -171,6 +207,11 @@ private fun ProfileContent(
                 name = user.name,
                 email = user.email,
                 modifier = Modifier.padding(top = 16.dp)
+            )
+            ContactDetails(
+                phone = user.phone,
+                address = user.address,
+                onEdit = onEditContact,
             )
             DegreeOfCompliance(
                 hoursBreakdown = hoursDone,
@@ -245,10 +286,156 @@ private fun UserBasicInfo(
 }
 
 @Composable
+private fun ContactDetails(
+    phone: String?,
+    address: String?,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ContentSurface(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(Res.string.contact_details).uppercase(),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_edit),
+                        contentDescription = stringResource(Res.string.edit_contact_details),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            UserItemInfo(
+                icon = painterResource(Res.drawable.ic_phone),
+                title = stringResource(Res.string.phone),
+                value = phone,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            UserItemInfo(
+                icon = painterResource(Res.drawable.ic_location),
+                title = stringResource(Res.string.address),
+                value = address,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ContactEditorSheet(
+    state: ContactEditorUiState,
+    onPhoneChanged: (String) -> Unit,
+    onAddressChanged: (String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isSaving = state.status == ContactEditorStatus.Saving
+    val phoneError = if (state.status == ContactEditorStatus.InvalidPhone) {
+        stringResource(Res.string.invalid_phone_error)
+    } else {
+        null
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = stringResource(Res.string.edit_contact_details),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Text(
+                text = stringResource(Res.string.contact_details_description),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            CVTextField(
+                value = state.phone,
+                onValueChanged = onPhoneChanged,
+                label = stringResource(Res.string.phone),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone,
+                    imeAction = ImeAction.Next,
+                ),
+                placeholder = stringResource(Res.string.phone_placeholder),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_phone),
+                        contentDescription = null,
+                        tint = if (phoneError != null) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
+                },
+                showError = phoneError != null,
+                supportingText = phoneError,
+                enabled = !isSaving,
+            )
+            CVTextField(
+                value = state.address,
+                onValueChanged = onAddressChanged,
+                label = stringResource(Res.string.address),
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                placeholder = stringResource(Res.string.address_placeholder),
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_location),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                },
+                enabled = !isSaving,
+            )
+            if (state.status == ContactEditorStatus.Error) {
+                Text(
+                    text = stringResource(Res.string.contact_save_error),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+            Row(
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CVOutlinedButton(
+                    text = stringResource(Res.string.cancel),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                CVButton(
+                    text = if (isSaving) {
+                        stringResource(Res.string.saving)
+                    } else {
+                        stringResource(Res.string.save)
+                    },
+                    onClick = onSave,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun UserItemInfo(
     icon: Painter,
     title: String,
-    value: String,
+    value: String?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -264,10 +451,18 @@ private fun UserItemInfo(
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
             )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            )
+            if (value.isNullOrBlank()) {
+                Text(
+                    text = stringResource(Res.string.not_specified),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            } else {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                )
+            }
         }
     }
 }

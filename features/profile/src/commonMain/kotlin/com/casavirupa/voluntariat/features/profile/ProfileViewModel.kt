@@ -2,10 +2,12 @@ package com.casavirupa.voluntariat.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
 import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
+import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentArea
 import com.casavirupa.voluntariat.shared.model.commitment.CommitmentPeriod
@@ -36,6 +38,7 @@ import kotlin.time.Clock
 class ProfileViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
+    private val userRepository: UserRepository,
     interestLinksRepository: InterestLinksRepository,
     commitmentRepository: CommitmentRepository,
 ) : ViewModel() {
@@ -47,6 +50,9 @@ class ProfileViewModel(
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    private val _contactEditor = MutableStateFlow(ContactEditorUiState())
+    val contactEditor: StateFlow<ContactEditorUiState> = _contactEditor.asStateFlow()
 
     val user: StateFlow<User?> =
         authRepository
@@ -165,6 +171,56 @@ class ProfileViewModel(
         }
     }
 
+    fun openContactEditor() {
+        val currentUser = user.value ?: return
+        _contactEditor.update {
+            ContactEditorUiState(
+                isVisible = true,
+                phone = currentUser.phone.orEmpty(),
+                address = currentUser.address.orEmpty(),
+            )
+        }
+    }
+
+    fun onContactPhoneChanged(phone: String) {
+        _contactEditor.update { it.copy(phone = phone, status = ContactEditorStatus.Idle) }
+    }
+
+    fun onContactAddressChanged(address: String) {
+        _contactEditor.update { it.copy(address = address, status = ContactEditorStatus.Idle) }
+    }
+
+    fun saveContactDetails() {
+        val currentUser = user.value ?: return
+        val editor = _contactEditor.value
+        if (editor.status == ContactEditorStatus.Saving) return
+
+        val phone = editor.phone.trim().ifBlank { null }
+        val address = editor.address.trim().ifBlank { null }
+        if (phone != null && !isPhoneValid(phone)) {
+            _contactEditor.update { it.copy(status = ContactEditorStatus.InvalidPhone) }
+            return
+        }
+
+        _contactEditor.update { it.copy(status = ContactEditorStatus.Saving) }
+        viewModelScope.launch {
+            userRepository
+                .updateContactDetails(currentUser.id, phone, address)
+                .onSuccess { closeContactEditor() }
+                .onFailure { error ->
+                    Logger.e(error, LOG_TAG) { "Error saving contact details: ${error.message}" }
+                    _contactEditor.update { it.copy(status = ContactEditorStatus.Error) }
+                }
+        }
+    }
+
+    fun closeContactEditor() {
+        _contactEditor.update { ContactEditorUiState() }
+    }
+
+    private fun isPhoneValid(phone: String): Boolean =
+        PHONE_REGEX.matches(phone) && phone.count { it.isDigit() } in MIN_PHONE_DIGITS..MAX_PHONE_DIGITS
+
     fun nextMonth() {
         _currentMonth.update { it.plus(DatePeriod(months = 1)) }
     }
@@ -183,6 +239,25 @@ class ProfileViewModel(
 }
 
 data class ProfileUiState(val navigateToSignIn: Boolean = false)
+
+data class ContactEditorUiState(
+    val isVisible: Boolean = false,
+    val phone: String = "",
+    val address: String = "",
+    val status: ContactEditorStatus = ContactEditorStatus.Idle,
+)
+
+enum class ContactEditorStatus {
+    Idle,
+    InvalidPhone,
+    Saving,
+    Error,
+}
+
+private val PHONE_REGEX = """^\+?[0-9 ()./-]+$""".toRegex()
+private const val MIN_PHONE_DIGITS = 6
+private const val MAX_PHONE_DIGITS = 15
+private const val LOG_TAG = "ProfileViewModel"
 
 data class CommitmentTargets(
     val total: CommitmentTarget?,
