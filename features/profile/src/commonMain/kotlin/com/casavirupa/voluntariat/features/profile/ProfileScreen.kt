@@ -91,9 +91,11 @@ import voluntariatcv.features.profile.generated.resources.log_out
 import voluntariatcv.features.profile.generated.resources.long_stay
 import voluntariatcv.features.profile.generated.resources.member_of_casa_virupa
 import voluntariatcv.features.profile.generated.resources.missing_hours
+import voluntariatcv.features.profile.generated.resources.missing_hours_quarter
 import voluntariatcv.features.profile.generated.resources.mitra
 import voluntariatcv.features.profile.generated.resources.monthly_hours
 import voluntariatcv.features.profile.generated.resources.no_hours_registered
+import voluntariatcv.features.profile.generated.resources.no_hours_registered_quarter
 import voluntariatcv.features.profile.generated.resources.profile_title
 import voluntariatcv.features.profile.generated.resources.quarterly_hours
 import voluntariatcv.features.profile.generated.resources.second_quarter
@@ -376,9 +378,10 @@ private fun DegreeOfCompliance(
                     )
                 }
                 val messageText = when {
+                    done == 0.0 && isMitra -> stringResource(Res.string.no_hours_registered_quarter)
                     done == 0.0 -> stringResource(Res.string.no_hours_registered)
                     targetHours != null && done < targetHours -> stringResource(
-                        Res.string.missing_hours,
+                        if (isMitra) Res.string.missing_hours_quarter else Res.string.missing_hours,
                         (targetHours - done).formatString(1)
                     )
                     else -> null
