@@ -331,26 +331,28 @@ private fun VolunteerShiftItem(
                     }
                 }
             }
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = BorderColor,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                volunteer.meals.forEach { meal ->
-                    meal.getIcon()?.let { icon ->
+            if (volunteer.meals.isNotEmpty() || volunteer.sleep) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = BorderColor,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    volunteer.meals.forEach { meal ->
+                        meal.getIcon()?.let { icon ->
+                            CVTag(
+                                text = meal.displayName(),
+                                icon = icon,
+                                backgroundColor = meal.getBackgroundColor(),
+                            )
+                        }
+                    }
+                    if (volunteer.sleep) {
                         CVTag(
-                            text = meal.displayName(),
-                            icon = icon,
-                            backgroundColor = meal.getBackgroundColor(),
+                            text = stringResource(Res.string.overnight_stay),
+                            icon = painterResource(Res.drawable.ic_sleep_bed),
+                            backgroundColor = Color(0xFFD3AD63),
                         )
                     }
-                }
-                if (volunteer.sleep) {
-                    CVTag(
-                        text = stringResource(Res.string.overnight_stay),
-                        icon = painterResource(Res.drawable.ic_sleep_bed),
-                        backgroundColor = Color(0xFFD3AD63),
-                    )
                 }
             }
         }

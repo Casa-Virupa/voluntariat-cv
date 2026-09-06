@@ -2,7 +2,9 @@ package com.casavirupa.voluntariat.shared.model.calendar
 
 import com.casavirupa.voluntariat.shared.model.payment.Prices
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
+import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
+import com.casavirupa.voluntariat.shared.model.user.UserRole
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
@@ -29,6 +31,25 @@ data class Volunteer(
     }
 
     fun calculateHours(): Int = shifts.sumOf { it.getHour() }
+
+    fun isOwnedBy(viewer: User): Boolean = userId == viewer.id
+
+    // A volunteer sees their own bookings, general volunteering and specific volunteering in
+    // one of their own areas. The coordination team sees everyone.
+    fun isVisibleTo(viewer: User): Boolean =
+        isOwnedBy(viewer) ||
+            viewer.role == UserRole.CoordinationTeam ||
+            shifts.any { shift ->
+                when (val type = shift.type) {
+                    VolunteerType.General -> true
+                    is VolunteerType.Specific -> type.specificArea in viewer.specificAreas
+                }
+            }
+
+    // Meals and overnight stays are private: only the volunteer themselves and the
+    // coordination team (who manage the house logistics) can see them.
+    fun areServicesVisibleTo(viewer: User): Boolean =
+        isOwnedBy(viewer) || viewer.role == UserRole.CoordinationTeam
 }
 
 data class VolunteerId(val value: String) {

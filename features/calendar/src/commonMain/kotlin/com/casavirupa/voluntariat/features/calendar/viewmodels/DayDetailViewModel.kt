@@ -15,7 +15,6 @@ import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
-import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -108,10 +107,17 @@ class DayDetailViewModel(
                     val currentUser = authRepository.getCurrentUser().getOrElse { null }
                     Triple(volunteers, users, currentUser)
                 }.onSuccess { (volunteers, users, currentUser) ->
+                    // Without a resolved viewer we can't apply the visibility rules, so
+                    // nothing is shown rather than leaking other people's bookings.
+                    val visibleVolunteers = if (currentUser == null) {
+                        emptyList()
+                    } else {
+                        volunteers.filter { it.isVisibleTo(currentUser) }
+                    }
                     _uiState.update {
                         it.copy(
-                            dayShifts = buildDayShifts(volunteers, users, currentUser?.id),
-                            headerUi = it.headerUi.copy(numOfVolunteers = volunteers.size),
+                            dayShifts = buildDayShifts(visibleVolunteers, users, currentUser),
+                            headerUi = it.headerUi.copy(numOfVolunteers = visibleVolunteers.size),
                         )
                     }
                 }
@@ -121,7 +127,7 @@ class DayDetailViewModel(
     private fun buildDayShifts(
         volunteers: List<Volunteer>,
         users: List<User>,
-        currentUserId: UserId?,
+        viewer: User?,
     ) = DayShifts(
         allDayVolunteers = volunteers
             .filter { it.shifts.size > 1 }
@@ -129,7 +135,7 @@ class DayDetailViewModel(
                 users
                     .find { user -> user.id == volunteer.userId }
                     ?.let { user ->
-                        volunteer.toUiModel(user.name, currentUserId)
+                        volunteer.toUiModel(user.name, viewer)
                     }
             },
         morningVolunteers = volunteers
@@ -138,7 +144,7 @@ class DayDetailViewModel(
                 users
                     .find { user -> user.id == volunteer.userId }
                     ?.let { user ->
-                        volunteer.toUiModel(user.name, currentUserId)
+                        volunteer.toUiModel(user.name, viewer)
                     }
             },
         afternoonVolunteers = volunteers
@@ -147,7 +153,7 @@ class DayDetailViewModel(
                 users
                     .find { user -> user.id == volunteer.userId }
                     ?.let { user ->
-                        volunteer.toUiModel(user.name, currentUserId)
+                        volunteer.toUiModel(user.name, viewer)
                     }
             },
     )
@@ -188,8 +194,9 @@ sealed class VolunteerTypeUi {
     ) : VolunteerTypeUi()
 }
 
-private fun Volunteer.toUiModel(name: String, userId: UserId?) =
-    VolunteerItemUi(
+private fun Volunteer.toUiModel(name: String, viewer: User?): VolunteerItemUi {
+    val showsServices = viewer != null && areServicesVisibleTo(viewer)
+    return VolunteerItemUi(
         id = id,
         name = name,
         schedule = shifts.formatSchedule(),
@@ -198,10 +205,11 @@ private fun Volunteer.toUiModel(name: String, userId: UserId?) =
         } else {
             buildSingleVolunteerType(shifts.first())
         },
-        meals = meals,
-        sleep = sleep,
-        canBeDeleted = this.userId == userId,
+        meals = if (showsServices) meals else emptyList(),
+        sleep = showsServices && sleep,
+        canBeDeleted = viewer != null && isOwnedBy(viewer),
     )
+}
 
 private fun buildAllDayVolunteerType(shifts: List<Shift>) =
     VolunteerTypeUi.AllDay(
