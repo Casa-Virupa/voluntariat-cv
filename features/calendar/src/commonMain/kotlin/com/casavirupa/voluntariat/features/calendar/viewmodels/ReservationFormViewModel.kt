@@ -4,9 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.core.utils.Throttler
-import com.casavirupa.voluntariat.shared.core.utils.getFirstDayOfMonth
-import com.casavirupa.voluntariat.shared.core.utils.getLastDayOfMonth
-import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
@@ -18,24 +15,19 @@ import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.minus
-import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -53,7 +45,6 @@ import voluntariatcv.features.calendar.generated.resources.lunch
 import voluntariatcv.features.calendar.generated.resources.morning
 import voluntariatcv.features.calendar.generated.resources.specific
 import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
-import kotlin.time.Clock
 
 class ReservationFormViewModel(
     private val authRepository: AuthRepository,
@@ -156,36 +147,32 @@ class ReservationFormViewModel(
 
     private var temporalDate: LocalDate? = null
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val notAvailableDates =
-        date
-            .flatMapConcat { date ->
-                calendarRepository.getGoogleCalendarEventsByRange(
-                    startDate = getStartDate(date),
-                    endDate = getLastDate(date)
-                ).map { googleCalendarEvents ->
-                    googleCalendarEvents.filter { !it.available }.map { it.start.date }
-                }
-            }.stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = emptyList(),
-            )
-
-    init {
-        viewModelScope.launch {
-            notAvailableDates.collect()
-        }
-    }
-
     fun onDateChanged(date: LocalDate) {
-        if (date in notAvailableDates.value) {
-            _showRemoteWorkDialog.update { true }
-            temporalDate = date
-        } else {
-            applySelectedDate(date)
+        viewModelScope.launch {
+            if (isVolunteeringAvailableOn(date)) {
+                applySelectedDate(date)
+            } else {
+                temporalDate = date
+                _showRemoteWorkDialog.update { true }
+            }
         }
     }
+
+    /**
+     * A day is not available for on-site volunteering when any Google Calendar event happening
+     * on it (all-day or multi-day included) is flagged as not available ("NO VOLUNTARIAT").
+     * If the events can't be read, the day is treated as available so the user isn't blocked.
+     */
+    private suspend fun isVolunteeringAvailableOn(date: LocalDate): Boolean =
+        runCatching {
+            calendarRepository
+                .getGoogleCalendarEventsByDate(date)
+                .first()
+                .all { it.available }
+        }.getOrElse { error ->
+            Logger.e(error, LOG_TAG) { "Error checking availability on $date" }
+            true
+        }
 
     fun workOnRemoteOnDate() {
         temporalDate?.let { applySelectedDate(it) }
@@ -519,14 +506,6 @@ class ReservationFormViewModel(
             }
         return result
     }
-
-    private fun getStartDate(date: LocalDate?) =
-        date?.minus(DatePeriod(months = 2))?.getFirstDayOfMonth()
-            ?: Clock.System.now().toDate().getFirstDayOfMonth()
-
-    private fun getLastDate(date: LocalDate?) =
-        date?.plus(DatePeriod(months = 2))?.getLastDayOfMonth()
-            ?: Clock.System.now().toDate().getLastDayOfMonth()
 }
 
 data class ReservationFormUiState(
