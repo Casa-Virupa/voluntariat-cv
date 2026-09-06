@@ -45,3 +45,53 @@ fun GoogleCalendarEvent.isHappeningOn(
 
     return eventStart < dayEnd && eventEnd > dayStart
 }
+
+// Which part of a day an event occupies. Morning/afternoon are split at 14:00, the same
+// boundary the volunteering shifts use.
+enum class DayCoverage {
+    None,
+    Morning,
+    Afternoon,
+    WholeDay,
+}
+
+fun GoogleCalendarEvent.coverageOn(
+    date: LocalDate,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): DayCoverage {
+    if (!isHappeningOn(date, timeZone)) return DayCoverage.None
+    if (isAllDay) return DayCoverage.WholeDay
+
+    val dayStart = date.atStartOfDayIn(timeZone)
+    val dayEnd = dayStart.plus(1, DateTimeUnit.DAY, timeZone)
+    val midday = LocalDateTime(date, LocalTime(MIDDAY_HOUR, 0)).toInstant(timeZone)
+    val clippedStart = maxOf(start.toInstant(timeZone), dayStart)
+    val clippedEnd = minOf(end.toInstant(timeZone), dayEnd)
+
+    val touchesMorning = clippedStart < midday
+    val touchesAfternoon = clippedEnd > midday
+    return when {
+        touchesMorning && touchesAfternoon -> DayCoverage.WholeDay
+        touchesMorning -> DayCoverage.Morning
+        else -> DayCoverage.Afternoon
+    }
+}
+
+// Combined "NO VOLUNTARIAT" coverage of a day: an all-day block greys the whole cell,
+// a timed one only the half it falls in; morning + afternoon blocks add up to the whole day.
+fun List<GoogleCalendarEvent>.unavailabilityOn(
+    date: LocalDate,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): DayCoverage =
+    filter { !it.available }
+        .map { it.coverageOn(date, timeZone) }
+        .fold(DayCoverage.None) { acc, coverage ->
+            when {
+                coverage == DayCoverage.None -> acc
+                acc == DayCoverage.None -> coverage
+                acc == coverage -> acc
+                else -> DayCoverage.WholeDay
+            }
+        }
+
+private const val MIDDAY_HOUR = 14

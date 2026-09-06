@@ -65,3 +65,79 @@ class GoogleCalendarEventTest {
         available = true,
     )
 }
+
+class DayCoverageTest {
+    private val day = LocalDate(2026, 9, 12)
+    private val tz = kotlinx.datetime.TimeZone.UTC
+
+    @Test
+    fun `all-day block covers the whole day`() {
+        val event = blocked(LocalDateTime(2026, 9, 12, 0, 0), LocalDateTime(2026, 9, 13, 0, 0), isAllDay = true)
+        assertEquals(DayCoverage.WholeDay, event.coverageOn(day, tz))
+    }
+
+    @Test
+    fun `block ending before 14h covers only the morning`() {
+        val event = blocked(LocalDateTime(2026, 9, 12, 9, 0), LocalDateTime(2026, 9, 12, 13, 0))
+        assertEquals(DayCoverage.Morning, event.coverageOn(day, tz))
+    }
+
+    @Test
+    fun `block starting at 14h or later covers only the afternoon`() {
+        val event = blocked(LocalDateTime(2026, 9, 12, 14, 0), LocalDateTime(2026, 9, 12, 20, 0))
+        assertEquals(DayCoverage.Afternoon, event.coverageOn(day, tz))
+    }
+
+    @Test
+    fun `timed block spanning 14h covers the whole day`() {
+        val event = blocked(LocalDateTime(2026, 9, 12, 10, 0), LocalDateTime(2026, 9, 12, 18, 0))
+        assertEquals(DayCoverage.WholeDay, event.coverageOn(day, tz))
+    }
+
+    @Test
+    fun `multi-day timed block is clipped to the viewed day`() {
+        val event = blocked(LocalDateTime(2026, 9, 11, 18, 0), LocalDateTime(2026, 9, 12, 12, 0))
+        assertEquals(DayCoverage.Morning, event.coverageOn(day, tz))
+        assertEquals(DayCoverage.Afternoon, event.coverageOn(LocalDate(2026, 9, 11), tz))
+        assertEquals(DayCoverage.None, event.coverageOn(LocalDate(2026, 9, 13), tz))
+    }
+
+    @Test
+    fun `available events never count as unavailability`() {
+        val events = listOf(
+            blocked(LocalDateTime(2026, 9, 12, 0, 0), LocalDateTime(2026, 9, 13, 0, 0), isAllDay = true)
+                .copy(available = true),
+        )
+        assertEquals(DayCoverage.None, events.unavailabilityOn(day, tz))
+    }
+
+    @Test
+    fun `morning and afternoon blocks add up to the whole day`() {
+        val events = listOf(
+            blocked(LocalDateTime(2026, 9, 12, 9, 0), LocalDateTime(2026, 9, 12, 12, 0)),
+            blocked(LocalDateTime(2026, 9, 12, 16, 0), LocalDateTime(2026, 9, 12, 19, 0)),
+        )
+        assertEquals(DayCoverage.WholeDay, events.unavailabilityOn(day, tz))
+    }
+
+    @Test
+    fun `two morning blocks stay a morning block`() {
+        val events = listOf(
+            blocked(LocalDateTime(2026, 9, 12, 9, 0), LocalDateTime(2026, 9, 12, 10, 0)),
+            blocked(LocalDateTime(2026, 9, 12, 11, 0), LocalDateTime(2026, 9, 12, 12, 0)),
+        )
+        assertEquals(DayCoverage.Morning, events.unavailabilityOn(day, tz))
+    }
+
+    private fun blocked(start: LocalDateTime, end: LocalDateTime, isAllDay: Boolean = false) =
+        GoogleCalendarEvent(
+            id = 2L,
+            googleId = "g2",
+            title = "NO VOLUNTARIAT",
+            description = "",
+            start = start,
+            end = end,
+            isAllDay = isAllDay,
+            available = false,
+        )
+}

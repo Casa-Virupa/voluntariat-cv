@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,8 +45,10 @@ import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
+import com.casavirupa.voluntariat.shared.model.calendar.DayCoverage
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
+import com.casavirupa.voluntariat.shared.model.calendar.unavailabilityOn
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -350,19 +353,42 @@ private fun DayCell(
     modifier: Modifier = Modifier,
 ) {
     val isToday = date == today
-    val isAvailable = googleCalendarEvents.all { it.available }
-    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-    val backgroundColor = when {
-        isAvailable || isPast -> Color.Transparent
-        else -> Color.Gray.copy(alpha = 0.1f)
+    // A "NO VOLUNTARIAT" with hours only greys the half of the day it falls in
+    // (morning: top-left triangle, afternoon: bottom-right); an all-day one greys it all.
+    val unavailability = remember(googleCalendarEvents, date) {
+        googleCalendarEvents.unavailabilityOn(date)
     }
+    val isFullyUnavailable = unavailability == DayCoverage.WholeDay
+    val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+    val unavailableColor = Color.Gray.copy(alpha = 0.1f)
 
     Box(
         modifier = modifier
             .size(cellSize)
             .drawBehind {
-                if (backgroundColor != Color.Transparent) {
-                    drawRect(color = backgroundColor)
+                if (!isPast) {
+                    when (unavailability) {
+                        DayCoverage.WholeDay -> drawRect(color = unavailableColor)
+                        DayCoverage.Morning -> drawPath(
+                            path = Path().apply {
+                                moveTo(0f, 0f)
+                                lineTo(size.width, 0f)
+                                lineTo(0f, size.height)
+                                close()
+                            },
+                            color = unavailableColor,
+                        )
+                        DayCoverage.Afternoon -> drawPath(
+                            path = Path().apply {
+                                moveTo(size.width, 0f)
+                                lineTo(size.width, size.height)
+                                lineTo(0f, size.height)
+                                close()
+                            },
+                            color = unavailableColor,
+                        )
+                        DayCoverage.None -> Unit
+                    }
                 }
                 val strokeWidth = 0.5.dp.toPx()
                 // Draw bottom and right borders for the grid effect
@@ -400,7 +426,7 @@ private fun DayCell(
                 style = MaterialTheme.typography.titleSmall,
                 color =
                     when {
-                        !isAvailable -> MaterialTheme.colorScheme.onSurfaceVariant
+                        isFullyUnavailable -> MaterialTheme.colorScheme.onSurfaceVariant
                         isToday -> MaterialTheme.colorScheme.onPrimary
                         isPast -> MaterialTheme.colorScheme.onSurfaceVariant
                         isCurrentMonth -> MaterialTheme.colorScheme.onSurface
@@ -417,13 +443,15 @@ private fun DayCell(
                     )
                 )
             }
-            if (!isPast && isAvailable) {
-                googleCalendarEvents.forEach {
-                    CalendarEvent(
-                        text = it.title,
-                        color = Color(0xFF8FA399),
-                    )
-                }
+            if (!isPast && !isFullyUnavailable) {
+                googleCalendarEvents
+                    .filter { it.available }
+                    .forEach {
+                        CalendarEvent(
+                            text = it.title,
+                            color = Color(0xFF8FA399),
+                        )
+                    }
             }
         }
     }
