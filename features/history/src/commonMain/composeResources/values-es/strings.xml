@@ -44,4 +44,12 @@
         <item quantity="one">1 pernoctación incluida (mitra)</item>
         <item quantity="other">%1$d pernoctaciones incluidas (mitra)</item>
     </plurals>
+    <plurals name="breakfasts_count">
+        <item quantity="one">1 desayuno</item>
+        <item quantity="other">%1$d desayunos</item>
+    </plurals>
+    <plurals name="breakfasts_next_day_count">
+        <item quantity="one">1 desayuno del día siguiente</item>
+        <item quantity="other">%1$d desayunos del día siguiente</item>
+    </plurals>
 </resources>

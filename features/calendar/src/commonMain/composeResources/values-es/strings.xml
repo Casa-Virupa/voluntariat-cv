@@ -65,4 +65,5 @@
     <string name="not_available_volunteering_title">Voluntariado no disponible</string>
     <string name="not_available_volunteering_description">Si quieres hacer voluntariado este día, tendrás que hacerlo en remoto.</string>
     <string name="select_specific_area">Selecciona el área específica</string>
+    <string name="breakfast_next_day">Desayuno del día siguiente</string>
 </resources>

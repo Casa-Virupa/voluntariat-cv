@@ -9,10 +9,12 @@ data class MonthlyChargeBreakdown(
     val dinners: Int,
     val nights: Int,
     val breakfasts: Int,
+    val breakfastsNextDay: Int,
     val lunchesAmount: Double,
     val dinnersAmount: Double,
     val nightsAmount: Double,
     val breakfastsAmount: Double,
+    val breakfastsNextDayAmount: Double,
     val freeLunchesUsed: Int,
     val freeDinnersUsed: Int,
     val freeNightsUsed: Int,
@@ -23,7 +25,8 @@ data class MonthlyChargeBreakdown(
     val discount: Double get() = lunchesDiscount + dinnersDiscount + nightsDiscount
 
     val total: Double
-        get() = lunchesAmount + dinnersAmount + nightsAmount + breakfastsAmount - discount
+        get() = lunchesAmount + dinnersAmount + nightsAmount +
+            breakfastsAmount + breakfastsNextDayAmount - discount
 
     companion object {
         val Empty = MonthlyChargeBreakdown(
@@ -31,10 +34,12 @@ data class MonthlyChargeBreakdown(
             dinners = 0,
             nights = 0,
             breakfasts = 0,
+            breakfastsNextDay = 0,
             lunchesAmount = 0.0,
             dinnersAmount = 0.0,
             nightsAmount = 0.0,
             breakfastsAmount = 0.0,
+            breakfastsNextDayAmount = 0.0,
             freeLunchesUsed = 0,
             freeDinnersUsed = 0,
             freeNightsUsed = 0,
@@ -70,10 +75,12 @@ fun calculateMonthlyCharge(
     var dinners = 0
     var nights = 0
     var breakfasts = 0
+    var breakfastsNextDay = 0
     var lunchesAmount = 0.0
     var dinnersAmount = 0.0
     var nightsAmount = 0.0
     var breakfastsAmount = 0.0
+    var breakfastsNextDayAmount = 0.0
     var freeLunchesUsed = 0
     var freeDinnersUsed = 0
     var freeNightsUsed = 0
@@ -105,6 +112,10 @@ fun calculateMonthlyCharge(
                     breakfasts++
                     breakfastsAmount += prices.breakfast
                 }
+                Meal.BreakfastNextDay -> {
+                    breakfastsNextDay++
+                    breakfastsNextDayAmount += prices.breakfastNextDay
+                }
                 Meal.Unknown -> Unit
             }
         }
@@ -123,10 +134,12 @@ fun calculateMonthlyCharge(
         dinners = dinners,
         nights = nights,
         breakfasts = breakfasts,
+        breakfastsNextDay = breakfastsNextDay,
         lunchesAmount = lunchesAmount,
         dinnersAmount = dinnersAmount,
         nightsAmount = nightsAmount,
         breakfastsAmount = breakfastsAmount,
+        breakfastsNextDayAmount = breakfastsNextDayAmount,
         freeLunchesUsed = freeLunchesUsed,
         freeDinnersUsed = freeDinnersUsed,
         freeNightsUsed = freeNightsUsed,

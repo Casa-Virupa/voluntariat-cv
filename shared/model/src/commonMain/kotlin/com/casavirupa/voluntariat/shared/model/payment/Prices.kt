@@ -4,6 +4,7 @@ data class Prices(
     val lunch: Double = DEFAULT_MEAL_PRICE,
     val dinner: Double = DEFAULT_MEAL_PRICE,
     val breakfast: Double = DEFAULT_BREAKFAST_PRICE,
+    val breakfastNextDay: Double = DEFAULT_BREAKFAST_PRICE,
     val sleep: Double = DEFAULT_SLEEP_PRICE,
     val mitraAllowance: MitraAllowance = MitraAllowance.None,
 ) {

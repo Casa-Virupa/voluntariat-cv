@@ -188,6 +188,8 @@ private fun FirebaseVolunteerType.toDomainModel() =
 
 private fun String.toMealTypeModel() =
     when (this) {
+        "breakfast" -> Meal.Breakfast
+        "breakfast_next_day" -> Meal.BreakfastNextDay
         "lunch" -> Meal.Lunch
         "dinner" -> Meal.Dinner
         else -> Meal.Unknown
@@ -235,6 +237,8 @@ private fun TimeRange.toFirebaseTimeRange() =
 
 private fun Meal.toFirebaseModel() =
     when (this) {
+        Meal.Breakfast -> "breakfast"
+        Meal.BreakfastNextDay -> "breakfast_next_day"
         Meal.Lunch -> "lunch"
         Meal.Dinner -> "dinner"
         else -> EMPTY_VALUE

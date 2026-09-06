@@ -40,6 +40,7 @@ private fun FirebasePriceRule.toDomainModelOrNull(): PriceRule? =
                     lunch = lunch,
                     dinner = dinner,
                     breakfast = breakfast,
+                    breakfastNextDay = breakfastNextDay,
                     sleep = sleep,
                     mitraAllowance = MitraAllowance(
                         freeLunches = mitraFreeLunches,

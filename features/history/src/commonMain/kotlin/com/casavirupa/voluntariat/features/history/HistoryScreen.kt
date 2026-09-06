@@ -68,6 +68,8 @@ import voluntariatcv.features.history.generated.resources.ic_delete
 import voluntariatcv.features.history.generated.resources.ic_group
 import voluntariatcv.features.history.generated.resources.ic_sun
 import voluntariatcv.features.history.generated.resources.ic_target
+import voluntariatcv.features.history.generated.resources.breakfasts_count
+import voluntariatcv.features.history.generated.resources.breakfasts_next_day_count
 import voluntariatcv.features.history.generated.resources.lunches_count
 import voluntariatcv.features.history.generated.resources.mitra_free_dinners_count
 import voluntariatcv.features.history.generated.resources.mitra_free_lunches_count
@@ -490,6 +492,16 @@ private fun PaymentDetailDialog(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                if (detail.breakfasts > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.breakfasts_count,
+                            detail.breakfasts,
+                            detail.breakfasts,
+                        ),
+                        amount = detail.breakfastsAmount,
+                    )
+                }
                 if (detail.lunches > 0) {
                     PaymentDetailRow(
                         concept = pluralStringResource(
@@ -548,6 +560,16 @@ private fun PaymentDetailDialog(
                             detail.freeNights,
                         ),
                         amount = -detail.nightsDiscount,
+                    )
+                }
+                if (detail.breakfastsNextDay > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.breakfasts_next_day_count,
+                            detail.breakfastsNextDay,
+                            detail.breakfastsNextDay,
+                        ),
+                        amount = detail.breakfastsNextDayAmount,
                     )
                 }
                 if (detail.total == 0.0) {

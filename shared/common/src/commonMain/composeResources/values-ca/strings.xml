@@ -27,4 +27,6 @@
     <string name="area_transcriptions">Transcripcions</string>
     <string name="area_technical_audiovisual">Tècnic i audiovisual</string>
     <string name="area_technical_texts">Tècnic i textos</string>
+    <string name="breakfast">Esmorzar</string>
+    <string name="breakfast_next_day">Esmorzar de l\'endemà</string>
 </resources>

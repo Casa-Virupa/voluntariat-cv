@@ -18,6 +18,7 @@ data class Volunteer(
         val mealsTotal = meals.sumOf { meal ->
             when (meal) {
                 Meal.Breakfast -> prices.breakfast
+                Meal.BreakfastNextDay -> prices.breakfastNextDay
                 Meal.Lunch -> prices.lunch
                 Meal.Dinner -> prices.dinner
                 Meal.Unknown -> 0.0
@@ -88,7 +89,10 @@ data class TimeRange(
 }
 
 enum class Meal {
+    // Breakfast on the volunteering day itself (early arrival, no overnight stay)
     Breakfast,
+    // Breakfast the morning after an overnight stay (hotel-style); only with sleep = true
+    BreakfastNextDay,
     Lunch,
     Dinner,
     Unknown,

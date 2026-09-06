@@ -32,9 +32,12 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.afternoon
+import voluntariatcv.features.calendar.generated.resources.breakfast
+import voluntariatcv.features.calendar.generated.resources.breakfast_next_day
 import voluntariatcv.features.calendar.generated.resources.dinner
 import voluntariatcv.features.calendar.generated.resources.general
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
+import voluntariatcv.features.calendar.generated.resources.ic_breakfast
 import voluntariatcv.features.calendar.generated.resources.ic_group
 import voluntariatcv.features.calendar.generated.resources.ic_lunch
 import voluntariatcv.features.calendar.generated.resources.ic_moon
@@ -66,16 +69,22 @@ class ReservationFormViewModel(
     val additionalOptionsSelected: StateFlow<List<AdditionalOption>> =
         _additionalOptionsSelected.asStateFlow()
 
+    // Sleeping over is reserved to members; the next-day breakfast only makes sense
+    // together with an overnight stay, so it appears once "Sleep" is selected.
     val additionalOptions: StateFlow<List<AdditionalOption>> =
-        authRepository
-            .getCurrentUserFlow()
-            .map { user ->
-                if (user.isMember) {
-                    AdditionalOption.entries.toList()
-                } else {
-                    AdditionalOption.entries.filter { it != AdditionalOption.Sleep }.toList()
+        combine(
+            authRepository.getCurrentUserFlow(),
+            _additionalOptionsSelected,
+        ) { user, selected ->
+            AdditionalOption.entries.filter { option ->
+                when (option) {
+                    AdditionalOption.Sleep -> user.isMember
+                    AdditionalOption.BreakfastNextDay ->
+                        user.isMember && AdditionalOption.Sleep in selected
+                    else -> true
                 }
-            }.stateIn(
+            }
+        }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyList(),
@@ -219,6 +228,10 @@ class ReservationFormViewModel(
             val mutableOptions = it.toMutableList()
             if (mutableOptions.contains(option)) {
                 mutableOptions.remove(option)
+                // No overnight stay → no breakfast the morning after
+                if (option == AdditionalOption.Sleep) {
+                    mutableOptions.remove(AdditionalOption.BreakfastNextDay)
+                }
             } else {
                 mutableOptions.add(option)
             }
@@ -438,6 +451,8 @@ class ReservationFormViewModel(
 
     private fun AdditionalOption.toMeal() =
         when (this) {
+            AdditionalOption.Breakfast -> Meal.Breakfast
+            AdditionalOption.BreakfastNextDay -> Meal.BreakfastNextDay
             AdditionalOption.Lunch -> Meal.Lunch
             AdditionalOption.Dinner -> Meal.Dinner
             else -> Meal.Unknown
@@ -530,6 +545,10 @@ enum class AdditionalOption(
     val text: StringResource,
     val icon: DrawableResource,
 ) {
+    Breakfast(
+        text = Res.string.breakfast,
+        icon = Res.drawable.ic_breakfast,
+    ),
     Lunch(
         text = Res.string.lunch,
         icon = Res.drawable.ic_lunch,
@@ -541,6 +560,10 @@ enum class AdditionalOption(
     Sleep(
         text = Res.string.stay_to_sleep,
         icon = Res.drawable.ic_sleep_bed,
+    ),
+    BreakfastNextDay(
+        text = Res.string.breakfast_next_day,
+        icon = Res.drawable.ic_breakfast,
     ),
 }
 

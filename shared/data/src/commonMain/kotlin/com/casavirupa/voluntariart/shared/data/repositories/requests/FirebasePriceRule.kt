@@ -10,6 +10,7 @@ data class FirebasePriceRule(
     val lunch: Double = Prices.DEFAULT_MEAL_PRICE,
     val dinner: Double = Prices.DEFAULT_MEAL_PRICE,
     val breakfast: Double = Prices.DEFAULT_BREAKFAST_PRICE,
+    @SerialName("breakfast_next_day") val breakfastNextDay: Double = Prices.DEFAULT_BREAKFAST_PRICE,
     val sleep: Double = Prices.DEFAULT_SLEEP_PRICE,
     @SerialName("mitra_free_lunches") val mitraFreeLunches: Int = 0,
     @SerialName("mitra_free_dinners") val mitraFreeDinners: Int = 0,

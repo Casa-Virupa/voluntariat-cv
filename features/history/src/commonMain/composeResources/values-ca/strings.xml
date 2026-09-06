@@ -44,4 +44,12 @@
         <item quantity="one">1 pernoctació inclosa (mitra)</item>
         <item quantity="other">%1$d pernoctacions incloses (mitra)</item>
     </plurals>
+    <plurals name="breakfasts_count">
+        <item quantity="one">1 esmorzar</item>
+        <item quantity="other">%1$d esmorzars</item>
+    </plurals>
+    <plurals name="breakfasts_next_day_count">
+        <item quantity="one">1 esmorzar de l\'endemà</item>
+        <item quantity="other">%1$d esmorzars de l\'endemà</item>
+    </plurals>
 </resources>

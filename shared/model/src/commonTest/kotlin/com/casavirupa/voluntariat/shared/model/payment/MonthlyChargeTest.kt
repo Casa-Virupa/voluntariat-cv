@@ -161,6 +161,37 @@ class MonthlyChargeTest {
     }
 
     @Test
+    fun nextDayBreakfastUsesItsOwnPriceAndIsNeverDiscounted() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    breakfast = 3.0,
+                    breakfastNextDay = 4.5,
+                    mitraAllowance = allowance222,
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(
+                LocalDate(2026, 8, 5),
+                meals = listOf(Meal.Dinner, Meal.BreakfastNextDay),
+                sleep = true,
+            ),
+            booking(LocalDate(2026, 8, 6), meals = listOf(Meal.Breakfast)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+
+        assertEquals(1, result.breakfasts)
+        assertEquals(1, result.breakfastsNextDay)
+        assertEquals(3.0, result.breakfastsAmount, TOLERANCE)
+        assertEquals(4.5, result.breakfastsNextDayAmount, TOLERANCE)
+        // dinner and night are inside the mitra allowance; only the breakfasts are charged
+        assertEquals(3.0 + 4.5, result.total, TOLERANCE)
+    }
+
+    @Test
     fun allowanceDoesNotCarryOverBetweenMonths() {
         val january = emptyList<Volunteer>()
         val february = (1..3).map { day ->

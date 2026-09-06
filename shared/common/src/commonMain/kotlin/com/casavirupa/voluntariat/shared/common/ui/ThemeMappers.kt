@@ -30,8 +30,11 @@ import voluntariatcv.shared.common.generated.resources.area_temple
 import voluntariatcv.shared.common.generated.resources.area_transcriptions
 import voluntariatcv.shared.common.generated.resources.area_virupa_editions
 import voluntariatcv.shared.common.generated.resources.area_volunteer_coordination
+import voluntariatcv.shared.common.generated.resources.breakfast
+import voluntariatcv.shared.common.generated.resources.breakfast_next_day
 import voluntariatcv.shared.common.generated.resources.dinner
 import voluntariatcv.shared.common.generated.resources.general
+import voluntariatcv.shared.common.generated.resources.ic_breakfast
 import voluntariatcv.shared.common.generated.resources.ic_group
 import voluntariatcv.shared.common.generated.resources.ic_lunch
 import voluntariatcv.shared.common.generated.resources.ic_moon
@@ -42,6 +45,8 @@ import voluntariatcv.shared.common.generated.resources.specific
 @Composable
 fun Meal.displayName() =
     when (this) {
+        Meal.Breakfast -> stringResource(Res.string.breakfast)
+        Meal.BreakfastNextDay -> stringResource(Res.string.breakfast_next_day)
         Meal.Lunch -> stringResource(Res.string.lunch)
         Meal.Dinner -> stringResource(Res.string.dinner)
         else -> ""
@@ -50,6 +55,8 @@ fun Meal.displayName() =
 @Composable
 fun Meal.getBackgroundColor() =
     when (this) {
+        Meal.Breakfast -> Color(0xFFBC8F5E)
+        Meal.BreakfastNextDay -> Color(0xFFA67C52)
         Meal.Lunch -> MaterialTheme.colorScheme.primary
         Meal.Dinner -> Color(0xFF8FA399)
         else -> Color.Transparent
@@ -58,6 +65,8 @@ fun Meal.getBackgroundColor() =
 @Composable
 fun Meal.getIcon() =
     when (this) {
+        Meal.Breakfast -> painterResource(Res.drawable.ic_breakfast)
+        Meal.BreakfastNextDay -> painterResource(Res.drawable.ic_breakfast)
         Meal.Lunch -> painterResource(Res.drawable.ic_lunch)
         Meal.Dinner -> painterResource(Res.drawable.ic_moon)
         else -> null

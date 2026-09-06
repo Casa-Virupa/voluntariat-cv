@@ -44,4 +44,12 @@
         <item quantity="one">1 overnight stay included (mitra)</item>
         <item quantity="other">%1$d overnight stays included (mitra)</item>
     </plurals>
+    <plurals name="breakfasts_count">
+        <item quantity="one">1 breakfast</item>
+        <item quantity="other">%1$d breakfasts</item>
+    </plurals>
+    <plurals name="breakfasts_next_day_count">
+        <item quantity="one">1 next-morning breakfast</item>
+        <item quantity="other">%1$d next-morning breakfasts</item>
+    </plurals>
 </resources>
