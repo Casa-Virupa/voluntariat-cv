@@ -66,4 +66,7 @@
     <string name="not_available_volunteering_description">Si vols fer voluntariat aquest dia, l'hauràs de fer en remot.</string>
     <string name="select_specific_area">Selecciona l'àrea específica</string>
     <string name="breakfast_next_day">Esmorzar de l\'endemà</string>
+    <string name="filter_general_volunteering">Voluntariat general</string>
+    <string name="filter_specific_volunteering">Voluntariat específic</string>
+    <string name="filter_my_volunteering">Els meus voluntariats</string>
 </resources>

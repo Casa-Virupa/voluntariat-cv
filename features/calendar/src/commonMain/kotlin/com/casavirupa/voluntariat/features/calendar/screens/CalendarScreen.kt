@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -16,8 +17,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +49,7 @@ import com.casavirupa.voluntariat.features.calendar.models.YearMonth
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
+import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 import com.casavirupa.voluntariat.shared.model.calendar.DayCoverage
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
 import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
@@ -57,6 +62,9 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
+import voluntariatcv.features.calendar.generated.resources.filter_general_volunteering
+import voluntariatcv.features.calendar.generated.resources.filter_my_volunteering
+import voluntariatcv.features.calendar.generated.resources.filter_specific_volunteering
 import voluntariatcv.features.calendar.generated.resources.friday_short
 import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
@@ -79,12 +87,15 @@ internal fun CalendarScreen(
     val volunteers by viewModel.volunteers.collectAsStateWithLifecycle()
     val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
+    val filter by viewModel.filter.collectAsStateWithLifecycle()
 
     CalendarContent(
         volunteers = volunteers,
         googleCalendarEvents = googleCalendarEvents,
         yearMonth = currentMonth,
         today = viewModel.todayDate,
+        filter = filter,
+        onFilterSelected = viewModel::onFilterSelected,
         onPreviousMonth = viewModel::onPreviousMonth,
         onNextMonth = viewModel::onNextMonth,
         onYearMonthChanged = viewModel::onYearMonthChanged,
@@ -99,6 +110,8 @@ private fun CalendarContent(
     googleCalendarEvents: List<GoogleCalendarEvent>,
     yearMonth: YearMonth,
     today: LocalDate,
+    filter: CalendarFilter?,
+    onFilterSelected: (CalendarFilter) -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onYearMonthChanged: (YearMonth) -> Unit,
@@ -128,6 +141,11 @@ private fun CalendarContent(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+            CalendarFilters(
+                selected = filter,
+                onFilterSelected = onFilterSelected,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             WeekHeader()
             CalendarPager(
                 currentReference = yearMonth,
@@ -243,6 +261,55 @@ private fun CalendarNavigationArrows(
         }
     }
 }
+
+@Composable
+private fun CalendarFilters(
+    selected: CalendarFilter?,
+    onFilterSelected: (CalendarFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CalendarFilter.entries.forEach { filter ->
+            val isSelected = filter == selected
+            FilterChip(
+                selected = isSelected,
+                onClick = { onFilterSelected(filter) },
+                label = {
+                    Text(
+                        text = filter.displayName(),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalendarFilter.displayName() =
+    when (this) {
+        CalendarFilter.General -> stringResource(Res.string.filter_general_volunteering)
+        CalendarFilter.Specific -> stringResource(Res.string.filter_specific_volunteering)
+        CalendarFilter.Mine -> stringResource(Res.string.filter_my_volunteering)
+    }
 
 @Composable
 private fun WeekHeader(modifier: Modifier = Modifier) {

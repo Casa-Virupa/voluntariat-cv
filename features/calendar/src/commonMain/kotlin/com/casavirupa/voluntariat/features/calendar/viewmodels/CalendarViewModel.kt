@@ -8,9 +8,12 @@ import com.casavirupa.voluntariat.shared.core.utils.getCurrentYear
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.user.User
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +38,9 @@ class CalendarViewModel(
     private val _yearMonth = MutableStateFlow(YearMonth(getCurrentYear(), getCurrentMonth()))
     val yearMonth: StateFlow<YearMonth> = _yearMonth.asStateFlow()
 
+    private val _filter = MutableStateFlow<CalendarFilter?>(null)
+    val filter: StateFlow<CalendarFilter?> = _filter.asStateFlow()
+
     private val currentUser: StateFlow<User?> =
         authRepository
             .getCurrentUserFlow()
@@ -44,11 +50,8 @@ class CalendarViewModel(
                 initialValue = null,
             )
 
-    // Per-day count of the volunteers the viewer is allowed to see (same rules as the day
-    // detail). Nothing is counted until the viewer is known, so no booking is exposed by
-    // mistake.
     @OptIn(ExperimentalCoroutinesApi::class)
-    val volunteers: StateFlow<Map<LocalDate, Int>> =
+    private val monthVolunteers: Flow<List<Volunteer>> =
         yearMonth
             .flatMapLatest {
                 volunteerRepository
@@ -57,13 +60,19 @@ class CalendarViewModel(
                         monthNumber = it.month.number,
                         currentDate = todayDate,
                     )
-            }.combine(currentUser) { volunteers, user ->
-                if (user == null) return@combine emptyMap()
-                volunteers
-                    .filter { it.isVisibleTo(user) }
-                    .groupBy { it.date }
-                    .mapValues { (_, volunteers) -> volunteers.size }
-            }.stateIn(
+            }
+
+    // Per-day count of the volunteers the viewer is allowed to see (same rules as the day
+    // detail), narrowed further by the active filter. Nothing is counted until the viewer
+    // is known, so no booking is exposed by mistake.
+    val volunteers: StateFlow<Map<LocalDate, Int>> =
+        combine(monthVolunteers, currentUser, filter) { volunteers, user, filter ->
+            if (user == null) return@combine emptyMap()
+            volunteers
+                .filter { it.isVisibleTo(user) && (filter == null || filter.matches(it, user)) }
+                .groupBy { it.date }
+                .mapValues { (_, volunteers) -> volunteers.size }
+        }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyMap(),
@@ -107,5 +116,10 @@ class CalendarViewModel(
 
     fun onYearMonthChanged(newYearMonth: YearMonth) {
         _yearMonth.update { newYearMonth }
+    }
+
+    // Tapping the active filter again clears it.
+    fun onFilterSelected(selected: CalendarFilter) {
+        _filter.update { current -> if (current == selected) null else selected }
     }
 }

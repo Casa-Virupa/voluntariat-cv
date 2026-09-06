@@ -66,4 +66,7 @@
     <string name="not_available_volunteering_description">If you want to volunteer on this day, you must do it remotely.</string>
     <string name="select_specific_area">Select the specific area</string>
     <string name="breakfast_next_day">Breakfast the next morning</string>
+    <string name="filter_general_volunteering">General volunteering</string>
+    <string name="filter_specific_volunteering">Specific volunteering</string>
+    <string name="filter_my_volunteering">My volunteering</string>
 </resources>
