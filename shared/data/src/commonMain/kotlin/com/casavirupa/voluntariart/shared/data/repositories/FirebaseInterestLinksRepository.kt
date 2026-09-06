@@ -30,6 +30,9 @@ class FirebaseInterestLinksRepository(
 private fun FirebaseInterestLinks.toDomainModel() =
     InterestLinks(
         text = text,
+        textHabitual = text_habitual,
+        textMitra = text_mitra,
+        textLongStay = text_long_stay,
         updatedAt = updated_at
             ?.let { runCatching { Instant.parse(it).toDate() }.getOrNull() },
     )

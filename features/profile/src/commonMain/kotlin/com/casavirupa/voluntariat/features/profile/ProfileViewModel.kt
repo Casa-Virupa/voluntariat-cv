@@ -57,10 +57,12 @@ class ProfileViewModel(
                 initialValue = null,
             )
 
+    // The dashboard publishes one text per volunteer type plus a general one; resolve the
+    // text for the current user here so the screen keeps reading `text` as before.
     val interestLinks: StateFlow<InterestLinks> =
-        interestLinksRepository
-            .getInterestLinks()
-            .stateIn(
+        combine(user, interestLinksRepository.getInterestLinks()) { user, links ->
+            links.copy(text = links.textFor(user?.volunteerType))
+        }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = InterestLinks.Empty,
