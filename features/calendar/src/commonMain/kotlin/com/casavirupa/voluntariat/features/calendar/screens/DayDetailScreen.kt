@@ -232,9 +232,9 @@ private fun EventItem(
                 text = event.title,
                 style = MaterialTheme.typography.titleLarge,
             )
-            if (!event.isAllDay) {
+            event.formatSchedule()?.let { schedule ->
                 CVTag(
-                    text = "${event.start.time.format("HH:mm")}-${event.end.time.format("HH:mm")}",
+                    text = schedule,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
@@ -356,5 +356,21 @@ private fun VolunteerShiftItem(
         }
     }
 }
+
+// Single-day events show only their hours; multi-day ones also show the first and last
+// day so the user knows the activity's real span (e.g. a three-day teaching retreat).
+private fun GoogleCalendarEvent.formatSchedule(): String? =
+    when {
+        isMultiDay && isAllDay ->
+            "${start.date.format(DAY_MONTH_PATTERN)} - ${lastDay.format(DAY_MONTH_PATTERN)}"
+        isMultiDay ->
+            "${start.date.format(DAY_MONTH_PATTERN)} ${start.time.format(HOUR_PATTERN)} - " +
+                "${lastDay.format(DAY_MONTH_PATTERN)} ${end.time.format(HOUR_PATTERN)}"
+        isAllDay -> null
+        else -> "${start.time.format(HOUR_PATTERN)}-${end.time.format(HOUR_PATTERN)}"
+    }
+
+private const val DAY_MONTH_PATTERN = "dd/MM"
+private const val HOUR_PATTERN = "HH:mm"
 
 private val BorderColor = Color(0xFFE9E8E7)
