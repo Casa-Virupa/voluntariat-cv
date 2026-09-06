@@ -10,8 +10,11 @@ val voluntariatCVColorScheme = lightColorScheme(
     onPrimary = Color.White,
     primaryContainer = LightOrange100,
     onPrimaryContainer = DarkGrayBrown,
+    // Google Calendar events, the "general" area icon and the dinner meal chip
+    secondary = Sage,
+    onSecondary = Color.White,
     // Used to highlight the viewer's own volunteering days in the calendar
-    tertiary = Lilac,
+    tertiary = Blue,
     onTertiary = Color.White,
     surfaceContainerLowest = LightOrange50,
     surfaceContainerLow = LightOrange200,

@@ -50,7 +50,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
 import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
-import voluntariatcv.features.history.generated.resources.days
 import voluntariatcv.features.history.generated.resources.delete
 import voluntariatcv.features.history.generated.resources.delete_volunteering_description
 import voluntariatcv.features.history.generated.resources.delete_volunteering_title
@@ -61,7 +60,6 @@ import voluntariatcv.features.history.generated.resources.hours_format
 import voluntariatcv.features.history.generated.resources.ic_afternoon
 import voluntariatcv.features.history.generated.resources.ic_arrow_left
 import voluntariatcv.features.history.generated.resources.ic_arrow_right
-import voluntariatcv.features.history.generated.resources.ic_calendar_today
 import voluntariatcv.features.history.generated.resources.ic_cancel
 import voluntariatcv.features.history.generated.resources.ic_clock
 import voluntariatcv.features.history.generated.resources.ic_delete
@@ -233,26 +231,15 @@ private fun MonthSelector(
 
 @Composable
 private fun InformationSummary(
-    info: MonthSummary,
+    info: DetailedSummary,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SummaryContainer(
-            title = stringResource(Res.string.hours),
-            icon = painterResource(Res.drawable.ic_clock),
-            value = info.hours,
-            modifier = Modifier.weight(1f),
-        )
-        SummaryContainer(
-            title = stringResource(Res.string.days),
-            icon = painterResource(Res.drawable.ic_calendar_today),
-            value = info.days,
-            modifier = Modifier.weight(1f),
-        )
-    }
+    SummaryContainer(
+        title = stringResource(Res.string.hours),
+        icon = painterResource(Res.drawable.ic_clock),
+        value = info,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -284,10 +271,7 @@ private fun SummaryContainer(
                 )
             }
             Text(
-                text = when (value.total) {
-                    is Double -> value.total.formatString(1)
-                    else -> value.total.toString()
-                },
+                text = value.total.toString(),
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             )
             HorizontalDivider(
@@ -298,7 +282,7 @@ private fun SummaryContainer(
                 icon = painterResource(Res.drawable.ic_group),
                 title = stringResource(Res.string.general),
                 total = value.general,
-                iconColor = Color(0xFF8FA399),
+                iconColor = MaterialTheme.colorScheme.secondary,
             )
             DetailedSummaryInfo(
                 icon = painterResource(Res.drawable.ic_target),

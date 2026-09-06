@@ -16,4 +16,6 @@ internal val LightGray = Color(0xFFE7E5E4)
 
 internal val Red = Color(0xFFB42222)
 
-internal val Lilac = Color(0xFF9B7BB8)
+internal val Sage = Color(0xFF8FA399)
+// Sampled from the blue variant of the Casa Virupa logo
+internal val Blue = Color(0xFF4E687D)

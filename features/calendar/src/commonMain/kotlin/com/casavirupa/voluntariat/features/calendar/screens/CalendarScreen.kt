@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -30,7 +32,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -69,9 +74,9 @@ import voluntariatcv.features.calendar.generated.resources.friday_short
 import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_left
 import voluntariatcv.features.calendar.generated.resources.ic_arrow_right
+import voluntariatcv.features.calendar.generated.resources.ic_filter
 import voluntariatcv.features.calendar.generated.resources.monday_short
 import voluntariatcv.features.calendar.generated.resources.saturday_short
-import voluntariatcv.features.calendar.generated.resources.select_volunteering_title
 import voluntariatcv.features.calendar.generated.resources.sunday_short
 import voluntariatcv.features.calendar.generated.resources.thursday_short
 import voluntariatcv.features.calendar.generated.resources.tuesday_short
@@ -122,11 +127,17 @@ private fun CalendarContent(
     onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // UI-only: whether the filter chips are shown in place of the weekday row
+    var filtersVisible by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier,
         topBar = {
             CalendarTopBar(
                 currentMonth = yearMonth.month,
+                filtersVisible = filtersVisible,
+                hasActiveFilter = filter != null,
+                onToggleFilters = { filtersVisible = !filtersVisible },
                 onPreviousMonth = onPreviousMonth,
                 onNextMonth = onNextMonth,
             )
@@ -144,12 +155,11 @@ private fun CalendarContent(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            CalendarFilters(
-                selected = filter,
+            FiltersOrWeekHeader(
+                filtersVisible = filtersVisible,
+                filter = filter,
                 onFilterSelected = onFilterSelected,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            WeekHeader()
             CalendarPager(
                 currentReference = yearMonth,
                 pageToReference = { base, initialPage, page ->
@@ -188,53 +198,61 @@ private fun CalendarContent(
 @Composable
 private fun CalendarTopBar(
     currentMonth: Month,
+    filtersVisible: Boolean,
+    hasActiveFilter: Boolean,
+    onToggleFilters: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.padding(top = 32.dp, bottom = 16.dp, start = 24.dp, end = 8.dp),
+        modifier = modifier.padding(top = 32.dp, bottom = 8.dp, start = 24.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TopBarTitles(
+        TopBarTitle(
             title = currentMonth.getName(),
-            modifier = Modifier.weight(2f)
+            modifier = Modifier.weight(1f)
         )
+        IconButton(onClick = onToggleFilters) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_filter),
+                contentDescription = null,
+                // Stays tinted while a filter is active so it's visible even with the chips hidden
+                tint = if (filtersVisible || hasActiveFilter) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.inverseOnSurface
+                },
+            )
+        }
         CalendarNavigationArrows(
             onClickPrevious = onPreviousMonth,
             onClickNext = onNextMonth,
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp)
         )
     }
 }
 
 @Composable
-private fun TopBarTitles(
+private fun TopBarTitle(
     title: String,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        AnimatedContent(
-            targetState = title,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(durationMillis = 600)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = 600))
-            },
-            label = "MonthTitleAnimation"
-        ) { animatedTitle ->
-            Text(
-                text = animatedTitle,
-                modifier = Modifier.padding(bottom = 4.dp),
-                color = MaterialTheme.colorScheme.inverseOnSurface,
-                style = MaterialTheme.typography.displaySmall,
-            )
-        }
+    AnimatedContent(
+        targetState = title,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(durationMillis = 600)) togetherWith
+                    fadeOut(animationSpec = tween(durationMillis = 600))
+        },
+        label = "MonthTitleAnimation",
+        modifier = modifier,
+    ) { animatedTitle ->
         Text(
-            text = stringResource(Res.string.select_volunteering_title).uppercase(),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            style = MaterialTheme.typography.labelSmall,
+            text = animatedTitle,
+            color = MaterialTheme.colorScheme.inverseOnSurface,
+            style = MaterialTheme.typography.displaySmall.copy(
+                fontSize = 28.sp,
+                lineHeight = 32.sp,
+            ),
         )
     }
 }
@@ -245,10 +263,7 @@ private fun CalendarNavigationArrows(
     onClickNext: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
+    Row(modifier = modifier) {
         IconButton(onClick = onClickPrevious) {
             Icon(
                 painter = painterResource(Res.drawable.ic_arrow_left),
@@ -266,6 +281,44 @@ private fun CalendarNavigationArrows(
     }
 }
 
+/**
+ * The strip under the month title: the weekday names by default, or the filter chips
+ * when the filter icon is toggled. Both share a fixed height so the grid never jumps.
+ */
+@Composable
+private fun FiltersOrWeekHeader(
+    filtersVisible: Boolean,
+    filter: CalendarFilter?,
+    onFilterSelected: (CalendarFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
+    Column(modifier = modifier) {
+        HorizontalDivider(color = borderColor)
+        AnimatedContent(
+            targetState = filtersVisible,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(durationMillis = 300)) togetherWith
+                        fadeOut(animationSpec = tween(durationMillis = 300))
+            },
+            label = "FiltersOrWeekHeaderAnimation",
+        ) { showFilters ->
+            if (showFilters) {
+                CalendarFilters(
+                    selected = filter,
+                    onFilterSelected = onFilterSelected,
+                    modifier = Modifier
+                        .height(HEADER_STRIP_HEIGHT)
+                        .padding(horizontal = 16.dp),
+                )
+            } else {
+                WeekHeader(modifier = Modifier.height(HEADER_STRIP_HEIGHT))
+            }
+        }
+        HorizontalDivider(color = borderColor)
+    }
+}
+
 @Composable
 private fun CalendarFilters(
     selected: CalendarFilter?,
@@ -277,6 +330,7 @@ private fun CalendarFilters(
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CalendarFilter.entries.forEach { filter ->
             val isSelected = filter == selected
@@ -326,30 +380,26 @@ private fun WeekHeader(modifier: Modifier = Modifier) {
         stringResource(Res.string.saturday_short),
         stringResource(Res.string.sunday_short),
     )
-    val borderColor = MaterialTheme.colorScheme.outlineVariant
 
-    Column(modifier = modifier) {
-        HorizontalDivider(color = borderColor)
-        Row(modifier = Modifier.fillMaxWidth()) {
-            weekDayNames.forEach { dayName ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = dayName.uppercase(),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+    Row(modifier = modifier.fillMaxWidth()) {
+        weekDayNames.forEach { dayName ->
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = dayName.uppercase(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
-        HorizontalDivider(color = borderColor)
     }
 }
+
 @Composable
 private fun MonthGrid(
     yearMonth: YearMonth,
@@ -435,8 +485,8 @@ private fun DayCell(
     val isFullyUnavailable = unavailability == DayCoverage.WholeDay
     val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     val unavailableColor = Color.Gray.copy(alpha = 0.1f)
-    // The viewer's own volunteering days are tinted lilac (tertiary)
-    val mineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f)
+    // The viewer's own volunteering days are tinted brand blue (tertiary)
+    val mineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.26f)
 
     Box(
         modifier = modifier
@@ -499,7 +549,7 @@ private fun DayCell(
             Text(
                 text = date.day.toString(),
                 modifier = Modifier
-                    .padding(8.dp)
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 5.dp)
                     .background(color = selectionBackgroundColor, shape = CircleShape)
                     .padding(horizontal = 8.dp),
                 style = MaterialTheme.typography.titleSmall,
@@ -529,7 +579,7 @@ private fun DayCell(
                     .forEach {
                         CalendarEvent(
                             text = it.title,
-                            color = Color(0xFF8FA399),
+                            color = MaterialTheme.colorScheme.secondary,
                         )
                     }
             }
@@ -551,7 +601,7 @@ private fun CalendarEvent(
                 color = color,
                 shape = RoundedCornerShape(2.dp)
             ).padding(horizontal = 2.dp),
-        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.sp),
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, letterSpacing = 0.sp),
         color = MaterialTheme.colorScheme.onPrimary,
         overflow = TextOverflow.Ellipsis,
         maxLines = 1,
@@ -560,3 +610,6 @@ private fun CalendarEvent(
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
 private const val TOTAL_MONTHS = 12
+
+// Weekday row was 12dp padding + one labelSmall line; the filter chips (32dp) fit in it too
+private val HEADER_STRIP_HEIGHT = 44.dp

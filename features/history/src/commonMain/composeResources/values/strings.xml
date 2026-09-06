@@ -3,7 +3,6 @@
     <string name="afternoon">Afternoon</string>
     <string name="my_volunteerings">My volunteerings</string>
     <string name="hours">Hours</string>
-    <string name="days">Days</string>
     <string name="pending_payment">Pending payment</string>
     <string name="remember_payment">You have an outstanding balance of %1$s€.</string>
     <string name="volunteerings_history">Volunteerings history</string>

@@ -58,7 +58,7 @@ fun Meal.getBackgroundColor() =
         Meal.Breakfast -> Color(0xFFBC8F5E)
         Meal.BreakfastNextDay -> Color(0xFFA67C52)
         Meal.Lunch -> MaterialTheme.colorScheme.primary
-        Meal.Dinner -> Color(0xFF8FA399)
+        Meal.Dinner -> MaterialTheme.colorScheme.secondary
         else -> Color.Transparent
     }
 

@@ -2,7 +2,6 @@ package com.casavirupa.voluntariat.features.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.core.utils.toDate
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.LedgerRepository
@@ -105,7 +104,7 @@ class HistoryViewModel(
         ) { data, balance ->
             val volunteers = data.volunteers.toUiModel()
             HistoryUiState(
-                summary = MonthSummary(volunteers),
+                summary = DetailedSummary.hours(volunteers),
                 volunteers = volunteers,
                 showNoVolunteeringMessage = data.volunteers.isEmpty(),
                 paymentUiState = if (balance != null && balance > AMOUNT_TOLERANCE) {
@@ -189,7 +188,7 @@ class HistoryViewModel(
 }
 
 data class HistoryUiState(
-    val summary: MonthSummary,
+    val summary: DetailedSummary,
     val volunteers: List<VolunteerHistoryItem>,
     val showNoVolunteeringMessage: Boolean,
     val paymentUiState: PaymentUiState,
@@ -197,7 +196,7 @@ data class HistoryUiState(
 ) {
     companion object {
         val Empty = HistoryUiState(
-            summary = MonthSummary(DetailedSummary.Empty, DetailedSummary.Empty),
+            summary = DetailedSummary.Empty,
             volunteers = emptyList(),
             showNoVolunteeringMessage = false,
             paymentUiState = PaymentUiState.Hidden,
@@ -282,52 +281,13 @@ data class PaymentDetail(
     }
 }
 
-data class MonthSummary(
-    val days: DetailedSummary,
-    val hours: DetailedSummary,
-) {
-    companion object {
-        operator fun invoke(volunteers: List<VolunteerHistoryItem>): MonthSummary =
-            MonthSummary(
-                days = DetailedSummary.days(volunteers),
-                hours = DetailedSummary.hours(volunteers),
-            )
-    }
-}
-
 data class DetailedSummary(
-    val total: Number,
+    val total: Int,
     val general: String,
     val specific: String,
 ) {
     companion object {
         val Empty = DetailedSummary(0, "0", "")
-
-        fun days(volunteers: List<VolunteerHistoryItem>) =
-            DetailedSummary(
-                total = volunteers
-                    .flatMap { it.shifts }
-                    .sumOf { it.getTotalHour() }
-                    .div(ALL_DAY_DIVIDER),
-                general = volunteers
-                    .flatMap { it.shifts }
-                    .filter { it.type is VolunteerType.General }
-                    .sumOf { it.getHoursFromVolunteerType(it.type) }
-                    .div(ALL_DAY_DIVIDER)
-                    .let { "${it.formatString(1)}d" },
-                specific = volunteers
-                    .flatMap { it.shifts }
-                    .filter { it.type is VolunteerType.Specific }
-                    .sumOf { it.getHoursFromVolunteerType(it.type) }
-                    .div(ALL_DAY_DIVIDER)
-                    .let {
-                        if (it % ALL_DAY_DIVIDER == 0.0) {
-                            "${it.toInt()}d"
-                        } else {
-                            "${it.formatString(1)}d"
-                        }
-                    },
-            )
 
         fun hours(volunteers: List<VolunteerHistoryItem>) =
             DetailedSummary(
@@ -392,7 +352,5 @@ private operator fun LocalTime.minus(other: LocalTime): Double {
     val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()
     return abs(diffSeconds) / 3600.0
 }
-
-private const val ALL_DAY_DIVIDER = 8.0
 
 private const val AMOUNT_TOLERANCE = 0.001
