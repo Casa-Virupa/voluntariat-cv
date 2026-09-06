@@ -17,4 +17,15 @@
     <string name="requirement_8_characters">Mínimo 8 caracteres</string>
     <string name="requirement_uppercase_lowercase">Una mayúscula y una minúscula</string>
     <string name="requirement_number_symbol">Un número o símbolo especial</string>
+    <string name="forgot_password">¿Has olvidado la contraseña?</string>
+    <string name="reset_password_title">Recuperar contraseña</string>
+    <string name="reset_password_description">Introduce tu correo electrónico y te enviaremos un enlace para restablecer la contraseña.</string>
+    <string name="reset_password_sent_title">Correo enviado</string>
+    <string name="reset_password_sent_description">Si el correo %1$s está registrado, recibirás un enlace para restablecer la contraseña. Revisa también la carpeta de spam.</string>
+    <string name="reset_password_error">No se ha podido enviar el correo. Comprueba la dirección y vuelve a intentarlo.</string>
+    <string name="invalid_email_error">Introduce un correo electrónico válido</string>
+    <string name="send">Enviar</string>
+    <string name="sending">Enviando…</string>
+    <string name="cancel">Cancelar</string>
+    <string name="accept">Aceptar</string>
 </resources>

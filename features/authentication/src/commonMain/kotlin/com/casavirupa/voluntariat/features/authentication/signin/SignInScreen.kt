@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,6 +47,7 @@ import voluntariatcv.features.authentication.generated.resources.app_name_volunt
 import voluntariatcv.features.authentication.generated.resources.cv_logo
 import voluntariatcv.features.authentication.generated.resources.email_label
 import voluntariatcv.features.authentication.generated.resources.email_placeholder
+import voluntariatcv.features.authentication.generated.resources.forgot_password
 import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
 import voluntariatcv.features.authentication.generated.resources.ic_lock
 import voluntariatcv.features.authentication.generated.resources.ic_mail
@@ -62,6 +65,7 @@ internal fun SignInScreen(
 ) {
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
+    val forgotPassword by viewModel.forgotPassword.collectAsStateWithLifecycle()
 
     SignInContent(
         email = email,
@@ -69,7 +73,17 @@ internal fun SignInScreen(
         onEmailChanged = viewModel::onEmailChanged,
         onPasswordChanged = viewModel::onPasswordChanged,
         onClickLogIn = viewModel::onSignIn,
+        onClickForgotPassword = viewModel::onForgotPasswordClicked,
     )
+
+    if (forgotPassword.isVisible) {
+        ForgotPasswordDialog(
+            state = forgotPassword,
+            onEmailChanged = viewModel::onForgotPasswordEmailChanged,
+            onSend = viewModel::onSendPasswordResetEmail,
+            onDismiss = viewModel::closeForgotPasswordDialog,
+        )
+    }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val currentOnNavigateToCreatePassword by rememberUpdatedState(onNavigateToCreatePassword)
@@ -94,6 +108,7 @@ private fun SignInContent(
     onEmailChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
     onClickLogIn: () -> Unit,
+    onClickForgotPassword: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPassword by remember { mutableStateOf(false) }
@@ -116,11 +131,24 @@ private fun SignInContent(
             onTogglePasswordVisibility = { showPassword = !showPassword },
             modifier = Modifier.padding(top = 32.dp),
         )
+        TextButton(
+            onClick = onClickForgotPassword,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.End),
+        ) {
+            Text(
+                text = stringResource(Res.string.forgot_password),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
         CVButton(
             text = stringResource(Res.string.sign_in),
             onClick = onClickLogIn,
             modifier = Modifier
-                .padding(top = 32.dp)
+                .padding(top = 16.dp)
                 .fillMaxWidth(),
             icon = painterResource(Res.drawable.ic_arrow_right),
         )

@@ -46,6 +46,11 @@ class FirebaseAuthRepository(
             }
     }
 
+    override suspend fun sendPasswordResetEmail(email: String): Result<Unit> =
+        runCatching {
+            auth.sendPasswordResetEmail(email.trim())
+        }
+
     override suspend fun getCurrentUser(): Result<User> {
         val authUser = auth.currentUser
             ?: return Result.failure(NullPointerException("User authentication failed"))

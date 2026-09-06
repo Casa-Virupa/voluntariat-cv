@@ -8,6 +8,8 @@ interface AuthRepository {
 
     suspend fun updateNewPassword(actualPassword: String, newPassword: String): Result<Unit>
 
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit>
+
     suspend fun getCurrentUser(): Result<User>
 
     fun getCurrentUserFlow(): Flow<User>

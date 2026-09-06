@@ -20,6 +20,9 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
+    private val _forgotPassword = MutableStateFlow(ForgotPasswordUiState())
+    val forgotPassword: StateFlow<ForgotPasswordUiState> = _forgotPassword.asStateFlow()
+
     fun onEmailChanged(newEmail: String) {
         _email.update { newEmail }
     }
@@ -43,6 +46,41 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
         }
     }
 
+    fun onForgotPasswordClicked() {
+        _forgotPassword.update {
+            ForgotPasswordUiState(isVisible = true, email = email.value)
+        }
+    }
+
+    fun onForgotPasswordEmailChanged(newEmail: String) {
+        _forgotPassword.update { it.copy(email = newEmail, status = ForgotPasswordStatus.Idle) }
+    }
+
+    fun onSendPasswordResetEmail() {
+        val resetEmail = _forgotPassword.value.email.trim()
+        if (!isEmailValid(resetEmail)) {
+            _forgotPassword.update { it.copy(status = ForgotPasswordStatus.InvalidEmail) }
+            return
+        }
+        _forgotPassword.update { it.copy(status = ForgotPasswordStatus.Sending) }
+        viewModelScope.launch {
+            authRepository
+                .sendPasswordResetEmail(resetEmail)
+                .onSuccess {
+                    _forgotPassword.update { it.copy(status = ForgotPasswordStatus.Sent) }
+                }.onFailure { error ->
+                    Logger.e(error, LOG_TAG) {
+                        "Error sending password reset email: ${error.message}"
+                    }
+                    _forgotPassword.update { it.copy(status = ForgotPasswordStatus.Error) }
+                }
+        }
+    }
+
+    fun closeForgotPasswordDialog() {
+        _forgotPassword.update { ForgotPasswordUiState() }
+    }
+
     private fun navigateToCreatePassword() {
         _uiState.update { it.copy(navigateToCreatePassword = true, navigateToSchedule = false) }
     }
@@ -50,11 +88,29 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
     private fun navigateToSchedule() {
         _uiState.update { it.copy(navigateToSchedule = true, navigateToCreatePassword = false) }
     }
+
+    private fun isEmailValid(email: String) = EMAIL_REGEX.matches(email)
 }
 
 data class SignInUiState(
     val navigateToCreatePassword: Boolean = false,
     val navigateToSchedule: Boolean = false,
 )
+
+data class ForgotPasswordUiState(
+    val isVisible: Boolean = false,
+    val email: String = "",
+    val status: ForgotPasswordStatus = ForgotPasswordStatus.Idle,
+)
+
+enum class ForgotPasswordStatus {
+    Idle,
+    InvalidEmail,
+    Sending,
+    Sent,
+    Error,
+}
+
+private val EMAIL_REGEX = """^[^@\s]+@[^@\s]+\.[^@\s]+$""".toRegex()
 
 private const val LOG_TAG = "LogInViewModel"

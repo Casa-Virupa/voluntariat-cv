@@ -17,4 +17,15 @@
     <string name="requirement_8_characters">Mínim 8 caràcters</string>
     <string name="requirement_uppercase_lowercase">Una majúscula i una minúscula</string>
     <string name="requirement_number_symbol">Un número o símbol especial</string>
+    <string name="forgot_password">Has oblidat la contrasenya?</string>
+    <string name="reset_password_title">Recuperar contrasenya</string>
+    <string name="reset_password_description">Introdueix el teu correu electrònic i t\'enviarem un enllaç per restablir la contrasenya.</string>
+    <string name="reset_password_sent_title">Correu enviat</string>
+    <string name="reset_password_sent_description">Si el correu %1$s està registrat, hi rebràs un enllaç per restablir la contrasenya. Revisa també la carpeta de correu brossa.</string>
+    <string name="reset_password_error">No s\'ha pogut enviar el correu. Comprova l\'adreça i torna-ho a provar.</string>
+    <string name="invalid_email_error">Introdueix un correu electrònic vàlid</string>
+    <string name="send">Enviar</string>
+    <string name="sending">Enviant…</string>
+    <string name="cancel">Cancel·lar</string>
+    <string name="accept">Acceptar</string>
 </resources>
