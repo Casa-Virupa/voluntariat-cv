@@ -443,7 +443,7 @@ private fun CalendarEvent(
                 color = color,
                 shape = RoundedCornerShape(2.dp)
             ).padding(horizontal = 2.dp),
-        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, letterSpacing = 0.sp),
         color = MaterialTheme.colorScheme.onPrimary,
         overflow = TextOverflow.Ellipsis,
         maxLines = 1,
