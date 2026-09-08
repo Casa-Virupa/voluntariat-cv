@@ -48,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.rememberViewModelStoreOwner
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
+import com.casavirupa.voluntariat.features.calendar.utils.FILTERS_MODAL_KEY
 import com.casavirupa.voluntariat.features.calendar.utils.getName
 import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
@@ -105,7 +106,7 @@ internal fun CalendarScreen(
 
 
     if (showFilters) {
-        ComponentViewModelScope(key = "filters") {
+        ComponentViewModelScope(key = FILTERS_MODAL_KEY) {
             val filtersViewModel = koinViewModel<CalendarFiltersViewModel>()
 
             val currentFilter by filtersViewModel.currentFilter.collectAsStateWithLifecycle()
@@ -501,28 +502,6 @@ private fun ComponentViewModelScope(
         CompositionLocalProvider(LocalViewModelStoreOwner provides storeOwner) {
             content()
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CalendarFiltersModal(
-    allFilters: List<CalendarFilter>,
-    currentFilter: CalendarFilter,
-    onSelectFilter: (CalendarFilter) -> Unit,
-    onCloseFilters: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val sheetState = rememberAdaptiveSheetState()
-
-    AdaptiveBottomSheet(
-        onDismissRequest = onCloseFilters,
-        modifier = modifier,
-        adaptiveSheetState = sheetState,
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-    ) {
-        Text("Hola\nHola\nHola")
     }
 }
 

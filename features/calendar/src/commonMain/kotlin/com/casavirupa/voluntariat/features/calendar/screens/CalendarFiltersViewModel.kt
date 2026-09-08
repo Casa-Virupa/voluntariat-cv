@@ -2,6 +2,7 @@ package com.casavirupa.voluntariat.features.calendar.screens
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.casavirupa.voluntariat.features.calendar.utils.FILTERS_KEY
 import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 
 class CalendarFiltersViewModel(
@@ -19,9 +20,5 @@ class CalendarFiltersViewModel(
             return
         }
         savedStateHandle[FILTERS_KEY] = filter
-    }
-
-    companion object {
-        private const val FILTERS_KEY = "calendar_filters_key"
     }
 }
