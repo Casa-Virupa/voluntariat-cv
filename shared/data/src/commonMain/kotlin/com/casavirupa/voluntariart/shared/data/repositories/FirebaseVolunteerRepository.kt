@@ -172,10 +172,12 @@ private fun FirebaseShift.toDomainModelOrNull() =
         "morning" -> Shift.Morning(
             type = type.toDomainModel(),
             timeRange = timeRange.toDomainModel(),
+            online = online,
         )
         "afternoon" -> Shift.Afternoon(
             type = type.toDomainModel(),
             timeRange = timeRange.toDomainModel(),
+            online = online,
         )
         else -> null
     }
@@ -210,11 +212,13 @@ private fun Shift.toFirebaseModel() =
             shift = "morning",
             timeRange = timeRange.toFirebaseTimeRange(),
             type = type.toFirebaseModel(),
+            online = online,
         )
         is Shift.Afternoon -> FirebaseShift(
             shift = "afternoon",
             timeRange = timeRange.toFirebaseTimeRange(),
             type = type.toFirebaseModel(),
+            online = online,
         )
     }
 

@@ -27,4 +27,7 @@
     <string name="stay_period">Del %1$s al %2$s</string>
     <string name="stay_from">Desde el %1$s</string>
     <string name="stay_until">Hasta el %1$s</string>
+    <string name="certificates_title">Certificados</string>
+    <string name="food_handler_certificate">Carnet de manipulador de alimentos</string>
+    <string name="food_handler_certificate_hint">Actívalo si tienes el carnet en vigor</string>
 </resources>

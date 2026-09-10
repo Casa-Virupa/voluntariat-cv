@@ -77,6 +77,18 @@ class FirebaseAuthRepository(
             }
     }
 
+    override suspend fun setFoodHandlerCertificate(hasCertificate: Boolean): Result<Unit> =
+        runCatching {
+            val uid = auth.currentUser?.uid
+                ?: return Result.failure(NullPointerException("User authentication failed"))
+            firestore
+                .collection("users")
+                .document(uid)
+                .updateFields {
+                    "food_handler_certificate" to hasCertificate
+                }
+        }
+
     override suspend fun logOut(): Result<Unit> =
         runCatching {
             auth.signOut()
@@ -108,6 +120,7 @@ private fun FirestoreUser.toDomainModel(id: UserId, email: String): User =
         isMember = isMember,
         stayStart = stayStart.toLocalDateOrNull(),
         stayEnd = stayEnd.toLocalDateOrNull(),
+        hasFoodHandlerCertificate = hasFoodHandlerCertificate,
     )
 
 fun String?.toLocalDateOrNull(): LocalDate? =

@@ -167,6 +167,18 @@ class ProfileViewModel(
         }
     }
 
+    // Self-declared by the volunteer; the user snapshot flow refreshes the switch, so a
+    // failed write simply leaves it where it was.
+    fun setFoodHandlerCertificate(hasCertificate: Boolean) {
+        viewModelScope.launch {
+            authRepository
+                .setFoodHandlerCertificate(hasCertificate)
+                .onFailure {
+                    // TODO: Handle update error
+                }
+        }
+    }
+
     fun nextMonth() {
         _currentMonth.update { it.plus(DatePeriod(months = 1)) }
     }

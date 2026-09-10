@@ -62,10 +62,14 @@
     <string name="accept">Acceptar</string>
     <string name="special_activities">Activitats especials</string>
     <string name="not_available_volunteering_title">Voluntariat no disponible</string>
-    <string name="not_available_volunteering_description">Si vols fer voluntariat aquest dia, l'hauràs de fer en remot.</string>
+    <string name="not_available_volunteering_description">Aquest dia no hi ha voluntariat presencial. Si continues, el voluntariat quedarà registrat com a online i només podràs triar les àrees que ho permeten.</string>
     <string name="select_specific_area">Selecciona l'àrea específica</string>
     <string name="breakfast_next_day">Esmorzar de l\'endemà</string>
     <string name="filter_general_volunteering">Voluntariat general</string>
     <string name="filter_specific_volunteering">Voluntariat específic</string>
     <string name="filter_my_volunteering">Els meus voluntariats</string>
+    <string name="not_available_no_online_areas_description">Aquest dia no hi ha voluntariat presencial i cap de les teves àrees permet fer-lo online.</string>
+    <string name="online_shift_label">Faig el voluntariat online</string>
+    <string name="online_tag">Online</string>
+    <string name="sleep_notice_non_member">Si vols quedar-te a dormir, avisa-ho a l\'hostatgeria.</string>
 </resources>

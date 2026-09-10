@@ -19,6 +19,8 @@ data class FirebaseShift(
     val shift: String,
     @SerialName("time_range") val timeRange: FirebaseTimeRange,
     val type: FirebaseVolunteerType,
+    // Absent on bookings made before the online toggle existed → on-site
+    val online: Boolean = false,
 )
 
 @Serializable

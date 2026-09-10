@@ -14,5 +14,8 @@ interface AuthRepository {
 
     fun getCurrentUserFlow(): Flow<User>
 
+    /** The volunteer's own food handler certificate flag (`users/{uid}.food_handler_certificate`). */
+    suspend fun setFoodHandlerCertificate(hasCertificate: Boolean): Result<Unit>
+
     suspend fun logOut(): Result<Unit>
 }

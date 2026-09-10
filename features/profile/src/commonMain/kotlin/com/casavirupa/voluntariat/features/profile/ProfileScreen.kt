@@ -24,6 +24,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,9 +69,12 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.profile.generated.resources.Res
 import voluntariatcv.features.profile.generated.resources.casa_virupa
+import voluntariatcv.features.profile.generated.resources.certificates_title
 import voluntariatcv.features.profile.generated.resources.commitment_degree
 import voluntariatcv.features.profile.generated.resources.email
 import voluntariatcv.features.profile.generated.resources.first_quarter
+import voluntariatcv.features.profile.generated.resources.food_handler_certificate
+import voluntariatcv.features.profile.generated.resources.food_handler_certificate_hint
 import voluntariatcv.features.profile.generated.resources.fourth_quarter
 import voluntariatcv.features.profile.generated.resources.full_name
 import voluntariatcv.features.profile.generated.resources.general_volunteering
@@ -131,6 +135,7 @@ internal fun ProfileScreen(
             onPreviousMonth = viewModel::previousMonth,
             onNextQuarter = viewModel::nextQuarter,
             onPreviousQuarter = viewModel::previousQuarter,
+            onFoodHandlerCertificateChanged = viewModel::setFoodHandlerCertificate,
         )
     }
 
@@ -161,6 +166,7 @@ private fun ProfileContent(
     onNextQuarter: () -> Unit,
     onPreviousQuarter: () -> Unit,
     onLogOut: () -> Unit,
+    onFoodHandlerCertificateChanged: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = { Header(name = user.name) },
@@ -200,6 +206,12 @@ private fun ProfileContent(
                 )
                 SpecificAreas(specificAreas = user.specificAreas)
             }
+            // Food handler certificate: hidden until the Firestore rules allow the owner to
+            // write `food_handler_certificate`. Uncomment to release.
+            // Certificates(
+            //     hasFoodHandlerCertificate = user.hasFoodHandlerCertificate,
+            //     onFoodHandlerCertificateChanged = onFoodHandlerCertificateChanged,
+            // )
             if (user.isMember) {
                 MemberCV()
             }
@@ -680,6 +692,49 @@ private fun SpecificAreas(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+// The volunteer declares their own food handler certificate; coordination reads it in
+// the dashboard (kitchen shifts).
+@Composable
+private fun Certificates(
+    hasFoodHandlerCertificate: Boolean,
+    onFoodHandlerCertificateChanged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.certificates_title).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        ContentSurface {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SectionIcon(
+                    icon = painterResource(Res.drawable.ic_check),
+                    modifier = Modifier.padding(end = 16.dp),
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(Res.string.food_handler_certificate),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                    )
+                    Text(
+                        text = stringResource(Res.string.food_handler_certificate_hint),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = hasFoodHandlerCertificate,
+                    onCheckedChange = onFoodHandlerCertificateChanged,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
         }
     }

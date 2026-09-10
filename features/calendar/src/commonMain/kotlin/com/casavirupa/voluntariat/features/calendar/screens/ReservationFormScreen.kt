@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.viewmodels.AdditionalOption
 import com.casavirupa.voluntariat.features.calendar.viewmodels.FormVolunteerTypeUi
+import com.casavirupa.voluntariat.features.calendar.viewmodels.RemoteDialog
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftInfoSummary
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
@@ -71,10 +73,15 @@ import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_edit
+import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.morning_label
 import voluntariatcv.features.calendar.generated.resources.morning_shift_title
+import voluntariatcv.features.calendar.generated.resources.not_available_no_online_areas_description
 import voluntariatcv.features.calendar.generated.resources.not_available_volunteering_description
 import voluntariatcv.features.calendar.generated.resources.not_available_volunteering_title
+import voluntariatcv.features.calendar.generated.resources.online_shift_label
+import voluntariatcv.features.calendar.generated.resources.online_tag
+import voluntariatcv.features.calendar.generated.resources.sleep_notice_non_member
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.select_date
 import voluntariatcv.features.calendar.generated.resources.select_specific_area
@@ -106,7 +113,13 @@ internal fun ReservationFormScreen(
         .selectedMorningSpecificArea.collectAsStateWithLifecycle()
     val selectedAfternoonSpecificArea by viewModel
         .selectedAfternoonSpecificArea.collectAsStateWithLifecycle()
-    val showRemoteWorkDialog by viewModel.showRemoteWorkDialog.collectAsStateWithLifecycle()
+    val remoteDialog by viewModel.remoteDialog.collectAsStateWithLifecycle()
+    val showSleepNotice by viewModel.showSleepNotice.collectAsStateWithLifecycle()
+    val volunteerTypeOptions by viewModel.volunteerTypeOptions.collectAsStateWithLifecycle()
+    val showOnlineToggle by viewModel.showOnlineToggle.collectAsStateWithLifecycle()
+    val forcedOnline by viewModel.forcedOnline.collectAsStateWithLifecycle()
+    val morningOnline by viewModel.morningOnline.collectAsStateWithLifecycle()
+    val afternoonOnline by viewModel.afternoonOnline.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
@@ -115,6 +128,7 @@ internal fun ReservationFormScreen(
         shiftsInfo = shiftsInfo,
         optionsSelected = optionsSelected,
         options = options,
+        showSleepNotice = showSleepNotice,
         onDateChanged = viewModel::onDateChanged,
         onShiftSelected = viewModel::onShiftSelected,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
@@ -132,7 +146,12 @@ internal fun ReservationFormScreen(
             shownModal = shownModal,
             title = stringResource(Res.string.morning_shift_title),
             type = morningVolunteerType,
+            typeOptions = volunteerTypeOptions,
             onVolunteerTypeChanged = viewModel::onMorningVolunteerTypeChanged,
+            showOnlineToggle = showOnlineToggle,
+            online = morningOnline,
+            onlineLocked = forcedOnline,
+            onOnlineChanged = viewModel::onMorningOnlineChanged,
             timeRange = morningTimeRange,
             onDismiss = viewModel::dismissModal,
             onStartTimeChanged = viewModel::onMorningStartTimeChanged,
@@ -149,7 +168,12 @@ internal fun ReservationFormScreen(
             shownModal = shownModal,
             title = stringResource(Res.string.afternoon_shift_title),
             type = afternoonVolunteerType,
+            typeOptions = volunteerTypeOptions,
             onVolunteerTypeChanged = viewModel::onAfternoonVolunteerTypeChanged,
+            showOnlineToggle = showOnlineToggle,
+            online = afternoonOnline,
+            onlineLocked = forcedOnline,
+            onOnlineChanged = viewModel::onAfternoonOnlineChanged,
             timeRange = afternoonTimeRange,
             onDismiss = viewModel::dismissModal,
             onStartTimeChanged = viewModel::onAfternoonStartTimeChanged,
@@ -176,15 +200,24 @@ internal fun ReservationFormScreen(
         )
     }
 
-    if (showRemoteWorkDialog) {
-        WarningDialog(
-            onDismiss = viewModel::closeRemoteWorkDialog,
+    when (remoteDialog) {
+        RemoteDialog.CanGoOnline -> WarningDialog(
+            onDismiss = viewModel::closeRemoteDialog,
             title = stringResource(Res.string.not_available_volunteering_title),
             description = stringResource(Res.string.not_available_volunteering_description),
-            onCancel = viewModel::closeRemoteWorkDialog,
+            onCancel = viewModel::closeRemoteDialog,
             confirmText = stringResource(Res.string.accept),
             onConfirm = viewModel::workOnRemoteOnDate,
         )
+        RemoteDialog.NoOnlineAreas -> WarningDialog(
+            onDismiss = viewModel::closeRemoteDialog,
+            title = stringResource(Res.string.not_available_volunteering_title),
+            description = stringResource(Res.string.not_available_no_online_areas_description),
+            onCancel = viewModel::closeRemoteDialog,
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::closeRemoteDialog,
+        )
+        RemoteDialog.None -> {}
     }
 
     val currentOnNavBack by rememberUpdatedState(onNavBack)
@@ -204,6 +237,7 @@ private fun ReservationFormContent(
     shiftsInfo: List<ShiftInfoSummary>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
+    showSleepNotice: Boolean,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
@@ -239,6 +273,7 @@ private fun ReservationFormContent(
                 shiftsInfo = shiftsInfo,
                 optionsSelected = optionsSelected,
                 options = options,
+                showSleepNotice = showSleepNotice,
                 onDateChanged = onDateChanged,
                 onShiftSelected = onShiftSelected,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
@@ -264,6 +299,7 @@ private fun ReservationForm(
     shiftsInfo: List<ShiftInfoSummary>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
+    showSleepNotice: Boolean,
     onDateChanged: (LocalDate) -> Unit,
     onShiftSelected: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
@@ -300,7 +336,8 @@ private fun ReservationForm(
                 onEditInfo = onEditShiftInfo,
             )
         }
-        // Long-stay volunteers have no meals or nights to book, so the section is hidden
+        // Long-stay volunteers have no meals or nights to book, and forced-online days have
+        // none either, so the section is hidden
         if (options.isNotEmpty()) {
             FormSection(
                 title = stringResource(Res.string.additional_options),
@@ -311,6 +348,9 @@ private fun ReservationForm(
                     optionsSelected = optionsSelected,
                     onSelectOption = onAdditionalOptionSelected,
                 )
+                if (showSleepNotice) {
+                    SleepNotice(modifier = Modifier.padding(top = 12.dp))
+                }
             }
         }
         Spacer(Modifier.height(80.dp))
@@ -410,6 +450,29 @@ private fun AdditionalOptionsSelector(
     }
 }
 
+// Non-member habituals can't book a night in the app; they arrange it with the guesthouse.
+@Composable
+private fun SleepNotice(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_sleep_bed),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(Res.string.sleep_notice_non_member),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 @Composable
 private fun FormChip(
     text: String,
@@ -477,12 +540,23 @@ private fun ShiftScheduleInfo(
             } else {
                 "${stringResource(shift.type.text)} · ${shift.specificArea?.displayName().orEmpty()}"
             }
-            CVTag(
-                text = text,
-                icon = painterResource(shift.type.icon),
+            FlowRow(
                 modifier = Modifier.padding(top = 8.dp),
-                backgroundColor = shift.type.getBackgroundColor(),
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CVTag(
+                    text = text,
+                    icon = painterResource(shift.type.icon),
+                    backgroundColor = shift.type.getBackgroundColor(),
+                )
+                if (shift.online) {
+                    CVTag(
+                        text = stringResource(Res.string.online_tag),
+                        backgroundColor = OnlineTagColor,
+                    )
+                }
+            }
         }
         IconButton(onClick = onClickEditInfo) {
             Icon(
@@ -499,7 +573,12 @@ private fun ShiftModal(
     shownModal: ShownModal,
     title: String,
     type: FormVolunteerTypeUi,
+    typeOptions: List<FormVolunteerTypeUi>,
     onVolunteerTypeChanged: (FormVolunteerTypeUi) -> Unit,
+    showOnlineToggle: Boolean,
+    online: Boolean,
+    onlineLocked: Boolean,
+    onOnlineChanged: (Boolean) -> Unit,
     timeRange: TimeRange,
     onDismiss: () -> Unit,
     onStartTimeChanged: (LocalTime) -> Unit,
@@ -530,7 +609,7 @@ private fun ShiftModal(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                FormVolunteerTypeUi.entries.forEach { volunteerType ->
+                typeOptions.forEach { volunteerType ->
                     FormChip(
                         text = stringResource(volunteerType.text),
                         isSelected = type == volunteerType,
@@ -571,6 +650,25 @@ private fun ShiftModal(
                             )
                         }
                     }
+                }
+            }
+            // Only for specific shifts in an area that allows remote work; locked on when
+            // the day has no on-site volunteering
+            AnimatedVisibility(visible = showOnlineToggle) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.online_shift_label),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Switch(
+                        checked = online,
+                        onCheckedChange = onOnlineChanged,
+                        enabled = !onlineLocked,
+                    )
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -616,5 +714,7 @@ private fun FormVolunteerTypeUi.getBackgroundColor() =
         FormVolunteerTypeUi.Specific -> Color(0xFF9E816E)
     }
 
+
+private val OnlineTagColor = Color(0xFF7BA7BC)
 
 private const val DATE_PATTERN = "d MMMM yyyy"

@@ -61,15 +61,20 @@ data class VolunteerId(val value: String) {
 sealed class Shift {
     abstract val type: VolunteerType
     abstract val timeRange: TimeRange
+    // Done remotely rather than at the house. Only specific areas that allow it (see
+    // AreaConfig) can be online; general volunteering is always on-site.
+    abstract val online: Boolean
 
     data class Morning(
         override val type: VolunteerType,
         override val timeRange: TimeRange,
+        override val online: Boolean = false,
     ) : Shift()
 
     data class Afternoon(
         override val type: VolunteerType,
         override val timeRange: TimeRange,
+        override val online: Boolean = false,
     ) : Shift()
 
     fun getHour(): Int = HALF_JOURNEY

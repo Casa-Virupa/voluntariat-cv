@@ -17,7 +17,12 @@ data class User(
     // Long-stay volunteers only: the period they live at the house (set by the dashboard)
     val stayStart: LocalDate? = null,
     val stayEnd: LocalDate? = null,
+    // Food handler certificate ("carnet de manipulador d'aliments"); the volunteer sets it
+    // themselves from the profile screen. Defaults to false for users who never touched it.
+    val hasFoodHandlerCertificate: Boolean = false,
 ) {
+    val isHabitual: Boolean = volunteerType == UserVolunteerType.Habitual
+
     val isMitra: Boolean = volunteerType == UserVolunteerType.Mitra
 
     val isLongStay: Boolean = volunteerType == UserVolunteerType.LongStay

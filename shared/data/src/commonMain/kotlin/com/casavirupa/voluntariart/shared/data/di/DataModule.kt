@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariart.shared.data.di
 
+import com.casavirupa.voluntariart.shared.data.repositories.FirebaseAreaConfigRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseAuthRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseCommitmentRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseInterestLinksRepository
@@ -8,6 +9,7 @@ import com.casavirupa.voluntariart.shared.data.repositories.FirebasePriceReposit
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseUserRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseVolunteerRepository
 import com.casavirupa.voluntariart.shared.data.repositories.GoogleCalendarRepository
+import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
@@ -37,4 +39,5 @@ val dataModule = module {
     singleOf(::FirebaseCommitmentRepository) bind CommitmentRepository::class
     singleOf(::FirebaseLedgerRepository) bind LedgerRepository::class
     singleOf(::FirebaseInterestLinksRepository) bind InterestLinksRepository::class
+    singleOf(::FirebaseAreaConfigRepository) bind AreaConfigRepository::class
 }

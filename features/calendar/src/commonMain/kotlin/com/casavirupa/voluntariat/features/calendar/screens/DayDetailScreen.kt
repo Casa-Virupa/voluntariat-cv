@@ -53,6 +53,7 @@ import voluntariatcv.features.calendar.generated.resources.ic_delete
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.morning_shift_tag
+import voluntariatcv.features.calendar.generated.resources.online_tag
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon_sunday_with_puja
@@ -301,11 +302,22 @@ private fun VolunteerShiftItem(
             }
             when (val volunteerType = volunteer.type) {
                 is VolunteerTypeUi.Single -> {
-                    CVTag(
-                        text = volunteerType.type.displayName(),
-                        icon = volunteerType.type.getIcon(),
-                        backgroundColor = volunteerType.type.getBackgroundColor(),
-                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CVTag(
+                            text = volunteerType.type.displayName(),
+                            icon = volunteerType.type.getIcon(),
+                            backgroundColor = volunteerType.type.getBackgroundColor(),
+                        )
+                        if (volunteerType.online) {
+                            CVTag(
+                                text = stringResource(Res.string.online_tag),
+                                backgroundColor = OnlineTagColor,
+                            )
+                        }
+                    }
                 }
                 is VolunteerTypeUi.AllDay -> {
                     FlowRow(
@@ -315,7 +327,8 @@ private fun VolunteerShiftItem(
                         CVTag(
                             text = stringResource(
                                 Res.string.morning_shift_tag,
-                                volunteerType.morning.displayName(),
+                                volunteerType.morning.displayName()
+                                    .withOnlineSuffix(volunteerType.morningOnline),
                             ),
                             icon = painterResource(Res.drawable.ic_sun),
                             backgroundColor = volunteerType.morning.getBackgroundColor(),
@@ -323,7 +336,8 @@ private fun VolunteerShiftItem(
                         CVTag(
                             text = stringResource(
                                 Res.string.afternoon_shift_tag,
-                                volunteerType.afternoon.displayName(),
+                                volunteerType.afternoon.displayName()
+                                    .withOnlineSuffix(volunteerType.afternoonOnline),
                             ),
                             icon = painterResource(Res.drawable.ic_afternoon),
                             backgroundColor = volunteerType.afternoon.getBackgroundColor(),
@@ -376,3 +390,9 @@ private const val DAY_MONTH_PATTERN = "dd/MM"
 private const val HOUR_PATTERN = "HH:mm"
 
 private val BorderColor = Color(0xFFE9E8E7)
+
+@Composable
+private fun String.withOnlineSuffix(online: Boolean): String =
+    if (online) "$this · ${stringResource(Res.string.online_tag)}" else this
+
+private val OnlineTagColor = Color(0xFF7BA7BC)

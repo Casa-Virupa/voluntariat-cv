@@ -30,4 +30,5 @@ private fun FirestoreUser.toDomainModel(docId: String) =
         isMember = isMember,
         stayStart = stayStart.toLocalDateOrNull(),
         stayEnd = stayEnd.toLocalDateOrNull(),
+        hasFoodHandlerCertificate = hasFoodHandlerCertificate,
     )

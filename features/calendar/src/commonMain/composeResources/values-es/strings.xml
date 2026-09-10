@@ -62,10 +62,14 @@
     <string name="accept">Aceptar</string>
     <string name="special_activities">Actividades especiales</string>
     <string name="not_available_volunteering_title">Voluntariado no disponible</string>
-    <string name="not_available_volunteering_description">Si quieres hacer voluntariado este día, tendrás que hacerlo en remoto.</string>
+    <string name="not_available_volunteering_description">Este día no hay voluntariado presencial. Si continúas, el voluntariado quedará registrado como online y solo podrás elegir las áreas que lo permiten.</string>
     <string name="select_specific_area">Selecciona el área específica</string>
     <string name="breakfast_next_day">Desayuno del día siguiente</string>
     <string name="filter_general_volunteering">Voluntariado general</string>
     <string name="filter_specific_volunteering">Voluntariado específico</string>
     <string name="filter_my_volunteering">Mis voluntariados</string>
+    <string name="not_available_no_online_areas_description">Este día no hay voluntariado presencial y ninguna de tus áreas permite hacerlo online.</string>
+    <string name="online_shift_label">Hago el voluntariado online</string>
+    <string name="online_tag">Online</string>
+    <string name="sleep_notice_non_member">Si quieres quedarte a dormir, avísalo en la hospedería.</string>
 </resources>

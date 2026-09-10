@@ -27,4 +27,7 @@
     <string name="stay_period">From %1$s to %2$s</string>
     <string name="stay_from">From %1$s</string>
     <string name="stay_until">Until %1$s</string>
+    <string name="certificates_title">Certificates</string>
+    <string name="food_handler_certificate">Food handler certificate</string>
+    <string name="food_handler_certificate_hint">Turn it on if you hold a valid certificate</string>
 </resources>

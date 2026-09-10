@@ -62,10 +62,14 @@
     <string name="accept">Accept</string>
     <string name="special_activities">Special activities</string>
     <string name="not_available_volunteering_title">Volunteering not available</string>
-    <string name="not_available_volunteering_description">If you want to volunteer on this day, you must do it remotely.</string>
+    <string name="not_available_volunteering_description">There is no on-site volunteering on this day. If you continue, your volunteering will be recorded as online and you will only be able to choose areas that allow it.</string>
     <string name="select_specific_area">Select the specific area</string>
     <string name="breakfast_next_day">Breakfast the next morning</string>
     <string name="filter_general_volunteering">General volunteering</string>
     <string name="filter_specific_volunteering">Specific volunteering</string>
     <string name="filter_my_volunteering">My volunteering</string>
+    <string name="not_available_no_online_areas_description">There is no on-site volunteering on this day, and none of your areas allows doing it online.</string>
+    <string name="online_shift_label">I\'m volunteering online</string>
+    <string name="online_tag">Online</string>
+    <string name="sleep_notice_non_member">If you want to stay overnight, let the guesthouse know.</string>
 </resources>

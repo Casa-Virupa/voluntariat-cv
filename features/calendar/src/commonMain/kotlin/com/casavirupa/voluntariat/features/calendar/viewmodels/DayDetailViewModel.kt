@@ -186,11 +186,16 @@ data class VolunteerItemUi(
 )
 
 sealed class VolunteerTypeUi {
-    data class Single(val type: VolunteerType) : VolunteerTypeUi()
+    data class Single(
+        val type: VolunteerType,
+        val online: Boolean = false,
+    ) : VolunteerTypeUi()
 
     data class AllDay(
         val morning: VolunteerType,
         val afternoon: VolunteerType,
+        val morningOnline: Boolean = false,
+        val afternoonOnline: Boolean = false,
     ) : VolunteerTypeUi()
 }
 
@@ -211,14 +216,19 @@ private fun Volunteer.toUiModel(name: String, viewer: User?): VolunteerItemUi {
     )
 }
 
-private fun buildAllDayVolunteerType(shifts: List<Shift>) =
-    VolunteerTypeUi.AllDay(
-        morning = shifts.first { it.timeRange.end <= LocalTime(14, 0) }.type,
-        afternoon = shifts.first { it.timeRange.end > LocalTime(14, 0) }.type,
+private fun buildAllDayVolunteerType(shifts: List<Shift>): VolunteerTypeUi.AllDay {
+    val morning = shifts.first { it.timeRange.end <= LocalTime(14, 0) }
+    val afternoon = shifts.first { it.timeRange.end > LocalTime(14, 0) }
+    return VolunteerTypeUi.AllDay(
+        morning = morning.type,
+        afternoon = afternoon.type,
+        morningOnline = morning.online,
+        afternoonOnline = afternoon.online,
     )
+}
 
 private fun buildSingleVolunteerType(volunteerShift: Shift) =
-    VolunteerTypeUi.Single(type = volunteerShift.type)
+    VolunteerTypeUi.Single(type = volunteerShift.type, online = volunteerShift.online)
 
 private fun List<Shift>.formatSchedule() =
     sortedBy { it.timeRange.start }

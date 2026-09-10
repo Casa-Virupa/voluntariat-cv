@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.casavirupa.voluntariat.shared.core.utils.Throttler
+import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.configuration.AreaConfig
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -53,8 +55,31 @@ class ReservationFormViewModel(
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
+    private val areaConfigRepository: AreaConfigRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
+
+    // Dashboard-published list of areas whose volunteering may be done online.
+    val areaConfig: StateFlow<AreaConfig> =
+        areaConfigRepository
+            .getAreaConfig()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = AreaConfig.Empty,
+            )
+
+    // True once the user accepted to volunteer on a day with no on-site volunteering
+    // ("NO VOLUNTARIAT" in the Google Calendar): every shift is online, only online-capable
+    // areas can be chosen and there are no meals or nights to book.
+    private val _forcedOnline = MutableStateFlow(false)
+    val forcedOnline: StateFlow<Boolean> = _forcedOnline.asStateFlow()
+
+    private val _morningOnline = MutableStateFlow(false)
+    val morningOnline: StateFlow<Boolean> = _morningOnline.asStateFlow()
+
+    private val _afternoonOnline = MutableStateFlow(false)
+    val afternoonOnline: StateFlow<Boolean> = _afternoonOnline.asStateFlow()
 
     private val _uiState = MutableStateFlow(ReservationFormUiState())
     val uiState: StateFlow<ReservationFormUiState> = _uiState.asStateFlow()
@@ -75,8 +100,9 @@ class ReservationFormViewModel(
         combine(
             authRepository.getCurrentUserFlow(),
             _additionalOptionsSelected,
-        ) { user, selected ->
-            if (!user.paysForServices) return@combine emptyList()
+            _forcedOnline,
+        ) { user, selected, forcedOnline ->
+            if (!user.paysForServices || forcedOnline) return@combine emptyList()
             AdditionalOption.entries.filter { option ->
                 when (option) {
                     AdditionalOption.Sleep -> user.isMember
@@ -90,6 +116,20 @@ class ReservationFormViewModel(
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = emptyList(),
             )
+
+    // Non-member habituals can't book a night from the app: they have to arrange it with
+    // the guesthouse ("hostatgeria") directly, so the form tells them so.
+    val showSleepNotice: StateFlow<Boolean> =
+        combine(
+            authRepository.getCurrentUserFlow(),
+            _forcedOnline,
+        ) { user, forcedOnline ->
+            user.paysForServices && user.isHabitual && !user.isMember && !forcedOnline
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = false,
+        )
 
     private val _shownModal = MutableStateFlow(ShownModal.None)
     val shownModal: StateFlow<ShownModal> = _shownModal.asStateFlow()
@@ -114,14 +154,30 @@ class ReservationFormViewModel(
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
         _showExistingVolunteerDialogError.asStateFlow()
 
+    // The areas the user may pick for a specific shift: all their areas normally, only the
+    // online-capable ones on a day without on-site volunteering.
     val specificAreas: StateFlow<List<SpecificArea>> =
-        authRepository
-            .getCurrentUserFlow()
-            .map { it.specificAreas }
-            .stateIn(
+        combine(
+            authRepository.getCurrentUserFlow(),
+            areaConfig,
+            _forcedOnline,
+        ) { user, config, forcedOnline ->
+            if (forcedOnline) config.onlineAreasOf(user) else user.specificAreas
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyList(),
+        )
+
+    // General (on-site) volunteering isn't offered on a forced-online day.
+    val volunteerTypeOptions: StateFlow<List<FormVolunteerTypeUi>> =
+        _forcedOnline
+            .map { forcedOnline ->
+                if (forcedOnline) listOf(FormVolunteerTypeUi.Specific) else FormVolunteerTypeUi.entries
+            }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = emptyList(),
+                initialValue = FormVolunteerTypeUi.entries,
             )
 
     val showSpecificAreaSelector: StateFlow<Boolean> =
@@ -152,20 +208,71 @@ class ReservationFormViewModel(
     val selectedAfternoonSpecificArea: StateFlow<SpecificArea?> =
         _selectedAfternoonSpecificArea.asStateFlow()
 
-    private val _showRemoteWorkDialog = MutableStateFlow(false)
-    val showRemoteWorkDialog: StateFlow<Boolean> = _showRemoteWorkDialog.asStateFlow()
+    // Type and area of the shift whose modal is open, or null when none is.
+    private val openShiftSelection: StateFlow<Pair<FormVolunteerTypeUi, SpecificArea?>?> =
+        combine(
+            shownModal,
+            morningVolunteerType,
+            afternoonVolunteerType,
+            selectedMorningSpecificArea,
+            selectedAfternoonSpecificArea,
+        ) { modal, morningType, afternoonType, morningArea, afternoonArea ->
+            when (modal) {
+                ShownModal.MorningShift -> morningType to morningArea
+                ShownModal.AfternoonShift -> afternoonType to afternoonArea
+                ShownModal.None -> null
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
+        )
+
+    // The online switch appears only for a specific shift whose area allows remote work.
+    // With a single selectable area there is no area picker, so that area is the one used.
+    val showOnlineToggle: StateFlow<Boolean> =
+        combine(
+            openShiftSelection,
+            specificAreas,
+            areaConfig,
+        ) { selection, areas, config ->
+            selection != null &&
+                selection.first == FormVolunteerTypeUi.Specific &&
+                config.allowsOnline(selection.second ?: areas.singleOrNull())
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = false,
+        )
+
+    private val _remoteDialog = MutableStateFlow(RemoteDialog.None)
+    val remoteDialog: StateFlow<RemoteDialog> = _remoteDialog.asStateFlow()
 
     private var temporalDate: LocalDate? = null
 
     fun onDateChanged(date: LocalDate) {
         viewModelScope.launch {
             if (isVolunteeringAvailableOn(date)) {
+                _forcedOnline.update { false }
                 applySelectedDate(date)
             } else {
                 temporalDate = date
-                _showRemoteWorkDialog.update { true }
+                _remoteDialog.update {
+                    if (canWorkOnlineOnUnavailableDay()) {
+                        RemoteDialog.CanGoOnline
+                    } else {
+                        RemoteDialog.NoOnlineAreas
+                    }
+                }
             }
         }
+    }
+
+    private suspend fun canWorkOnlineOnUnavailableDay(): Boolean {
+        val user = authRepository.getCurrentUser().getOrNull() ?: return false
+        val config = runCatching { areaConfigRepository.getAreaConfig().first() }
+            .getOrDefault(AreaConfig.Empty)
+        return config.onlineAreasOf(user).isNotEmpty()
     }
 
     /**
@@ -184,10 +291,26 @@ class ReservationFormViewModel(
             true
         }
 
+    /**
+     * The user accepted to volunteer online on a day without on-site volunteering: every
+     * shift becomes online and specific, and anything already configured for the previous
+     * date (shifts, meals, nights) is dropped because it may not be allowed any more.
+     */
     fun workOnRemoteOnDate() {
-        temporalDate?.let { applySelectedDate(it) }
-        temporalDate = null
-        closeRemoteWorkDialog()
+        temporalDate?.let { date ->
+            _forcedOnline.update { true }
+            _shifts.update { emptyList() }
+            _shiftsInfo.update { emptyList() }
+            _additionalOptionsSelected.update { emptyList() }
+            _morningVolunteerType.update { FormVolunteerTypeUi.Specific }
+            _afternoonVolunteerType.update { FormVolunteerTypeUi.Specific }
+            _morningOnline.update { true }
+            _afternoonOnline.update { true }
+            _selectedMorningSpecificArea.update { null }
+            _selectedAfternoonSpecificArea.update { null }
+            applySelectedDate(date)
+        }
+        closeRemoteDialog()
     }
 
     private fun applySelectedDate(date: LocalDate) {
@@ -273,10 +396,21 @@ class ReservationFormViewModel(
 
     fun onMorningVolunteerTypeChanged(type: FormVolunteerTypeUi) {
         _morningVolunteerType.update { type }
+        // General volunteering is always on-site
+        if (type == FormVolunteerTypeUi.General) _morningOnline.update { false }
     }
 
     fun onAfternoonVolunteerTypeChanged(type: FormVolunteerTypeUi) {
         _afternoonVolunteerType.update { type }
+        if (type == FormVolunteerTypeUi.General) _afternoonOnline.update { false }
+    }
+
+    fun onMorningOnlineChanged(online: Boolean) {
+        if (!_forcedOnline.value) _morningOnline.update { online }
+    }
+
+    fun onAfternoonOnlineChanged(online: Boolean) {
+        if (!_forcedOnline.value) _afternoonOnline.update { online }
     }
 
     fun onMorningStartTimeChanged(time: LocalTime) {
@@ -297,10 +431,13 @@ class ReservationFormViewModel(
 
     fun onMorningSpecificAreaChanged(specificArea: SpecificArea) {
         _selectedMorningSpecificArea.update { specificArea }
+        // Switching to an area that can't be worked remotely drops the online choice
+        if (!areaConfig.value.allowsOnline(specificArea)) _morningOnline.update { false }
     }
 
     fun onAfternoonSpecificAreaChanged(specificArea: SpecificArea) {
         _selectedAfternoonSpecificArea.update { specificArea }
+        if (!areaConfig.value.allowsOnline(specificArea)) _afternoonOnline.update { false }
     }
 
     fun onConfirmShift() {
@@ -333,11 +470,10 @@ class ReservationFormViewModel(
                     _showExistingVolunteerDialogError.update { true }
                     return@launch
                 }
-                val specificArea = authRepository
-                    .getCurrentUser()
-                    .getOrNull()
-                    ?.specificAreas
-                    ?.first() ?: return@launch
+                // Fallback area for a specific shift when there was no picker (a single
+                // selectable area). On a forced-online day this is the first ONLINE area,
+                // not the user's first area — which may not allow remote work.
+                val specificArea = specificAreas.value.firstOrNull() ?: return@launch
                 val volunteer = buildReservation(specificArea)
                 authRepository
                     .getCurrentUser()
@@ -366,15 +502,28 @@ class ReservationFormViewModel(
         _showExistingVolunteerDialogError.update { false }
     }
 
-    fun closeRemoteWorkDialog() {
-        _showRemoteWorkDialog.update { false }
+    fun closeRemoteDialog() {
+        _remoteDialog.update { RemoteDialog.None }
         temporalDate = null
     }
 
     private fun formInputsAreValid() =
         date.value != null &&
                 shifts.value.isNotEmpty() &&
-                (morningVolunteerTypeIsValid() || afternoonVolunteerTypeIsValid())
+                (morningVolunteerTypeIsValid() || afternoonVolunteerTypeIsValid()) &&
+                onlineConstraintsAreValid()
+
+    // On a forced-online day every confirmed shift must be specific, in an online area
+    private fun onlineConstraintsAreValid(): Boolean {
+        if (!_forcedOnline.value) return true
+        val config = areaConfig.value
+        val fallbackArea = specificAreas.value.firstOrNull()
+        val confirmed = shiftsInfo.value
+        return confirmed.isNotEmpty() && confirmed.all { info ->
+            info.type == FormVolunteerTypeUi.Specific &&
+                config.allowsOnline(info.specificArea ?: fallbackArea)
+        }
+    }
 
     private fun morningVolunteerTypeIsValid() =
        (morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
@@ -400,12 +549,26 @@ class ReservationFormViewModel(
         _uiState.update { it.copy(isFormSavedSuccessfully = true) }
     }
 
+    // A shift is online only if the user asked for it AND it is a specific shift in an area
+    // that allows remote work; the toggle is hidden otherwise, but the state is re-checked
+    // here so a stale value can never be persisted.
+    private fun morningIsOnline(fallbackArea: SpecificArea? = specificAreas.value.singleOrNull()) =
+        _morningOnline.value &&
+            morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
+            areaConfig.value.allowsOnline(selectedMorningSpecificArea.value ?: fallbackArea)
+
+    private fun afternoonIsOnline(fallbackArea: SpecificArea? = specificAreas.value.singleOrNull()) =
+        _afternoonOnline.value &&
+            afternoonVolunteerType.value == FormVolunteerTypeUi.Specific &&
+            areaConfig.value.allowsOnline(selectedAfternoonSpecificArea.value ?: fallbackArea)
+
     private fun addMorningShiftInfo(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
         val newShift = ShiftInfoSummary(
             shift = ShiftUi.Morning,
             timeRange = morningTimeRange.value,
             type = morningVolunteerType.value,
             specificArea = selectedMorningSpecificArea.value,
+            online = morningIsOnline(),
         )
         if (shiftsInfo.isEmpty()) {
             return listOf(newShift)
@@ -425,6 +588,7 @@ class ReservationFormViewModel(
             timeRange = afternoonTimeRange.value,
             type = afternoonVolunteerType.value,
             specificArea = selectedAfternoonSpecificArea.value,
+            online = afternoonIsOnline(),
         )
         if (shiftsInfo.isEmpty()) {
             return listOf(newShift)
@@ -463,45 +627,35 @@ class ReservationFormViewModel(
         when {
             containsAll(ShiftUi.entries.toList()) -> this.map {
                 when (it) {
-                    ShiftUi.Morning -> {
-                        val specificArea = selectedMorningSpecificArea.value ?: userSpecificArea
-                        Shift.Morning(
-                            type = morningVolunteerType.value.toDomainModel(specificArea),
-                            timeRange = morningTimeRange.value,
-                        )
-                    }
-                    ShiftUi.Afternoon -> {
-                        val specificArea = selectedAfternoonSpecificArea.value ?: userSpecificArea
-                        Shift.Afternoon(
-                            type = afternoonVolunteerType.value.toDomainModel(specificArea),
-                            timeRange = afternoonTimeRange.value,
-                        )
-                    }
+                    ShiftUi.Morning -> morningShift(userSpecificArea)
+                    ShiftUi.Afternoon -> afternoonShift(userSpecificArea)
                 }
             }
             else -> {
                 when (this.first()) {
-                    ShiftUi.Morning -> {
-                        val specificArea = selectedMorningSpecificArea.value ?: userSpecificArea
-                        listOf(
-                            Shift.Morning(
-                                type = morningVolunteerType.value.toDomainModel(specificArea),
-                                timeRange = morningTimeRange.value,
-                            )
-                        )
-                    }
-                    ShiftUi.Afternoon -> {
-                        val specificArea = selectedAfternoonSpecificArea.value ?: userSpecificArea
-                        listOf(
-                            Shift.Afternoon(
-                                type = afternoonVolunteerType.value.toDomainModel(specificArea),
-                                timeRange = afternoonTimeRange.value,
-                            )
-                        )
-                    }
+                    ShiftUi.Morning -> listOf(morningShift(userSpecificArea))
+                    ShiftUi.Afternoon -> listOf(afternoonShift(userSpecificArea))
                 }
             }
         }
+
+    private fun morningShift(fallbackArea: SpecificArea): Shift.Morning {
+        val specificArea = selectedMorningSpecificArea.value ?: fallbackArea
+        return Shift.Morning(
+            type = morningVolunteerType.value.toDomainModel(specificArea),
+            timeRange = morningTimeRange.value,
+            online = morningIsOnline(fallbackArea),
+        )
+    }
+
+    private fun afternoonShift(fallbackArea: SpecificArea): Shift.Afternoon {
+        val specificArea = selectedAfternoonSpecificArea.value ?: fallbackArea
+        return Shift.Afternoon(
+            type = afternoonVolunteerType.value.toDomainModel(specificArea),
+            timeRange = afternoonTimeRange.value,
+            online = afternoonIsOnline(fallbackArea),
+        )
+    }
 
     private fun FormVolunteerTypeUi.toDomainModel(specificArea: SpecificArea? = null) =
         when (this) {
@@ -588,11 +742,21 @@ enum class ShownModal {
     None,
 }
 
+/** Dialog shown when the chosen day has no on-site volunteering ("NO VOLUNTARIAT"). */
+enum class RemoteDialog {
+    None,
+    /** The user has at least one online-capable area: they may continue, online only. */
+    CanGoOnline,
+    /** None of the user's areas allows remote work: the day can't be booked. */
+    NoOnlineAreas,
+}
+
 data class ShiftInfoSummary(
     val shift: ShiftUi,
     val timeRange: TimeRange,
     val type: FormVolunteerTypeUi,
     val specificArea: SpecificArea? = null,
+    val online: Boolean = false,
 )
 
 private const val LOG_TAG = "ReservationFormViewModel"

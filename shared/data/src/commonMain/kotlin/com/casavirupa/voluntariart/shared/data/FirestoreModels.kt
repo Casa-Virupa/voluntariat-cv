@@ -16,4 +16,6 @@ data class FirestoreUser(
     // ISO yyyy-MM-dd, long-stay volunteers only
     @SerialName("stay_start") val stayStart: String? = null,
     @SerialName("stay_end") val stayEnd: String? = null,
+    // Set by the volunteer from the app's profile screen; absent on older documents
+    @SerialName("food_handler_certificate") val hasFoodHandlerCertificate: Boolean = false,
 )
