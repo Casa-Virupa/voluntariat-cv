@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -55,7 +56,10 @@ import voluntariatcv.features.authentication.generated.resources.ic_visibility
 import voluntariatcv.features.authentication.generated.resources.ic_visibility_off
 import voluntariatcv.features.authentication.generated.resources.password_label
 import voluntariatcv.features.authentication.generated.resources.password_placeholder
+import voluntariatcv.features.authentication.generated.resources.accept
 import voluntariatcv.features.authentication.generated.resources.sign_in
+import voluntariatcv.features.authentication.generated.resources.sign_in_error
+import voluntariatcv.features.authentication.generated.resources.sign_in_error_description
 
 @Composable
 internal fun SignInScreen(
@@ -66,6 +70,8 @@ internal fun SignInScreen(
     val email by viewModel.email.collectAsStateWithLifecycle()
     val password by viewModel.password.collectAsStateWithLifecycle()
     val forgotPassword by viewModel.forgotPassword.collectAsStateWithLifecycle()
+    val showCredentialsErrorDialog by viewModel
+        .showCredentialsErrorDialog.collectAsStateWithLifecycle()
 
     SignInContent(
         email = email,
@@ -82,6 +88,16 @@ internal fun SignInScreen(
             onEmailChanged = viewModel::onForgotPasswordEmailChanged,
             onSend = viewModel::onSendPasswordResetEmail,
             onDismiss = viewModel::closeForgotPasswordDialog,
+        )
+    }
+
+    if (showCredentialsErrorDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closeCredentialsErrorDialog,
+            title = stringResource(Res.string.sign_in_error),
+            description = stringResource(Res.string.sign_in_error_description),
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::closeCredentialsErrorDialog,
         )
     }
 

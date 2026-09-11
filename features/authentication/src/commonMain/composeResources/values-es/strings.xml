@@ -28,4 +28,6 @@
     <string name="sending">Enviando…</string>
     <string name="cancel">Cancelar</string>
     <string name="accept">Aceptar</string>
+    <string name="sign_in_error">Error al iniciar sesión</string>
+    <string name="sign_in_error_description">Comprueba que las credenciales son correctas o si tu conexión es estable</string>
 </resources>

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -17,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter.Companion.tint
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -31,10 +29,10 @@ fun WarningDialog(
     onDismiss: () -> Unit,
     title: String,
     description: String,
-    onCancel: () -> Unit,
     confirmText: String,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismiss,
@@ -84,11 +82,13 @@ fun WarningDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CVOutlinedButton(
-                        text = stringResource(Res.string.cancel),
-                        onClick = onCancel,
-                        modifier = Modifier.weight(1f),
-                    )
+                    onCancel?.let {
+                        CVOutlinedButton(
+                            text = stringResource(Res.string.cancel),
+                            onClick = it,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                     CVButton(
                         text = confirmText,
                         onClick = onConfirm,
