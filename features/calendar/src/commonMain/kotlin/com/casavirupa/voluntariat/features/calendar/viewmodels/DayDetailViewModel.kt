@@ -182,7 +182,7 @@ data class VolunteerItemUi(
     val type: VolunteerTypeUi,
     val meals: List<Meal>,
     val sleep: Boolean,
-    val canBeDeleted: Boolean,
+    val canBeEdited: Boolean,
 )
 
 sealed class VolunteerTypeUi {
@@ -212,7 +212,7 @@ private fun Volunteer.toUiModel(name: String, viewer: User?): VolunteerItemUi {
         },
         meals = if (showsServices) meals else emptyList(),
         sleep = showsServices && sleep,
-        canBeDeleted = viewer != null && isOwnedBy(viewer),
+        canBeEdited = viewer != null && isOwnedBy(viewer),
     )
 }
 

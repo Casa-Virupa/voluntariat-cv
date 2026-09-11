@@ -50,6 +50,7 @@ import voluntariatcv.features.calendar.generated.resources.delete_volunteering_t
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
+import voluntariatcv.features.calendar.generated.resources.ic_edit
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.ic_sun
 import voluntariatcv.features.calendar.generated.resources.morning_shift_tag
@@ -273,75 +274,30 @@ private fun VolunteerShiftItem(
                 .fillMaxWidth()
         ) {
             Row {
-                FlowRow(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = volunteer.name,
-                        modifier = Modifier.alignByBaseline(),
-                        style = MaterialTheme.typography.titleLarge,
+                Column(modifier = Modifier.weight(1f)) {
+                    VolunteerTitleAndSchedule(
+                        name = volunteer.name,
+                        schedule = volunteer.schedule,
                     )
-                    Text(
-                        text = volunteer.schedule,
-                        modifier = Modifier.alignByBaseline(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    VolunteerTypeTags(
+                        type = volunteer.type,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
-                if (volunteer.canBeDeleted) {
-                    IconButton(onClick = onClickDelete) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_delete),
-                            contentDescription = null,
-                        )
-                    }
-                }
-            }
-            when (val volunteerType = volunteer.type) {
-                is VolunteerTypeUi.Single -> {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CVTag(
-                            text = volunteerType.type.displayName(),
-                            icon = volunteerType.type.getIcon(),
-                            backgroundColor = volunteerType.type.getBackgroundColor(),
-                        )
-                        if (volunteerType.online) {
-                            CVTag(
-                                text = stringResource(Res.string.online_tag),
-                                backgroundColor = OnlineTagColor,
+                if (volunteer.canBeEdited) {
+                    Column {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_edit),
+                                contentDescription = null,
                             )
                         }
-                    }
-                }
-                is VolunteerTypeUi.AllDay -> {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CVTag(
-                            text = stringResource(
-                                Res.string.morning_shift_tag,
-                                volunteerType.morning.displayName()
-                                    .withOnlineSuffix(volunteerType.morningOnline),
-                            ),
-                            icon = painterResource(Res.drawable.ic_sun),
-                            backgroundColor = volunteerType.morning.getBackgroundColor(),
-                        )
-                        CVTag(
-                            text = stringResource(
-                                Res.string.afternoon_shift_tag,
-                                volunteerType.afternoon.displayName()
-                                    .withOnlineSuffix(volunteerType.afternoonOnline),
-                            ),
-                            icon = painterResource(Res.drawable.ic_afternoon),
-                            backgroundColor = volunteerType.afternoon.getBackgroundColor(),
-                        )
+                        IconButton(onClick = onClickDelete) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_delete),
+                                contentDescription = null,
+                            )
+                        }
                     }
                 }
             }
@@ -368,6 +324,82 @@ private fun VolunteerShiftItem(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VolunteerTitleAndSchedule(
+    name: String,
+    schedule: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Text(
+            text = schedule,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun VolunteerTypeTags(
+    type: VolunteerTypeUi,
+    modifier: Modifier = Modifier,
+) {
+    when (type) {
+        is VolunteerTypeUi.Single -> {
+            FlowRow(
+                modifier = modifier,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CVTag(
+                    text = type.type.displayName(),
+                    icon = type.type.getIcon(),
+                    backgroundColor = type.type.getBackgroundColor(),
+                )
+                if (type.online) {
+                    CVTag(
+                        text = stringResource(Res.string.online_tag),
+                        backgroundColor = OnlineTagColor,
+                    )
+                }
+            }
+        }
+        is VolunteerTypeUi.AllDay -> {
+            FlowRow(
+                modifier = modifier,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CVTag(
+                    text = stringResource(
+                        Res.string.morning_shift_tag,
+                        type.morning.displayName()
+                            .withOnlineSuffix(type.morningOnline),
+                    ),
+                    icon = painterResource(Res.drawable.ic_sun),
+                    backgroundColor = type.morning.getBackgroundColor(),
+                )
+                CVTag(
+                    text = stringResource(
+                        Res.string.afternoon_shift_tag,
+                        type.afternoon.displayName()
+                            .withOnlineSuffix(type.afternoonOnline),
+                    ),
+                    icon = painterResource(Res.drawable.ic_afternoon),
+                    backgroundColor = type.afternoon.getBackgroundColor(),
+                )
             }
         }
     }
