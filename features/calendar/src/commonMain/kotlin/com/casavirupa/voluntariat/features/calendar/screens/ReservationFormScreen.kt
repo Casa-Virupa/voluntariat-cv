@@ -58,7 +58,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.calendar.generated.resources.Res
 import voluntariatcv.features.calendar.generated.resources.accept
 import voluntariatcv.features.calendar.generated.resources.additional_options
@@ -92,7 +91,8 @@ import kotlin.time.Clock
 @Composable
 internal fun ReservationFormScreen(
     onNavBack: () -> Unit,
-    viewModel: ReservationFormViewModel = koinViewModel(),
+    onSaved: () -> Unit,
+    viewModel: ReservationFormViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
@@ -220,10 +220,10 @@ internal fun ReservationFormScreen(
         RemoteDialog.None -> {}
     }
 
-    val currentOnNavBack by rememberUpdatedState(onNavBack)
+    val currentOnSaved by rememberUpdatedState(onSaved)
     LaunchedEffect(uiState.isFormSavedSuccessfully) {
         if (uiState.isFormSavedSuccessfully) {
-            currentOnNavBack()
+            currentOnSaved()
             viewModel.onNavigationHandled()
         }
     }

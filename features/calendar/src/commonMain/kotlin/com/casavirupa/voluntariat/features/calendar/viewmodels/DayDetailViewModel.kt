@@ -26,7 +26,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.emptyList
+import kotlin.time.Clock
 
 class DayDetailViewModel(
     navKey: DayDetailNavKey,
@@ -65,6 +68,10 @@ class DayDetailViewModel(
     val showDeleteDialog: StateFlow<Boolean> = _showDeleteDialog.asStateFlow()
 
     val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
+
+    // The reservation form only accepts today or later, so past days offer no «+» button.
+    val canAddVolunteering: Boolean =
+        date >= Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     private var selectedVolunteerToDelete: VolunteerId? = null
 

@@ -39,6 +39,17 @@ class MainNavigator(val state: MainNavigationState) {
     fun goBack() {
         state.stack.removeLastOrNull()
     }
+
+    /**
+     * Pops every entry above the most recent [key], so it becomes the visible screen again.
+     * If [key] isn't on the stack, everything but the root entry is popped.
+     */
+    fun popTo(key: MainNavKey) {
+        val stack = state.stack
+        while (stack.size > 1 && stack.last() != key) {
+            stack.removeAt(stack.lastIndex)
+        }
+    }
 }
 
 @Composable

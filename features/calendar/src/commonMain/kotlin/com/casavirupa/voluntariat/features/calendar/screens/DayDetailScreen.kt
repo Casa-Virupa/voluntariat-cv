@@ -33,6 +33,7 @@ import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.common.ui.getBackgroundColor
 import com.casavirupa.voluntariat.shared.common.ui.getIcon
 import com.casavirupa.voluntariat.shared.core.utils.format
+import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
@@ -47,6 +48,7 @@ import voluntariatcv.features.calendar.generated.resources.all_day
 import voluntariatcv.features.calendar.generated.resources.delete
 import voluntariatcv.features.calendar.generated.resources.delete_volunteering_description
 import voluntariatcv.features.calendar.generated.resources.delete_volunteering_title
+import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
@@ -67,6 +69,7 @@ import voluntariatcv.features.calendar.generated.resources.volunteers_count
 @Composable
 fun DayDetailScreen(
     onNavBack: () -> Unit,
+    onNavToReservationForm: () -> Unit,
     viewModel: DayDetailViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -79,6 +82,7 @@ fun DayDetailScreen(
         uiState = uiState,
         events = events,
         onClickBack = onNavBack,
+        onClickAdd = onNavToReservationForm.takeIf { viewModel.canAddVolunteering },
         onDeleteVolunteer = viewModel::onDeleteVolunteer,
         isSunday = viewModel.isSunday,
         thereIsProtectors = thereIsProtectors,
@@ -102,6 +106,7 @@ private fun DayDetailContent(
     uiState: DayDetailUiState,
     events: List<GoogleCalendarEvent>,
     onClickBack: () -> Unit,
+    onClickAdd: (() -> Unit)?,
     onDeleteVolunteer: (VolunteerId) -> Unit,
     isSunday: Boolean,
     thereIsProtectors: Boolean,
@@ -126,6 +131,14 @@ private fun DayDetailContent(
                     uiState.headerUi.numOfVolunteers,
                 ).uppercase(),
             )
+        },
+        floatingActionButton = {
+            if (onClickAdd != null) {
+                CVFabButton(
+                    icon = painterResource(Res.drawable.ic_add),
+                    onClick = onClickAdd,
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
     ) { innerPadding ->

@@ -38,6 +38,32 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
   - Consumed by `ProfileViewModel.commitmentTarget`; `DegreeOfCompliance` in `ProfileScreen`
     handles the null-target (no commitment) rendering.
 
+## Dashboard-published config docs (read-only for the app)
+
+- `configuration/links` → `FirebaseInterestLinksRepository` → `InterestLinks` (profile "Enllaços d'interès").
+- `configuration/areas` → `FirebaseAreaConfigRepository` → `AreaConfig.onlineAreas`: the specific
+  areas whose shifts may be done **online**. Missing doc / error → `AreaConfig.Empty` (nothing is
+  online). Drives the "online" switch in `ReservationFormViewModel` (`showOnlineToggle`) and the
+  forced-online flow on «NO VOLUNTARIAT» days (`RemoteDialog`, `forcedOnline`: only `Specific`
+  shifts in online areas, no meals/nights). General volunteering is never online.
+  Editor: dashboard `/configuracio?seccio=arees`; shape in `lib/areas-doc.ts`.
+
+## Fields the app writes / reads beyond the basics
+
+- `volunteers/{id}.shifts[i].online: Boolean` (default false) ← `Shift.online`. Shown as an
+  «Online» `CVTag` in the reservation summary and `DayDetailScreen`; dashboard mirrors it into
+  `fs_booking_shift.online` (badge in the calendar day panel).
+- `users/{uid}.food_handler_certificate: Boolean` (default false) ← `User.hasFoodHandlerCertificate`.
+  **Currently hidden**: the `Certificates(...)` call in `ProfileScreen` is commented out until the
+  Firestore rules allow the write; uncomment those lines to release. The **volunteer sets it
+  themselves** from the profile `Certificates` switch via
+  `AuthRepository.setFoodHandlerCertificate` — together with `onboarding_completed` it is the
+  only user field the app writes, so the console Firestore rules must allow the owner to update
+  exactly those keys. Dashboard shows it as an «Aliments» badge (coordinació, vista d'àpats) and
+  Excel column; never label it «Manipulador».
+- Reservation-form notice: a **habitual non-member** sees «avisa-ho a l'hostatgeria» under the
+  additional options (`showSleepNotice`) because the sleep chip is member-only.
+
 Firestore security rules are console-managed (not in either repo): rule collections are
 `allow read: if request.auth != null; allow write: if false;`.
 
@@ -54,10 +80,12 @@ from `role`. Don't reintroduce the old pattern of reading the type through
 
 ## Building & testing
 
-- This machine has no Android SDK configured — Android compile tasks fail with "SDK location not
-  found". Use the iOS targets to verify common code:
+- Android SDK (platform 36, cmdline-tools) lives at `~/Library/Android/sdk` (see
+  `local.properties`, gitignored).
+  - Android build: `./gradlew :androidApp:assembleDevDebug`. Only the `dev` flavor has a
+    `google-services.json`; `prod` variants fail on that missing (secret) file — not a code error.
   - Tests: `./gradlew :shared:model:iosSimulatorArm64Test`
-  - Compile check: `./gradlew :features:profile:compileKotlinIosSimulatorArm64` (etc. per module)
+  - iOS compile check: `./gradlew :features:profile:compileKotlinIosSimulatorArm64` (etc. per module)
 
 ## Workflow
 

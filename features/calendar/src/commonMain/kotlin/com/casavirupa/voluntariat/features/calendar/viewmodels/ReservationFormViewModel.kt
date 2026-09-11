@@ -3,6 +3,7 @@ package com.casavirupa.voluntariat.features.calendar.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.casavirupa.voluntariat.features.calendar.navigation.ReservationFormNavKey
 import com.casavirupa.voluntariat.shared.core.utils.Throttler
 import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
@@ -52,6 +53,7 @@ import voluntariatcv.features.calendar.generated.resources.specific
 import voluntariatcv.features.calendar.generated.resources.stay_to_sleep
 
 class ReservationFormViewModel(
+    navKey: ReservationFormNavKey,
     private val authRepository: AuthRepository,
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
@@ -249,6 +251,12 @@ class ReservationFormViewModel(
     val remoteDialog: StateFlow<RemoteDialog> = _remoteDialog.asStateFlow()
 
     private var temporalDate: LocalDate? = null
+
+    init {
+        // Opened from a day's detail: go through the same path as a manual pick so the
+        // «NO VOLUNTARIAT» check (and its online dialog) also applies to the pre-filled date.
+        navKey.initialDate?.let(::onDateChanged)
+    }
 
     fun onDateChanged(date: LocalDate) {
         viewModelScope.launch {
