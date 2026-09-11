@@ -22,6 +22,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Firebase/Dev/GoogleService-Info.plist",
+				"Firebase/Prod/GoogleService-Info.plist",
 				Info.plist,
 			);
 			target = 4776E9F55F63439630E85A5A /* iosApp */;
