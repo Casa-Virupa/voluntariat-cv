@@ -213,6 +213,7 @@
 			);
 			inputPaths = (
 				"$(PROJECT_DIR)/iosApp/Firebase/Dev/GoogleService-Info.plist",
+				"$(PROJECT_DIR)/iosApp/Firebase/Prod/GoogleService-Info.plist",
 			);
 			name = "Copy Firebase config";
 			outputFileListPaths = (

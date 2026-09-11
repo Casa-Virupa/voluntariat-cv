@@ -18,3 +18,7 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Prod Firebase config is a secret, never commit it
+iosApp/iosApp/Firebase/Prod/GoogleService-Info.plist
+androidApp/src/prod/google-services.json
