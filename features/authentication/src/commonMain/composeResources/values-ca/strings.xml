@@ -28,4 +28,6 @@
     <string name="sending">Enviant…</string>
     <string name="cancel">Cancel·lar</string>
     <string name="accept">Acceptar</string>
+    <string name="sign_in_error">Error en iniciar sessió</string>
+    <string name="sign_in_error_description">Comprova que les credencials son correctes o si la teva connexió és estable</string>
 </resources>

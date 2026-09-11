@@ -23,6 +23,9 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
     private val _forgotPassword = MutableStateFlow(ForgotPasswordUiState())
     val forgotPassword: StateFlow<ForgotPasswordUiState> = _forgotPassword.asStateFlow()
 
+    private val _showCredentialsErrorDialog = MutableStateFlow(false)
+    val showCredentialsErrorDialog: StateFlow<Boolean> = _showCredentialsErrorDialog.asStateFlow()
+
     fun onEmailChanged(newEmail: String) {
         _email.update { newEmail }
     }
@@ -42,6 +45,7 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
                     }
                 }.onFailure { error ->
                     Logger.e(error, LOG_TAG) { "Error on log in: ${error.message}" }
+                    _showCredentialsErrorDialog.update { true }
                 }
         }
     }
@@ -79,6 +83,10 @@ internal class SignInViewModel(private val authRepository: AuthRepository) : Vie
 
     fun closeForgotPasswordDialog() {
         _forgotPassword.update { ForgotPasswordUiState() }
+    }
+
+    fun closeCredentialsErrorDialog() {
+        _showCredentialsErrorDialog.update { false }
     }
 
     private fun navigateToCreatePassword() {

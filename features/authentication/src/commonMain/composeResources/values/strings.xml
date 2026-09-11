@@ -28,4 +28,6 @@
     <string name="sending">Sending…</string>
     <string name="cancel">Cancel</string>
     <string name="accept">Accept</string>
+    <string name="sign_in_error">Error signing in</string>
+    <string name="sign_in_error_description">Check that the credentials are correct or if your connection is stable</string>
 </resources>
