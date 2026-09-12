@@ -22,7 +22,6 @@
     <string name="meals_included">Meals included</string>
     <string name="morning">Morning</string>
     <string name="afternoon">Afternoon</string>
-    <string name="all_day">All day</string>
     <string name="breakfast">Breakfast</string>
     <string name="lunch">Lunch</string>
     <string name="dinner">Dinner</string>
@@ -55,8 +54,6 @@
     <string name="end_label">End</string>
     <string name="morning_label">Morning: %1$s</string>
     <string name="afternoon_label">Afternoon: %1$s</string>
-    <string name="morning_shift_tag">Morning · %1$s</string>
-    <string name="afternoon_shift_tag">Afternoon · %1$s</string>
     <string name="existing_volunteer_dialog_title">Volunteer already registered</string>
     <string name="existing_volunteer_dialog_description">You already have a volunteering on this day. If you want to add a new one, you must delete the existing one first.</string>
     <string name="accept">Accept</string>

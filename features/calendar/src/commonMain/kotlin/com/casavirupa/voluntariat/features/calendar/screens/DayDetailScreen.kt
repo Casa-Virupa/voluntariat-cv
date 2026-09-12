@@ -28,7 +28,6 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailUiState
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.DayShifts
 import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerItemUi
-import com.casavirupa.voluntariat.features.calendar.viewmodels.VolunteerTypeUi
 import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.common.ui.getBackgroundColor
 import com.casavirupa.voluntariat.shared.common.ui.getIcon
@@ -43,18 +42,13 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
-import voluntariatcv.features.calendar.generated.resources.afternoon_shift_tag
-import voluntariatcv.features.calendar.generated.resources.all_day
 import voluntariatcv.features.calendar.generated.resources.delete
 import voluntariatcv.features.calendar.generated.resources.delete_volunteering_description
 import voluntariatcv.features.calendar.generated.resources.delete_volunteering_title
 import voluntariatcv.features.calendar.generated.resources.ic_add
-import voluntariatcv.features.calendar.generated.resources.ic_afternoon
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
-import voluntariatcv.features.calendar.generated.resources.ic_sun
-import voluntariatcv.features.calendar.generated.resources.morning_shift_tag
 import voluntariatcv.features.calendar.generated.resources.online_tag
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
@@ -181,22 +175,13 @@ private fun DayShiftsAndEvents(
         }
         item {
             ShiftTitle(
-                text = stringResource(Res.string.all_day),
+                text = if (isSunday) {
+                    stringResource(Res.string.shift_morning_sunday)
+                } else {
+                    stringResource(Res.string.shift_morning)
+                },
                 modifier = Modifier.padding(top = 16.dp),
             )
-        }
-        items(dayShifts.allDayVolunteers) { volunteer ->
-            VolunteerShiftItem(
-                volunteer = volunteer,
-                onClickDelete = { onDeleteVolunteer(volunteer.id) },
-            )
-        }
-        item {
-            if (isSunday) {
-                ShiftTitle(text = stringResource(Res.string.shift_morning_sunday))
-            } else {
-                ShiftTitle(text = stringResource(Res.string.shift_morning))
-            }
         }
         items(dayShifts.morningVolunteers) { volunteer ->
             VolunteerShiftItem(
@@ -313,49 +298,20 @@ private fun VolunteerShiftItem(
                     }
                 }
             }
-            when (val volunteerType = volunteer.type) {
-                is VolunteerTypeUi.Single -> {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CVTag(
-                            text = volunteerType.type.displayName(),
-                            icon = volunteerType.type.getIcon(),
-                            backgroundColor = volunteerType.type.getBackgroundColor(),
-                        )
-                        if (volunteerType.online) {
-                            CVTag(
-                                text = stringResource(Res.string.online_tag),
-                                backgroundColor = OnlineTagColor,
-                            )
-                        }
-                    }
-                }
-                is VolunteerTypeUi.AllDay -> {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CVTag(
-                            text = stringResource(
-                                Res.string.morning_shift_tag,
-                                volunteerType.morning.displayName()
-                                    .withOnlineSuffix(volunteerType.morningOnline),
-                            ),
-                            icon = painterResource(Res.drawable.ic_sun),
-                            backgroundColor = volunteerType.morning.getBackgroundColor(),
-                        )
-                        CVTag(
-                            text = stringResource(
-                                Res.string.afternoon_shift_tag,
-                                volunteerType.afternoon.displayName()
-                                    .withOnlineSuffix(volunteerType.afternoonOnline),
-                            ),
-                            icon = painterResource(Res.drawable.ic_afternoon),
-                            backgroundColor = volunteerType.afternoon.getBackgroundColor(),
-                        )
-                    }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                CVTag(
+                    text = volunteer.type.displayName(),
+                    icon = volunteer.type.getIcon(),
+                    backgroundColor = volunteer.type.getBackgroundColor(),
+                )
+                if (volunteer.online) {
+                    CVTag(
+                        text = stringResource(Res.string.online_tag),
+                        backgroundColor = OnlineTagColor,
+                    )
                 }
             }
             if (volunteer.meals.isNotEmpty() || volunteer.sleep) {
@@ -403,9 +359,5 @@ private const val DAY_MONTH_PATTERN = "dd/MM"
 private const val HOUR_PATTERN = "HH:mm"
 
 private val BorderColor = Color(0xFFE9E8E7)
-
-@Composable
-private fun String.withOnlineSuffix(online: Boolean): String =
-    if (online) "$this · ${stringResource(Res.string.online_tag)}" else this
 
 private val OnlineTagColor = Color(0xFF7BA7BC)
