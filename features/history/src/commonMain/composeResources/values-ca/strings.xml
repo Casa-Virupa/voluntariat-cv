@@ -1,0 +1,54 @@
+<resources>
+    <string name="morning">Matí</string>
+    <string name="afternoon">Tarda</string>
+    <string name="my_volunteerings">Els meus voluntariats</string>
+    <string name="hours">Hores</string>
+    <string name="pending_payment">Pendent de pagament</string>
+    <string name="remember_payment">Tens un saldo pendent de %1$s€.</string>
+    <string name="volunteerings_history">Historial de voluntariats</string>
+    <string name="hours_format">%1$dh</string>
+    <string name="general">General</string>
+    <string name="specific">Específic</string>
+    <string name="accept_button">Acceptar</string>
+    <string name="delete_volunteering_title">Eliminar voluntariat</string>
+    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d\'aquest dia? Aquesta acció no es pot desfer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="no_volunteering_title">Sense voluntariat</string>
+    <string name="no_volunteering_description">Encara has de fer el voluntariat d'aquest mes</string>
+    <string name="payment_detail_button">Detall</string>
+    <string name="payment_detail_title">Detall del pagament</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">No hi ha res pendent de pagar aquest mes</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 dinar</item>
+        <item quantity="other">%1$d dinars</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 sopar</item>
+        <item quantity="other">%1$d sopars</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 pernoctació</item>
+        <item quantity="other">%1$d pernoctacions</item>
+    </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 dinar inclòs (mitra)</item>
+        <item quantity="other">%1$d dinars inclosos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 sopar inclòs (mitra)</item>
+        <item quantity="other">%1$d sopars inclosos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 pernoctació inclosa (mitra)</item>
+        <item quantity="other">%1$d pernoctacions incloses (mitra)</item>
+    </plurals>
+    <plurals name="breakfasts_count">
+        <item quantity="one">1 esmorzar</item>
+        <item quantity="other">%1$d esmorzars</item>
+    </plurals>
+    <plurals name="breakfasts_next_day_count">
+        <item quantity="one">1 esmorzar de l\'endemà</item>
+        <item quantity="other">%1$d esmorzars de l\'endemà</item>
+    </plurals>
+</resources>

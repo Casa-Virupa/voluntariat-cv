@@ -1,0 +1,32 @@
+<resources>
+    <string name="lunch">Comida</string>
+    <string name="dinner">Cena</string>
+    <string name="general">General</string>
+    <string name="specific">Específico</string>
+    <string name="morning">Mañana</string>
+    <string name="afternoon">Tarde</string>
+    <string name="all_day">Todo el día</string>
+    <string name="area_animals">Animales</string>
+    <string name="area_shop">Tienda</string>
+    <string name="area_communication">Comunicación</string>
+    <string name="area_volunteer_coordination">Coordinación de voluntariado</string>
+    <string name="area_kitchen">Cocina</string>
+    <string name="area_graphical_design">Diseño gráfico</string>
+    <string name="area_virupa_editions">Ediciones Virupa</string>
+    <string name="area_exterior">Exterior</string>
+    <string name="area_can_bordoi_events">Eventos Can Bordoi</string>
+    <string name="area_grove">Huerto</string>
+    <string name="area_registrations">Inscripciones</string>
+    <string name="area_gardening">Jardinería</string>
+    <string name="area_labor">Laboral</string>
+    <string name="area_maintenance">Mantenimiento</string>
+    <string name="area_pedagogical">Pedagógico</string>
+    <string name="area_community_health">Salud de la comunidad</string>
+    <string name="area_grants">Subvenciones</string>
+    <string name="area_temple">Templo</string>
+    <string name="area_transcriptions">Transcripciones</string>
+    <string name="area_technical_audiovisual">Técnico y audiovisual</string>
+    <string name="area_technical_texts">Técnico y textos</string>
+    <string name="breakfast">Desayuno</string>
+    <string name="breakfast_next_day">Desayuno del día siguiente</string>
+</resources>

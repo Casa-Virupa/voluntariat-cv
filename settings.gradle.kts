@@ -2,6 +2,7 @@ rootProject.name = "VoluntariatCV"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             mavenContent {
@@ -28,4 +29,17 @@ dependencyResolutionManagement {
     }
 }
 
-include(":composeApp")
+include(":androidApp")
+include(":features:authentication")
+include(":features:calendar")
+include(":features:history")
+include(":features:profile")
+include(":shared:common")
+include(":shared:core")
+include(":shared:data")
+include(":shared:database")
+include(":shared:dependencies")
+include(":shared:designsystem")
+include(":shared:domain")
+include(":shared:model")
+include(":shared:ui")

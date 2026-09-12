@@ -1,0 +1,54 @@
+<resources>
+    <string name="morning">Mañana</string>
+    <string name="afternoon">Tarde</string>
+    <string name="my_volunteerings">Mis voluntariados</string>
+    <string name="hours">Horas</string>
+    <string name="pending_payment">Pendiente de pago</string>
+    <string name="remember_payment">Tienes un saldo pendiente de %1$s€.</string>
+    <string name="volunteerings_history">Historial de voluntariados</string>
+    <string name="hours_format">%1$dh</string>
+    <string name="general">General</string>
+    <string name="specific">Específico</string>
+    <string name="accept_button">Aceptar</string>
+    <string name="delete_volunteering_title">Eliminar voluntariado</string>
+    <string name="delete_volunteering_description">¿Estás seguro que quieres eliminar tu voluntariado de este día? Esta acción no se puede deshacer.</string>
+    <string name="delete">Eliminar</string>
+    <string name="no_volunteering_title">Sin voluntariado</string>
+    <string name="no_volunteering_description">Todavía tienes que hacer el voluntariado de este mes</string>
+    <string name="payment_detail_button">Detalle</string>
+    <string name="payment_detail_title">Detalle del pago</string>
+    <string name="payment_detail_total">Total</string>
+    <string name="nothing_to_pay">No hay nada pendiente de pagar este mes</string>
+    <plurals name="lunches_count">
+        <item quantity="one">1 almuerzo</item>
+        <item quantity="other">%1$d almuerzos</item>
+    </plurals>
+    <plurals name="dinners_count">
+        <item quantity="one">1 cena</item>
+        <item quantity="other">%1$d cenas</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">1 pernoctación</item>
+        <item quantity="other">%1$d pernoctaciones</item>
+    </plurals>
+    <plurals name="mitra_free_lunches_count">
+        <item quantity="one">1 almuerzo incluido (mitra)</item>
+        <item quantity="other">%1$d almuerzos incluidos (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_dinners_count">
+        <item quantity="one">1 cena incluida (mitra)</item>
+        <item quantity="other">%1$d cenas incluidas (mitra)</item>
+    </plurals>
+    <plurals name="mitra_free_nights_count">
+        <item quantity="one">1 pernoctación incluida (mitra)</item>
+        <item quantity="other">%1$d pernoctaciones incluidas (mitra)</item>
+    </plurals>
+    <plurals name="breakfasts_count">
+        <item quantity="one">1 desayuno</item>
+        <item quantity="other">%1$d desayunos</item>
+    </plurals>
+    <plurals name="breakfasts_next_day_count">
+        <item quantity="one">1 desayuno del día siguiente</item>
+        <item quantity="other">%1$d desayunos del día siguiente</item>
+    </plurals>
+</resources>

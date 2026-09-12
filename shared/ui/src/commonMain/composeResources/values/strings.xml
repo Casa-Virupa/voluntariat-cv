@@ -1,0 +1,5 @@
+<resources>
+    <string name="calendar_menu">Calendar</string>
+    <string name="history_menu">History</string>
+    <string name="profile_menu">Profile</string>
+</resources>

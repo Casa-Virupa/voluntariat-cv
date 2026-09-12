@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>EnvironmentConfiguration</key>
+	<string>$(ENVIRONMENT_CONFIGURATION)</string>
 </dict>
 </plist>

@@ -1,0 +1,264 @@
+package com.casavirupa.voluntariat.features.authentication.signin
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.flowWithLifecycle
+import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
+import com.casavirupa.voluntariat.shared.designsystem.components.CVTextField
+import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import voluntariatcv.features.authentication.generated.resources.Res
+import voluntariatcv.features.authentication.generated.resources.app_name_volunteering
+import voluntariatcv.features.authentication.generated.resources.cv_logo
+import voluntariatcv.features.authentication.generated.resources.email_label
+import voluntariatcv.features.authentication.generated.resources.email_placeholder
+import voluntariatcv.features.authentication.generated.resources.forgot_password
+import voluntariatcv.features.authentication.generated.resources.ic_arrow_right
+import voluntariatcv.features.authentication.generated.resources.ic_lock
+import voluntariatcv.features.authentication.generated.resources.ic_mail
+import voluntariatcv.features.authentication.generated.resources.ic_visibility
+import voluntariatcv.features.authentication.generated.resources.ic_visibility_off
+import voluntariatcv.features.authentication.generated.resources.password_label
+import voluntariatcv.features.authentication.generated.resources.password_placeholder
+import voluntariatcv.features.authentication.generated.resources.accept
+import voluntariatcv.features.authentication.generated.resources.sign_in
+import voluntariatcv.features.authentication.generated.resources.sign_in_error
+import voluntariatcv.features.authentication.generated.resources.sign_in_error_description
+
+@Composable
+internal fun SignInScreen(
+    onNavigateToCreatePassword: () -> Unit,
+    onNavigateToSchedule: () -> Unit,
+    viewModel: SignInViewModel = koinViewModel()
+) {
+    val email by viewModel.email.collectAsStateWithLifecycle()
+    val password by viewModel.password.collectAsStateWithLifecycle()
+    val forgotPassword by viewModel.forgotPassword.collectAsStateWithLifecycle()
+    val showCredentialsErrorDialog by viewModel
+        .showCredentialsErrorDialog.collectAsStateWithLifecycle()
+
+    SignInContent(
+        email = email,
+        password = password,
+        onEmailChanged = viewModel::onEmailChanged,
+        onPasswordChanged = viewModel::onPasswordChanged,
+        onClickLogIn = viewModel::onSignIn,
+        onClickForgotPassword = viewModel::onForgotPasswordClicked,
+    )
+
+    if (forgotPassword.isVisible) {
+        ForgotPasswordDialog(
+            state = forgotPassword,
+            onEmailChanged = viewModel::onForgotPasswordEmailChanged,
+            onSend = viewModel::onSendPasswordResetEmail,
+            onDismiss = viewModel::closeForgotPasswordDialog,
+        )
+    }
+
+    if (showCredentialsErrorDialog) {
+        WarningDialog(
+            onDismiss = viewModel::closeCredentialsErrorDialog,
+            title = stringResource(Res.string.sign_in_error),
+            description = stringResource(Res.string.sign_in_error_description),
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::closeCredentialsErrorDialog,
+        )
+    }
+
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val currentOnNavigateToCreatePassword by rememberUpdatedState(onNavigateToCreatePassword)
+    val currentOnNavigateToSchedule by rememberUpdatedState(onNavigateToSchedule)
+
+    LaunchedEffect(viewModel, lifecycle) {
+        viewModel.uiState
+            .flowWithLifecycle(lifecycle)
+            .collect { state ->
+                when {
+                    state.navigateToCreatePassword -> currentOnNavigateToCreatePassword()
+                    state.navigateToSchedule -> currentOnNavigateToSchedule()
+                }
+            }
+    }
+}
+
+@Composable
+private fun SignInContent(
+    email: String,
+    password: String,
+    onEmailChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+    onClickLogIn: () -> Unit,
+    onClickForgotPassword: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showPassword by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        HeaderImageWithTitle()
+        SignInInputs(
+            email = email,
+            password = password,
+            onEmailChanged = onEmailChanged,
+            onPasswordChanged = onPasswordChanged,
+            showPassword = showPassword,
+            onTogglePasswordVisibility = { showPassword = !showPassword },
+            modifier = Modifier.padding(top = 32.dp),
+        )
+        TextButton(
+            onClick = onClickForgotPassword,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.End),
+        ) {
+            Text(
+                text = stringResource(Res.string.forgot_password),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+        CVButton(
+            text = stringResource(Res.string.sign_in),
+            onClick = onClickLogIn,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
+            icon = painterResource(Res.drawable.ic_arrow_right),
+        )
+    }
+}
+
+@Composable
+private fun HeaderImageWithTitle(modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Image(
+            painter = painterResource(Res.drawable.cv_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .height(100.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop,
+        )
+        Text(
+            text = stringResource(Res.string.app_name_volunteering),
+            style = MaterialTheme.typography.displayMedium,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun SignInInputs(
+    email: String,
+    password: String,
+    onEmailChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+    showPassword: Boolean,
+    onTogglePasswordVisibility: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val visualTransformation = if (showPassword) {
+        VisualTransformation.None
+    } else {
+        PasswordVisualTransformation()
+    }
+
+    Column(modifier = modifier) {
+        CVTextField(
+            value = email,
+            onValueChanged = onEmailChanged,
+            label = stringResource(Res.string.email_label),
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+            ),
+            placeholder = stringResource(Res.string.email_placeholder),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_mail),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+        )
+        CVTextField(
+            value = password,
+            onValueChanged = onPasswordChanged,
+            label = stringResource(Res.string.password_label),
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_lock),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+            ),
+            placeholder = stringResource(Res.string.password_placeholder),
+            visualTransformation = visualTransformation,
+            trailingIcon = {
+                IconButton(onClick = onTogglePasswordVisibility) {
+                    val iconPainter = if (showPassword) {
+                        painterResource(Res.drawable.ic_visibility_off)
+                    } else {
+                        painterResource(Res.drawable.ic_visibility)
+                    }
+                    Icon(
+                        painter = iconPainter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        )
+    }
+}
