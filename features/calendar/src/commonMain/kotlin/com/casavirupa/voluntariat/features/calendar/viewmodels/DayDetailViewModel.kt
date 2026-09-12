@@ -217,8 +217,8 @@ private fun Volunteer.toUiModel(name: String, viewer: User?): VolunteerItemUi {
 }
 
 private fun buildAllDayVolunteerType(shifts: List<Shift>): VolunteerTypeUi.AllDay {
-    val morning = shifts.first { it.timeRange.end <= LocalTime(14, 0) }
-    val afternoon = shifts.first { it.timeRange.end > LocalTime(14, 0) }
+    val morning = shifts.first { it.timeRange.start <= LocalTime(14, 0) }
+    val afternoon = shifts.first { it.timeRange.start > LocalTime(14, 0) }
     return VolunteerTypeUi.AllDay(
         morning = morning.type,
         afternoon = afternoon.type,
