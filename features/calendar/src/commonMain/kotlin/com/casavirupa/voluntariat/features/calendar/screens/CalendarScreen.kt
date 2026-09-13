@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.components.CalendarPager
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
@@ -56,9 +57,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.CalendarViewModel
 import com.casavirupa.voluntariat.shared.designsystem.components.CVFabButton
 import com.casavirupa.voluntariat.shared.model.calendar.CalendarFilter
 import com.casavirupa.voluntariat.shared.model.calendar.DayCoverage
-import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
-import com.casavirupa.voluntariat.shared.model.calendar.isHappeningOn
-import com.casavirupa.voluntariat.shared.model.calendar.unavailabilityOn
+import com.casavirupa.voluntariat.shared.model.calendar.DayEvents
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.number
@@ -91,14 +90,21 @@ internal fun CalendarScreen(
 ) {
     val volunteers by viewModel.volunteers.collectAsStateWithLifecycle()
     val myVolunteerDates by viewModel.myVolunteerDates.collectAsStateWithLifecycle()
-    val googleCalendarEvents by viewModel.googleCalendarEvents.collectAsStateWithLifecycle()
+    val eventsByDay by viewModel.eventsByDay.collectAsStateWithLifecycle()
     val currentMonth by viewModel.yearMonth.collectAsStateWithLifecycle()
     val filter by viewModel.filter.collectAsStateWithLifecycle()
+
+    // Keeps the shown month's Google Calendar events fresh: runs on entering the screen, on
+    // every month change, on the way back from a day's detail and on returning to the foreground.
+    LifecycleResumeEffect(currentMonth) {
+        viewModel.onMonthShown(currentMonth)
+        onPauseOrDispose { }
+    }
 
     CalendarContent(
         volunteers = volunteers,
         myVolunteerDates = myVolunteerDates,
-        googleCalendarEvents = googleCalendarEvents,
+        eventsByDay = eventsByDay,
         yearMonth = currentMonth,
         today = viewModel.todayDate,
         filter = filter,
@@ -115,7 +121,7 @@ internal fun CalendarScreen(
 private fun CalendarContent(
     volunteers: Map<LocalDate, Int>,
     myVolunteerDates: Set<LocalDate>,
-    googleCalendarEvents: List<GoogleCalendarEvent>,
+    eventsByDay: Map<LocalDate, DayEvents>,
     yearMonth: YearMonth,
     today: LocalDate,
     filter: CalendarFilter?,
@@ -161,31 +167,14 @@ private fun CalendarContent(
                 onFilterSelected = onFilterSelected,
             )
             CalendarPager(
-                currentReference = yearMonth,
-                pageToReference = { base, initialPage, page ->
-                    val offsetInMonths = page - initialPage
-                    val totalMonths = base.month.number + offsetInMonths - 1
-
-                    val addedYears = totalMonths.floorDiv(TOTAL_MONTHS)
-                    val newMonthIndex = totalMonths.mod(TOTAL_MONTHS)
-
-                    YearMonth(
-                        year = base.year + addedYears,
-                        month = Month(newMonthIndex + 1)
-                    )
-                },
-                calculateOffset = { current, base ->
-                    val yearDiff = current.year - base.year
-                    val monthDiff = current.month.number - base.month.number
-                    (yearDiff * 12) + monthDiff
-                },
+                currentMonth = yearMonth,
+                onMonthChange = onYearMonthChanged,
                 modifier = Modifier.weight(1f),
-                onReferenceChange = onYearMonthChanged,
-            ) { yearMonth ->
+            ) { month ->
                 MonthGrid(
-                    yearMonth = yearMonth,
+                    yearMonth = month,
                     today = today,
-                    googleCalendarEvents = googleCalendarEvents,
+                    eventsByDay = eventsByDay,
                     onDayClick = onDayClick,
                     volunteers = volunteers,
                     myVolunteerDates = myVolunteerDates,
@@ -405,7 +394,7 @@ private fun MonthGrid(
     yearMonth: YearMonth,
     onDayClick: (LocalDate) -> Unit,
     today: LocalDate,
-    googleCalendarEvents: List<GoogleCalendarEvent>,
+    eventsByDay: Map<LocalDate, DayEvents>,
     volunteers: Map<LocalDate, Int>,
     myVolunteerDates: Set<LocalDate>,
     modifier: Modifier = Modifier,
@@ -432,25 +421,18 @@ private fun MonthGrid(
             DpSize(width = maxWidth / 7, height = maxHeight/ 6)
         }
 
-        val eventsByDate = remember(googleCalendarEvents, calendarDays) {
-            calendarDays.associate { (date, _) ->
-                date to googleCalendarEvents.filter { it.isHappeningOn(date) }
-            }
-        }
-
         Column {
             for (row in 0 until 6) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     for (col in 0 until 7) {
                         val index = row * 7 + col
                         val (date, isCurrentMonth) = calendarDays[index]
-                        val googleCalendarEventsForDay = eventsByDate[date] ?: emptyList()
                         DayCell(
                             date = date,
                             isCurrentMonth = isCurrentMonth,
                             isPast = date < today,
                             today = today,
-                            googleCalendarEvents = googleCalendarEventsForDay,
+                            dayEvents = eventsByDay[date],
                             cellSize = dayCellSize,
                             numOfVolunteers = volunteers[date],
                             isMine = date in myVolunteerDates,
@@ -470,7 +452,7 @@ private fun DayCell(
     isPast: Boolean,
     today: LocalDate,
     cellSize: DpSize,
-    googleCalendarEvents: List<GoogleCalendarEvent>,
+    dayEvents: DayEvents?,
     onClick: () -> Unit,
     numOfVolunteers: Int?,
     isMine: Boolean,
@@ -479,9 +461,7 @@ private fun DayCell(
     val isToday = date == today
     // A "NO VOLUNTARIAT" with hours only greys the half of the day it falls in
     // (morning: top-left triangle, afternoon: bottom-right); an all-day one greys it all.
-    val unavailability = remember(googleCalendarEvents, date) {
-        googleCalendarEvents.unavailabilityOn(date)
-    }
+    val unavailability = dayEvents?.unavailability ?: DayCoverage.None
     val isFullyUnavailable = unavailability == DayCoverage.WholeDay
     val borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
     val unavailableColor = Color.Gray.copy(alpha = 0.1f)
@@ -573,8 +553,8 @@ private fun DayCell(
                     )
                 )
             }
-            if (!isPast && !isFullyUnavailable) {
-                googleCalendarEvents
+            if (!isPast && !isFullyUnavailable && dayEvents != null) {
+                dayEvents.events
                     .filter { it.available }
                     .forEach {
                         CalendarEvent(
@@ -609,7 +589,6 @@ private fun CalendarEvent(
 }
 
 private const val TOTAL_DAYS_SHOWED_IN_CALENDAR = 42
-private const val TOTAL_MONTHS = 12
 
 // Weekday row was 12dp padding + one labelSmall line; the filter chips (32dp) fit in it too
 private val HEADER_STRIP_HEIGHT = 44.dp

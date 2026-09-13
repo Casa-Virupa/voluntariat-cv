@@ -4,12 +4,10 @@
     <string name="my_volunteerings">Mis voluntariados</string>
     <string name="hours">Horas</string>
     <string name="pending_payment">Pendiente de pago</string>
-    <string name="remember_payment">Tienes un saldo pendiente de %1$s€.</string>
     <string name="volunteerings_history">Historial de voluntariados</string>
     <string name="hours_format">%1$dh</string>
     <string name="general">General</string>
     <string name="specific">Específico</string>
-    <string name="accept_button">Aceptar</string>
     <string name="delete_volunteering_title">Eliminar voluntariado</string>
     <string name="delete_volunteering_description">¿Estás seguro que quieres eliminar tu voluntariado de este día? Esta acción no se puede deshacer.</string>
     <string name="delete">Eliminar</string>
@@ -17,8 +15,13 @@
     <string name="no_volunteering_description">Todavía tienes que hacer el voluntariado de este mes</string>
     <string name="payment_detail_button">Detalle</string>
     <string name="payment_detail_title">Detalle del pago</string>
-    <string name="payment_detail_total">Total</string>
     <string name="nothing_to_pay">No hay nada pendiente de pagar este mes</string>
+    <string name="payment_month_amount">%1$s: %2$s€</string>
+    <string name="payment_balance">Saldo acumulado: %1$s€</string>
+    <string name="payment_detail_total_month">Total %1$s</string>
+    <string name="payment_detail_balance">Saldo acumulado</string>
+    <string name="pay_button">Pagar</string>
+    <string name="close_button">Cerrar</string>
     <plurals name="lunches_count">
         <item quantity="one">1 almuerzo</item>
         <item quantity="other">%1$d almuerzos</item>

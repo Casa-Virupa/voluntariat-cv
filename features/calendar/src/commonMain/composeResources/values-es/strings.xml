@@ -22,7 +22,6 @@
     <string name="meals_included">Comidas incluidas</string>
     <string name="morning">Mañana</string>
     <string name="afternoon">Tarde</string>
-    <string name="all_day">Todo el día</string>
     <string name="breakfast">Desayuno</string>
     <string name="lunch">Almuerzo</string>
     <string name="dinner">Cena</string>
@@ -55,8 +54,6 @@
     <string name="end_label">Fin</string>
     <string name="morning_label">Mañana: %1$s</string>
     <string name="afternoon_label">Tarde: %1$s</string>
-    <string name="morning_shift_tag">Mañana · %1$s</string>
-    <string name="afternoon_shift_tag">Tarde · %1$s</string>
     <string name="existing_volunteer_dialog_title">Voluntariado ya registrado</string>
     <string name="existing_volunteer_dialog_description">Ya tienes un voluntariado en este día. Si quieres añadir uno nuevo, debes eliminar el existente primero.</string>
     <string name="accept">Aceptar</string>

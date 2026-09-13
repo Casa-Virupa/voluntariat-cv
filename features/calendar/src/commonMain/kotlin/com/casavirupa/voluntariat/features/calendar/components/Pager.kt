@@ -1,73 +1,66 @@
 package com.casavirupa.voluntariat.features.calendar.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
-import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.casavirupa.voluntariat.features.calendar.models.YearMonth
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Month
 
+/**
+ * Horizontal pager over months. Pages map to months through a fixed anchor, so a page index
+ * means the same month in every composition: the pager state is `rememberSaveable` and is
+ * restored (ignoring `initialPage`) when the calendar comes back from the day detail, while
+ * the ViewModel keeps the month on its own — both must agree without any shared "base" month.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun <T> CalendarPager(
-    currentReference: T,
-    calculateOffset: (current: T, base: T) -> Int,
-    pageToReference: (baseReference: T, initialPage: Int, page: Int) -> T,
-    onReferenceChange: (T) -> Unit,
+internal fun CalendarPager(
+    currentMonth: YearMonth,
+    onMonthChange: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable (reference: T) -> Unit,
+    content: @Composable (month: YearMonth) -> Unit,
 ) {
-    val initialPage = TOTAL_OF_MONTHS / 2
+    val pagerState = rememberPagerState(
+        initialPage = currentMonth.toPage(),
+        pageCount = { PAGE_COUNT },
+    )
+    val latestMonth by rememberUpdatedState(currentMonth)
 
-    // Capture initial reference as stable base for offset calculations
-    val baseReference = remember { currentReference }
-
-    val referenceOffset =
-        remember(currentReference, baseReference) {
-            calculateOffset(currentReference, baseReference)
-        }
-
-    val pagerState =
-        rememberPagerState(
-            initialPage = initialPage + referenceOffset,
-            pageCount = { TOTAL_OF_MONTHS },
-        )
-
-    val pageConverter: (Int) -> T =
-        remember(baseReference, initialPage) {
-            { page ->
-                pageToReference(baseReference, initialPage, page)
-            }
-        }
-
-    val currentReferenceState = rememberUpdatedState(currentReference)
-
+    // Pager → ViewModel. The settled page is the source of truth both for swipes and for a
+    // restored pager (after process death the ViewModel is back to today, the pager is not).
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }
-            .collect { page ->
-                val newReference = pageConverter(page)
-                if (newReference != currentReferenceState.value) {
-                    onReferenceChange(newReference)
+            .map { page -> page.toYearMonth() }
+            .collect { month ->
+                if (month != latestMonth) {
+                    onMonthChange(month)
                 }
             }
     }
 
-    LaunchedEffect(currentReference) {
-        val targetOffset = calculateOffset(currentReference, baseReference)
-        val targetPage = initialPage + targetOffset
-
-        if (pagerState.currentPage != targetPage) {
-            pagerState.animateScrollToPage(targetPage)
-        }
+    // ViewModel → pager (arrow buttons). drop(1) skips the value already present when the
+    // screen is (re)entered, so nothing scrolls on the way back from the day detail.
+    LaunchedEffect(Unit) {
+        snapshotFlow { latestMonth }
+            .drop(1)
+            .collectLatest { month ->
+                val targetPage = month.toPage()
+                if (pagerState.currentPage != targetPage) {
+                    pagerState.animateScrollToPage(targetPage)
+                }
+            }
     }
 
     HorizontalPager(
@@ -81,9 +74,16 @@ internal fun <T> CalendarPager(
             snapPositionalThreshold = 0.2f,
         ),
     ) { page ->
-        val reference = pageConverter(page)
-        content(reference)
+        content(page.toYearMonth())
     }
 }
 
-private const val TOTAL_OF_MONTHS = 200
+// Page 0 is January 2000; the last page is December 2099.
+private val ANCHOR = YearMonth(2000, Month.JANUARY)
+private const val PAGE_COUNT = 12 * 100
+
+private fun YearMonth.toPage(): Int =
+    (monthIndex - ANCHOR.monthIndex).coerceIn(0, PAGE_COUNT - 1)
+
+private fun Int.toYearMonth(): YearMonth =
+    YearMonth.fromMonthIndex(ANCHOR.monthIndex + this)

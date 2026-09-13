@@ -14,6 +14,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import com.casavirupa.voluntariat.shared.model.payment.calculateMonthlyCharge
+import com.casavirupa.voluntariat.shared.model.payment.paymentUrl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -63,7 +64,13 @@ class HistoryViewModel(
                 ),
                 priceRepository.getPriceRules(),
             ) { volunteers, priceRules ->
-                MonthData(volunteers, priceRules, user.isMitra, user.paysForServices)
+                MonthData(
+                    volunteers = volunteers,
+                    priceRules = priceRules,
+                    isMitra = user.isMitra,
+                    paysForServices = user.paysForServices,
+                    userName = user.name,
+                )
             }
         }.stateIn(
             scope = viewModelScope,
@@ -103,20 +110,32 @@ class HistoryViewModel(
             pendingBalance,
         ) { data, balance ->
             val volunteers = data.volunteers.toUiModel()
+            // Only a positive balance is payable; the web reads the amount from the URL.
+            val pendingBalance = balance?.takeIf { it > AMOUNT_TOLERANCE }
+            val paymentDetail = if (data.paysForServices) {
+                PaymentDetail(
+                    volunteers = data.volunteers,
+                    priceRules = data.priceRules,
+                    isMitra = data.isMitra,
+                    balance = balance ?: 0.0,
+                    paymentUrl = pendingBalance?.let { paymentUrl(data.userName, it) },
+                )
+            } else {
+                PaymentDetail.Empty
+            }
             HistoryUiState(
                 summary = DetailedSummary.hours(volunteers),
                 volunteers = volunteers,
                 showNoVolunteeringMessage = data.volunteers.isEmpty(),
-                paymentUiState = if (balance != null && balance > AMOUNT_TOLERANCE) {
-                    PaymentUiState.Pending(balance)
+                paymentUiState = if (pendingBalance != null) {
+                    PaymentUiState.Pending(
+                        monthAmount = paymentDetail.total,
+                        balance = pendingBalance,
+                    )
                 } else {
                     PaymentUiState.Hidden
                 },
-                paymentDetail = if (data.paysForServices) {
-                    PaymentDetail(data.volunteers, data.priceRules, data.isMitra)
-                } else {
-                    PaymentDetail.Empty
-                },
+                paymentDetail = paymentDetail,
             )
         }.stateIn(
             scope = viewModelScope,
@@ -210,6 +229,7 @@ private data class MonthData(
     val priceRules: PriceRules,
     val isMitra: Boolean,
     val paysForServices: Boolean,
+    val userName: String,
 )
 
 data class PaymentDetail(
@@ -229,7 +249,12 @@ data class PaymentDetail(
     val lunchesDiscount: Double,
     val dinnersDiscount: Double,
     val nightsDiscount: Double,
+    // Net charge of the month being viewed
     val total: Double,
+    // Outstanding balance over all months (charges minus ledger); what the volunteer pays
+    val balance: Double,
+    // Pre-filled link to the payment page; null when there is nothing to pay
+    val paymentUrl: String?,
 ) {
     companion object {
         val Empty = PaymentDetail(
@@ -250,12 +275,16 @@ data class PaymentDetail(
             dinnersDiscount = 0.0,
             nightsDiscount = 0.0,
             total = 0.0,
+            balance = 0.0,
+            paymentUrl = null,
         )
 
         operator fun invoke(
             volunteers: List<Volunteer>,
             priceRules: PriceRules,
             isMitra: Boolean,
+            balance: Double,
+            paymentUrl: String?,
         ): PaymentDetail {
             val breakdown = calculateMonthlyCharge(volunteers, priceRules, isMitra)
             return PaymentDetail(
@@ -276,6 +305,8 @@ data class PaymentDetail(
                 dinnersDiscount = breakdown.dinnersDiscount,
                 nightsDiscount = breakdown.nightsDiscount,
                 total = breakdown.total,
+                balance = balance,
+                paymentUrl = paymentUrl,
             )
         }
     }
@@ -321,7 +352,12 @@ data class VolunteerHistoryItem(
 
 sealed class PaymentUiState {
     data object Hidden : PaymentUiState()
-    data class Pending(val amount: Double) : PaymentUiState()
+    // [monthAmount] is the net charge of the month being viewed; [balance] the global
+    // outstanding amount the volunteer is asked to pay.
+    data class Pending(
+        val monthAmount: Double,
+        val balance: Double,
+    ) : PaymentUiState()
 }
 
 private fun Shift.getTotalHour() =

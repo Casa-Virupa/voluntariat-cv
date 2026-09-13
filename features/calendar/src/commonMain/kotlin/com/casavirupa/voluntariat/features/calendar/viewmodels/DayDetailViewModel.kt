@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.emptyList
@@ -131,39 +130,28 @@ class DayDetailViewModel(
         }
     }
 
+    // One entry per shift: a volunteer booked for both morning and afternoon appears
+    // under each heading (both entries share the booking id, so deleting either
+    // removes the whole day's booking).
     private fun buildDayShifts(
         volunteers: List<Volunteer>,
         users: List<User>,
         viewer: User?,
     ) = DayShifts(
-        allDayVolunteers = volunteers
-            .filter { it.shifts.size > 1 }
-            .mapNotNull { volunteer ->
-                users
-                    .find { user -> user.id == volunteer.userId }
-                    ?.let { user ->
-                        volunteer.toUiModel(user.name, viewer)
-                    }
-            },
-        morningVolunteers = volunteers
-            .filter { it.shifts.all { shift -> shift is Shift.Morning } }
-            .mapNotNull { volunteer ->
-                users
-                    .find { user -> user.id == volunteer.userId }
-                    ?.let { user ->
-                        volunteer.toUiModel(user.name, viewer)
-                    }
-            },
-        afternoonVolunteers = volunteers
-            .filter { it.shifts.all { shift -> shift is Shift.Afternoon } }
-            .mapNotNull { volunteer ->
-                users
-                    .find { user -> user.id == volunteer.userId }
-                    ?.let { user ->
-                        volunteer.toUiModel(user.name, viewer)
-                    }
-            },
+        morningVolunteers = volunteers.toShiftItems<Shift.Morning>(users, viewer),
+        afternoonVolunteers = volunteers.toShiftItems<Shift.Afternoon>(users, viewer),
     )
+
+    private inline fun <reified T : Shift> List<Volunteer>.toShiftItems(
+        users: List<User>,
+        viewer: User?,
+    ): List<VolunteerItemUi> =
+        mapNotNull { volunteer ->
+            val shift = volunteer.shifts.firstOrNull { it is T } ?: return@mapNotNull null
+            users
+                .find { user -> user.id == volunteer.userId }
+                ?.let { user -> volunteer.toUiModel(user.name, viewer, shift) }
+        }
 }
 
 data class DayDetailUiState(
@@ -177,7 +165,6 @@ data class DetailHeaderUi(
 )
 
 data class DayShifts(
-    val allDayVolunteers: List<VolunteerItemUi> = emptyList(),
     val morningVolunteers: List<VolunteerItemUi> = emptyList(),
     val afternoonVolunteers: List<VolunteerItemUi> = emptyList(),
 )
@@ -186,59 +173,26 @@ data class VolunteerItemUi(
     val id: VolunteerId,
     val name: String,
     val schedule: String,
-    val type: VolunteerTypeUi,
+    val type: VolunteerType,
+    val online: Boolean,
     val meals: List<Meal>,
     val sleep: Boolean,
     val canBeDeleted: Boolean,
 )
 
-sealed class VolunteerTypeUi {
-    data class Single(
-        val type: VolunteerType,
-        val online: Boolean = false,
-    ) : VolunteerTypeUi()
-
-    data class AllDay(
-        val morning: VolunteerType,
-        val afternoon: VolunteerType,
-        val morningOnline: Boolean = false,
-        val afternoonOnline: Boolean = false,
-    ) : VolunteerTypeUi()
-}
-
-private fun Volunteer.toUiModel(name: String, viewer: User?): VolunteerItemUi {
+private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift): VolunteerItemUi {
     val showsServices = viewer != null && areServicesVisibleTo(viewer)
     return VolunteerItemUi(
         id = id,
         name = name,
-        schedule = shifts.formatSchedule(),
-        type = if (shifts.size > 1) {
-            buildAllDayVolunteerType(shifts)
-        } else {
-            buildSingleVolunteerType(shifts.first())
-        },
+        schedule = shift.formatSchedule(),
+        type = shift.type,
+        online = shift.online,
         meals = if (showsServices) meals else emptyList(),
         sleep = showsServices && sleep,
         canBeDeleted = viewer != null && isOwnedBy(viewer),
     )
 }
 
-private fun buildAllDayVolunteerType(shifts: List<Shift>): VolunteerTypeUi.AllDay {
-    val morning = shifts.first { it.timeRange.start <= LocalTime(14, 0) }
-    val afternoon = shifts.first { it.timeRange.start > LocalTime(14, 0) }
-    return VolunteerTypeUi.AllDay(
-        morning = morning.type,
-        afternoon = afternoon.type,
-        morningOnline = morning.online,
-        afternoonOnline = afternoon.online,
-    )
-}
-
-private fun buildSingleVolunteerType(volunteerShift: Shift) =
-    VolunteerTypeUi.Single(type = volunteerShift.type, online = volunteerShift.online)
-
-private fun List<Shift>.formatSchedule() =
-    sortedBy { it.timeRange.start }
-        .joinToString(" · ") { shift ->
-            "${shift.timeRange.start.format("HH:mm")} - ${shift.timeRange.end.format("HH:mm")}"
-        }
+private fun Shift.formatSchedule() =
+    "${timeRange.start.format("HH:mm")} - ${timeRange.end.format("HH:mm")}"

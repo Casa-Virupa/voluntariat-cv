@@ -7,11 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
 interface VolunteerRepository {
-    fun getVolunteersByDateRange(
-        year: Int,
-        monthNumber: Int,
-        currentDate: LocalDate,
-    ): Flow<List<Volunteer>>
+    /** Realtime stream of every booking dated [from] or later (no upper bound). */
+    fun getVolunteersFrom(from: LocalDate): Flow<List<Volunteer>>
 
     suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>>
 

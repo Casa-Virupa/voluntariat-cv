@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.core.utils.formatString
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
+import com.casavirupa.voluntariat.shared.designsystem.components.CVOutlinedButton
 import com.casavirupa.voluntariat.shared.designsystem.components.CVTag
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
@@ -48,8 +50,8 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import voluntariatcv.features.history.generated.resources.Res
-import voluntariatcv.features.history.generated.resources.accept_button
 import voluntariatcv.features.history.generated.resources.afternoon
+import voluntariatcv.features.history.generated.resources.close_button
 import voluntariatcv.features.history.generated.resources.delete
 import voluntariatcv.features.history.generated.resources.delete_volunteering_description
 import voluntariatcv.features.history.generated.resources.delete_volunteering_title
@@ -78,11 +80,14 @@ import voluntariatcv.features.history.generated.resources.nights_count
 import voluntariatcv.features.history.generated.resources.no_volunteering_description
 import voluntariatcv.features.history.generated.resources.no_volunteering_title
 import voluntariatcv.features.history.generated.resources.nothing_to_pay
+import voluntariatcv.features.history.generated.resources.pay_button
+import voluntariatcv.features.history.generated.resources.payment_balance
+import voluntariatcv.features.history.generated.resources.payment_detail_balance
 import voluntariatcv.features.history.generated.resources.payment_detail_button
 import voluntariatcv.features.history.generated.resources.payment_detail_title
-import voluntariatcv.features.history.generated.resources.payment_detail_total
+import voluntariatcv.features.history.generated.resources.payment_detail_total_month
+import voluntariatcv.features.history.generated.resources.payment_month_amount
 import voluntariatcv.features.history.generated.resources.pending_payment
-import voluntariatcv.features.history.generated.resources.remember_payment
 import voluntariatcv.features.history.generated.resources.specific
 import voluntariatcv.features.history.generated.resources.volunteerings_history
 
@@ -117,6 +122,7 @@ internal fun HistoryScreen(viewModel: HistoryViewModel = koinViewModel()) {
     if (showPaymentDetailDialog) {
         PaymentDetailDialog(
             detail = uiState.paymentDetail,
+            monthName = currentDate.monthName(),
             onDismiss = viewModel::closePaymentDetailDialog,
         )
     }
@@ -155,16 +161,23 @@ private fun HistoryContent(
             if (uiState.showNoVolunteeringMessage) {
                 PaymentMessage(
                     title = stringResource(Res.string.no_volunteering_title),
-                    description = stringResource(Res.string.no_volunteering_description),
+                    lines = listOf(stringResource(Res.string.no_volunteering_description)),
                 )
             }
             when (val state = uiState.paymentUiState) {
                 PaymentUiState.Hidden -> {}
                 is PaymentUiState.Pending -> PaymentMessage(
                     title = stringResource(Res.string.pending_payment),
-                    description = stringResource(
-                        Res.string.remember_payment,
-                        state.amount.toAmountString(),
+                    lines = listOf(
+                        stringResource(
+                            Res.string.payment_month_amount,
+                            currentDate.monthName(),
+                            state.monthAmount.toAmountString(),
+                        ),
+                        stringResource(
+                            Res.string.payment_balance,
+                            state.balance.toAmountString(),
+                        ),
                     ),
                     onClickDetail = onShowPaymentDetail,
                 )
@@ -333,7 +346,7 @@ private fun DetailedSummaryInfo(
 @Composable
 private fun PaymentMessage(
     title: String,
-    description: String,
+    lines: List<String>,
     modifier: Modifier = Modifier,
     onClickDetail: (() -> Unit)? = null,
 ) {
@@ -363,12 +376,14 @@ private fun PaymentMessage(
                         fontWeight = FontWeight.Medium,
                     ),
                 )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Normal,
-                    ),
-                )
+                lines.forEach { line ->
+                    Text(
+                        text = line,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Normal,
+                        ),
+                    )
+                }
             }
             if (onClickDetail != null) {
                 Column(horizontalAlignment = Alignment.End) {
@@ -451,9 +466,11 @@ private fun HistoryItem(
 @Composable
 private fun PaymentDetailDialog(
     detail: PaymentDetail,
+    monthName: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val uriHandler = LocalUriHandler.current
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.clip(RoundedCornerShape(12.dp)),
@@ -564,18 +581,38 @@ private fun PaymentDetailDialog(
                 } else {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     PaymentDetailRow(
-                        concept = stringResource(Res.string.payment_detail_total),
+                        concept = stringResource(Res.string.payment_detail_total_month, monthName),
                         amount = detail.total,
                         emphasized = true,
                     )
                 }
-                CVButton(
-                    text = stringResource(Res.string.accept_button),
-                    onClick = onDismiss,
+                // The balance spans every month (minus what's already been paid): it is
+                // what the volunteer actually owes and what the payment link carries.
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                PaymentDetailRow(
+                    concept = stringResource(Res.string.payment_detail_balance),
+                    amount = detail.balance,
+                    emphasized = true,
+                )
+                Row(
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .fillMaxWidth(),
-                )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CVOutlinedButton(
+                        text = stringResource(Res.string.close_button),
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                    )
+                    detail.paymentUrl?.let { url ->
+                        CVButton(
+                            text = stringResource(Res.string.pay_button),
+                            onClick = { uriHandler.openUri(url) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
         }
     }
@@ -608,6 +645,9 @@ private fun PaymentDetailRow(
 
 private fun Double.toAmountString(): String =
     if (this % 1.0 == 0.0) toInt().toString() else formatString(2)
+
+private fun LocalDate.monthName(): String =
+    format("MMMM").replaceFirstChar { it.uppercase() }
 
 @Composable
 private fun ShiftTags(
