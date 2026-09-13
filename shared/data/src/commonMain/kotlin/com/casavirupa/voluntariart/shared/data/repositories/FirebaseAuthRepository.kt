@@ -7,11 +7,13 @@ import com.casavirupa.voluntariat.shared.model.user.User
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
 import com.casavirupa.voluntariat.shared.model.user.UserVolunteerType
+import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.auth.EmailAuthProvider
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.LocalDate
@@ -74,6 +76,8 @@ class FirebaseAuthRepository(
                 } else {
                     null
                 }
+            }.catch { error ->
+                Logger.e(error, LOG_TAG) { "Error in getCurrentUserFlow" }
             }
     }
 
@@ -174,3 +178,5 @@ fun String.toSpecificArea() =
         "technical_and_texts" -> SpecificArea.TechnicalAndTexts
         else -> SpecificArea.Unknown
     }
+
+private const val LOG_TAG = "FirebaseAuthRepository"

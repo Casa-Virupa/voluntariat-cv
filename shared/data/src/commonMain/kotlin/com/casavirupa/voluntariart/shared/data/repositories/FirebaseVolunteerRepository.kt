@@ -14,6 +14,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
+import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.fromMilliseconds
@@ -84,6 +85,10 @@ class FirebaseVolunteerRepository(
                         .toDomainModel(doc.id)
                 }
             }
+            .catch { error ->
+                Logger.e(error, LOG_TAG) { "Error in getVolunteersByUserFlow for user ${id.value}" }
+                emit(emptyList())
+            }
 
     override fun getVolunteersByUserAndMonth(
         id: UserId,
@@ -139,6 +144,10 @@ class FirebaseVolunteerRepository(
                         .data<FirebaseVolunteer>()
                         .toDomainModel(doc.id)
                 }
+            }
+            .catch { error ->
+                Logger.e(error, LOG_TAG) { "Error in getVolunteersByUserAndRange for user ${id.value}" }
+                emit(emptyList())
             }
     }
 
@@ -290,3 +299,4 @@ private fun SpecificArea.toFirebaseValue() =
     }
 
 private const val EMPTY_VALUE = ""
+private const val LOG_TAG = "FirebaseVolunteerRepository"
