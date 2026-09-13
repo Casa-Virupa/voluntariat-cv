@@ -41,6 +41,19 @@ class MainNavigator(val state: MainNavigationState) {
     }
 
     /**
+     * Bottom-bar navigation: shows [key] without stacking a duplicate of it. Already on top →
+     * no-op; somewhere below → pop back to it; otherwise push it.
+     */
+    fun switchTo(key: MainNavKey) {
+        val stack = state.stack
+        when {
+            stack.lastOrNull() == key -> Unit
+            key in stack -> popTo(key)
+            else -> stack.add(key)
+        }
+    }
+
+    /**
      * Pops every entry above the most recent [key], so it becomes the visible screen again.
      * If [key] isn't on the stack, everything but the root entry is popped.
      */

@@ -13,8 +13,14 @@ CREATE TABLE GoogleCalendarEventDb (
 insertGoogleCalendarEvent:
 INSERT OR REPLACE INTO GoogleCalendarEventDb VALUES (?, ?, ?, ?, ?, ?, ?);
 
-deleteAllGoogleCalendarEvents:
-DELETE FROM GoogleCalendarEventDb;
+-- Events overlapping [startTimestamp, endTimestamp): the window a sync is about to re-insert.
+deleteGoogleCalendarEventsOverlapping:
+DELETE FROM GoogleCalendarEventDb
+WHERE start < :endTimestamp AND end > :startTimestamp;
+
+deleteGoogleCalendarEventsEndingBefore:
+DELETE FROM GoogleCalendarEventDb
+WHERE end < :cutoff;
 
 getGoogleCalendarEvents:
 SELECT DISTINCT *
@@ -24,8 +30,3 @@ getGoogleCalendarEventsByDate:
 SELECT DISTINCT *
 FROM GoogleCalendarEventDb
 WHERE start < (:date + 86400000) AND end > :date;
-
-getGoogleCalendarEventsByRange:
-SELECT DISTINCT *
-FROM GoogleCalendarEventDb
-WHERE start < :endTimestamp AND end > :startTimestamp;

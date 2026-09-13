@@ -196,12 +196,3 @@ private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift): Volu
 
 private fun Shift.formatSchedule() =
     "${timeRange.start.format("HH:mm")} - ${timeRange.end.format("HH:mm")}"
-
-private fun buildSingleVolunteerType(volunteerShift: Shift) =
-    VolunteerTypeUi.Single(type = volunteerShift.type, online = volunteerShift.online)
-
-private fun List<Shift>.formatSchedule() =
-    sortedBy { it.timeRange.start }
-        .joinToString(" · ") { shift ->
-            "${shift.timeRange.start.format("HH:mm")} - ${shift.timeRange.end.format("HH:mm")}"
-        }

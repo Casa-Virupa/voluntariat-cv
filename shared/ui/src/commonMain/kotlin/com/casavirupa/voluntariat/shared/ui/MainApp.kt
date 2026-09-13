@@ -64,7 +64,7 @@ fun MainApp(onLogOut: () -> Unit) {
                 ) {
                     BottomNavigationBar(
                         currentNavKey = navigationState.currentKey,
-                        onClickDestination = { navigator.navigate(it) }
+                        onClickDestination = { navigator.switchTo(it) }
                     )
                 }
             },

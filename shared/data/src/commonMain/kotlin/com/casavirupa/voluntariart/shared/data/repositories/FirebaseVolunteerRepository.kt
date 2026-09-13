@@ -17,7 +17,10 @@ import com.casavirupa.voluntariat.shared.model.user.UserId
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.fromMilliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -27,12 +30,8 @@ import kotlin.time.Instant
 class FirebaseVolunteerRepository(
     private val firestore: FirebaseFirestore,
 ) : VolunteerRepository {
-    override fun getVolunteersByDateRange(
-        year: Int,
-        monthNumber: Int,
-        currentDate: LocalDate,
-    ): Flow<List<Volunteer>> {
-        val timestamp = Timestamp.fromMilliseconds(currentDate.toEpochMilliseconds().toDouble())
+    override fun getVolunteersFrom(from: LocalDate): Flow<List<Volunteer>> {
+        val timestamp = Timestamp.fromMilliseconds(from.toEpochMilliseconds().toDouble())
         return firestore
             .collection("volunteers")
             .where { "timestamp" greaterThanOrEqualTo timestamp }
@@ -42,6 +41,10 @@ class FirebaseVolunteerRepository(
                     doc.data<FirebaseVolunteer>().toDomainModel(doc.id)
                 }
             }
+            // Decoding the whole collection is the expensive part: keep it off the main thread.
+            .flowOn(Dispatchers.Default)
+            // A read error (e.g. rules) must not kill the calendar's state flows.
+            .catch { emit(emptyList()) }
     }
 
     override suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>> =
