@@ -10,26 +10,26 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.shared.common.generated.resources.Res
 import voluntariatcv.shared.common.generated.resources.area_animals
-import voluntariatcv.shared.common.generated.resources.area_can_bordoi_events
+import voluntariatcv.shared.common.generated.resources.area_audiovisual
 import voluntariatcv.shared.common.generated.resources.area_communication
-import voluntariatcv.shared.common.generated.resources.area_community_health
-import voluntariatcv.shared.common.generated.resources.area_exterior
-import voluntariatcv.shared.common.generated.resources.area_gardening
+import voluntariatcv.shared.common.generated.resources.area_exteriors_gardening
 import voluntariatcv.shared.common.generated.resources.area_grants
 import voluntariatcv.shared.common.generated.resources.area_graphical_design
 import voluntariatcv.shared.common.generated.resources.area_grove
+import voluntariatcv.shared.common.generated.resources.area_health
 import voluntariatcv.shared.common.generated.resources.area_kitchen
 import voluntariatcv.shared.common.generated.resources.area_labor
 import voluntariatcv.shared.common.generated.resources.area_maintenance
 import voluntariatcv.shared.common.generated.resources.area_pedagogical
 import voluntariatcv.shared.common.generated.resources.area_registrations
 import voluntariatcv.shared.common.generated.resources.area_shop
-import voluntariatcv.shared.common.generated.resources.area_technical_audiovisual
-import voluntariatcv.shared.common.generated.resources.area_technical_texts
+import voluntariatcv.shared.common.generated.resources.area_technical_programming
 import voluntariatcv.shared.common.generated.resources.area_temple
+import voluntariatcv.shared.common.generated.resources.area_texts
 import voluntariatcv.shared.common.generated.resources.area_transcriptions
 import voluntariatcv.shared.common.generated.resources.area_virupa_editions
 import voluntariatcv.shared.common.generated.resources.area_volunteer_coordination
+import voluntariatcv.shared.common.generated.resources.area_works
 import voluntariatcv.shared.common.generated.resources.breakfast
 import voluntariatcv.shared.common.generated.resources.breakfast_next_day
 import voluntariatcv.shared.common.generated.resources.dinner
@@ -100,24 +100,24 @@ fun SpecificArea.displayName() =
     when (this) {
         SpecificArea.Animals -> stringResource(Res.string.area_animals)
         SpecificArea.Shop -> stringResource(Res.string.area_shop)
+        SpecificArea.Audiovisual -> stringResource(Res.string.area_audiovisual)
         SpecificArea.Communication -> stringResource(Res.string.area_communication)
         SpecificArea.VolunteerCoordination -> stringResource(Res.string.area_volunteer_coordination)
         SpecificArea.Kitchen -> stringResource(Res.string.area_kitchen)
         SpecificArea.GraphicalDesign -> stringResource(Res.string.area_graphical_design)
         SpecificArea.VirupaEditions -> stringResource(Res.string.area_virupa_editions)
-        SpecificArea.Exterior -> stringResource(Res.string.area_exterior)
-        SpecificArea.CanBordoiEvents -> stringResource(Res.string.area_can_bordoi_events)
+        SpecificArea.ExteriorsAndGardening -> stringResource(Res.string.area_exteriors_gardening)
         SpecificArea.Grove -> stringResource(Res.string.area_grove)
         SpecificArea.Registrations -> stringResource(Res.string.area_registrations)
-        SpecificArea.Gardening -> stringResource(Res.string.area_gardening)
         SpecificArea.Labor -> stringResource(Res.string.area_labor)
         SpecificArea.Maintenance -> stringResource(Res.string.area_maintenance)
+        SpecificArea.Works -> stringResource(Res.string.area_works)
         SpecificArea.Pedagogical -> stringResource(Res.string.area_pedagogical)
-        SpecificArea.CommunityHealth -> stringResource(Res.string.area_community_health)
+        SpecificArea.Health -> stringResource(Res.string.area_health)
         SpecificArea.Grants -> stringResource(Res.string.area_grants)
+        SpecificArea.TechnicalAndProgramming -> stringResource(Res.string.area_technical_programming)
         SpecificArea.Temple -> stringResource(Res.string.area_temple)
+        SpecificArea.Texts -> stringResource(Res.string.area_texts)
         SpecificArea.Transcriptions -> stringResource(Res.string.area_transcriptions)
-        SpecificArea.TechnicalAndAudiovisual -> stringResource(Res.string.area_technical_audiovisual)
-        SpecificArea.TechnicalAndTexts -> stringResource(Res.string.area_technical_texts)
         SpecificArea.Unknown -> ""
     }

@@ -157,25 +157,25 @@ fun String.toSpecificArea() =
     when (this) {
         "animals" -> SpecificArea.Animals
         "shop" -> SpecificArea.Shop
+        "technical_and_audiovisual" -> SpecificArea.Audiovisual
         "communication" -> SpecificArea.Communication
         "volunteer_coordination" -> SpecificArea.VolunteerCoordination
         "kitchen" -> SpecificArea.Kitchen
         "graphical_design" -> SpecificArea.GraphicalDesign
         "virupa_editions" -> SpecificArea.VirupaEditions
-        "exterior" -> SpecificArea.Exterior
-        "can_bordoi_events" -> SpecificArea.CanBordoiEvents
+        "gardening" -> SpecificArea.ExteriorsAndGardening
         "grove" -> SpecificArea.Grove
         "registrations" -> SpecificArea.Registrations
-        "gardening" -> SpecificArea.Gardening
         "labor" -> SpecificArea.Labor
         "maintenance" -> SpecificArea.Maintenance
+        "works" -> SpecificArea.Works
         "pedagogical" -> SpecificArea.Pedagogical
-        "community_health" -> SpecificArea.CommunityHealth
+        "community_health" -> SpecificArea.Health
         "grants" -> SpecificArea.Grants
+        "technical_and_programming" -> SpecificArea.TechnicalAndProgramming
         "temple" -> SpecificArea.Temple
+        "technical_and_texts" -> SpecificArea.Texts
         "transcriptions" -> SpecificArea.Transcriptions
-        "technical_and_audiovisual" -> SpecificArea.TechnicalAndAudiovisual
-        "technical_and_texts" -> SpecificArea.TechnicalAndTexts
         else -> SpecificArea.Unknown
     }
 
