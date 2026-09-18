@@ -257,7 +257,7 @@ class CommitmentRulesTest {
                     targetMinutes = 480,
                     periodKind = CommitmentPeriod.Month,
                     validFrom = LocalDate(2026, 7, 1),
-                    area = CommitmentArea.Specific(SpecificArea.TechnicalAndTexts),
+                    area = CommitmentArea.Specific(SpecificArea.Texts),
                 ),
                 rule(
                     id = "dash-5",
@@ -279,7 +279,7 @@ class CommitmentRulesTest {
 
         // Total rules are excluded, other users' area rules don't leak in
         assertEquals(1, targets.size)
-        val techAndTexts = targets[CommitmentArea.Specific(SpecificArea.TechnicalAndTexts)]
+        val techAndTexts = targets[CommitmentArea.Specific(SpecificArea.Texts)]
         assertEquals(480 * 3, techAndTexts?.targetMinutes)
         assertTrue(techAndTexts!!.isScaled)
     }
