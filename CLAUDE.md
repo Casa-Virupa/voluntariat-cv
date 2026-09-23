@@ -63,6 +63,15 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
   Excel column; never label it «Manipulador».
 - Reservation-form notice: a **habitual non-member** sees «avisa-ho a l'hostatgeria» under the
   additional options (`showSleepNotice`) because the sleep chip is member-only.
+- **Meals/bed-only bookings** (issue #108): a booking may have **no shifts** when it has meals or
+  a bed. It is priced with the `<item>_no_volunteering` fields of `price_rules` (issue #93,
+  `Prices.forBooking`), stays outside the mitra quota, isn't counted as a volunteer (calendar /
+  day header) and shows under «Només àpats o pernoctació» in `DayDetailScreen`.
+- **Mitra quota** (`MonthlyCharge.kt`, issue #90): `mitra_free_meals` is one pool for lunch,
+  dinner and same-day breakfast (fallback `mitra_free_lunches + mitra_free_dinners` on old docs);
+  `mitra_free_sleeps` nights, and a free night frees its next-day breakfast. Zero-priced items
+  take no slot; order = date, booking id, breakfast → lunch → dinner. Mirrored bit-for-bit by
+  the dashboard's `v_charge_discounted` (`lib/allowance.test.ts`).
 
 Firestore security rules are console-managed (not in either repo): rule collections are
 `allow read: if request.auth != null; allow write: if false;`.

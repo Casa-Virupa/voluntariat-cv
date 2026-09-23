@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -174,12 +173,16 @@ class ReservationFormViewModel(
             initialValue = emptyList(),
         )
 
-    // General (on-site) volunteering isn't offered on a forced-online day.
+    // General (on-site) volunteering isn't offered on a forced-online day, and specific
+    // volunteering isn't offered to someone with no specific area to pick.
     val volunteerTypeOptions: StateFlow<List<FormVolunteerTypeUi>> =
-        _forcedOnline
-            .map { forcedOnline ->
-                if (forcedOnline) listOf(FormVolunteerTypeUi.Specific) else FormVolunteerTypeUi.entries
-            }.stateIn(
+        combine(_forcedOnline, specificAreas) { forcedOnline, areas ->
+            when {
+                forcedOnline -> listOf(FormVolunteerTypeUi.Specific)
+                areas.isEmpty() -> listOf(FormVolunteerTypeUi.General)
+                else -> FormVolunteerTypeUi.entries
+            }
+        }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = FormVolunteerTypeUi.entries,
@@ -471,36 +474,45 @@ class ReservationFormViewModel(
     }
 
     fun onConfirm() {
+        // The duplicate-day check and the write are separate network calls: a second tap
+        // while they run (slow connection) would book the same day twice.
+        if (_uiState.value.isSaving) return
         confirmThrottler.throttle {
             viewModelScope.launch {
                 formError()?.let { error ->
                     showError(error)
                     return@launch
                 }
-                val user = authRepository.getCurrentUser().getOrElse { error ->
-                    Logger.e(error, LOG_TAG) { "Error getting current user when reserving a day" }
-                    showError(ReservationFormError.SaveFailed)
-                    return@launch
-                }
-                val alreadyBooked = existVolunteerFromUser(user.id).getOrElse { error ->
-                    Logger.e(error, LOG_TAG) { "Error reading the user's volunteers" }
-                    showError(ReservationFormError.SaveFailed)
-                    return@launch
-                }
-                if (alreadyBooked) {
-                    _showExistingVolunteerDialogError.update { true }
-                    return@launch
-                }
-                volunteerRepository
-                    .reserveDay(user.id, buildReservation())
-                    .onSuccess {
-                        navigateBack()
-                    }.onFailure { error ->
-                        Logger.e(error, LOG_TAG) { "Error reserving a day" }
-                        showError(ReservationFormError.SaveFailed)
-                    }
+                _uiState.update { it.copy(isSaving = true) }
+                if (!saveReservation()) _uiState.update { it.copy(isSaving = false) }
             }
         }
+    }
+
+    // True once the booking is written; on any other outcome the user has been told why.
+    private suspend fun saveReservation(): Boolean {
+        val user = authRepository.getCurrentUser().getOrElse { error ->
+            Logger.e(error, LOG_TAG) { "Error getting current user when reserving a day" }
+            showError(ReservationFormError.SaveFailed)
+            return false
+        }
+        val alreadyBooked = existVolunteerFromUser(user.id).getOrElse { error ->
+            Logger.e(error, LOG_TAG) { "Error reading the user's volunteers" }
+            showError(ReservationFormError.SaveFailed)
+            return false
+        }
+        if (alreadyBooked) {
+            _showExistingVolunteerDialogError.update { true }
+            return false
+        }
+        return volunteerRepository
+            .reserveDay(user.id, buildReservation())
+            .onSuccess {
+                navigateBack()
+            }.onFailure { error ->
+                Logger.e(error, LOG_TAG) { "Error reserving a day" }
+                showError(ReservationFormError.SaveFailed)
+            }.isSuccess
     }
 
     fun dismissError() {
@@ -703,6 +715,8 @@ class ReservationFormViewModel(
 
 data class ReservationFormUiState(
     val isFormSavedSuccessfully: Boolean = false,
+    // A confirm is in flight: further taps on CONFIRMAR are ignored
+    val isSaving: Boolean = false,
     val error: ReservationFormError? = null,
 )
 

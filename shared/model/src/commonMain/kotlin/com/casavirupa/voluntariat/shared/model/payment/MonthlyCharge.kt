@@ -3,6 +3,7 @@ package com.casavirupa.voluntariat.shared.model.payment
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import kotlinx.datetime.LocalDate
+import kotlin.math.roundToLong
 
 data class MonthlyChargeBreakdown(
     val lunches: Int,
@@ -26,9 +27,13 @@ data class MonthlyChargeBreakdown(
 ) {
     val discount: Double get() = mealsDiscount + nightsDiscount + breakfastsNextDayDiscount
 
+    // Rounded to cents: amounts and discounts are summed separately, so with prices that
+    // have cents the float sum can end up at e.g. -7e-15 instead of exactly 0.
     val total: Double
-        get() = lunchesAmount + dinnersAmount + nightsAmount +
-            breakfastsAmount + breakfastsNextDayAmount - discount
+        get() = (
+            lunchesAmount + dinnersAmount + nightsAmount +
+                breakfastsAmount + breakfastsNextDayAmount - discount
+            ).roundToCents()
 
     companion object {
         val Empty = MonthlyChargeBreakdown(
@@ -178,3 +183,5 @@ private fun Meal.dayOrder(): Int =
         Meal.BreakfastNextDay -> 3
         Meal.Unknown -> 4
     }
+
+private fun Double.roundToCents(): Double = (this * 100).roundToLong() / 100.0

@@ -334,6 +334,30 @@ class MonthlyChargeTest {
         assertEquals(8.0, result.total, TOLERANCE)
     }
 
+    @Test
+    fun fullyDiscountedMonthWithCentPricesTotalsExactlyZero() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    breakfast = 1.10,
+                    lunch = 12.30,
+                    dinner = 9.70,
+                    mitraAllowance = allowance42,
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(LocalDate(2026, 8, 3), meals = listOf(Meal.Breakfast, Meal.Lunch)),
+            booking(LocalDate(2026, 8, 4), meals = listOf(Meal.Lunch, Meal.Dinner)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+
+        // exact comparison on purpose: the dialog shows "nothing to pay" only for 0.0
+        assertEquals(0.0, result.total)
+    }
+
     companion object {
         private const val TOLERANCE = 0.0001
     }
