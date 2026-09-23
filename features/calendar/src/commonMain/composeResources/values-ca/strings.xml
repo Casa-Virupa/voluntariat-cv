@@ -69,4 +69,10 @@
     <string name="online_shift_label">Faig el voluntariat online</string>
     <string name="online_tag">Online</string>
     <string name="sleep_notice_non_member">Si vols quedar-te a dormir, avisa-ho a l\'hostatgeria.</string>
+    <string name="reservation_error_title">No s\'ha pogut confirmar</string>
+    <string name="reservation_error_missing_date">Tria la data del voluntariat.</string>
+    <string name="reservation_error_missing_shift">Tria almenys un torn (matí o tarda).</string>
+    <string name="reservation_error_missing_specific_area">Tria l\'àrea específica de cada torn específic.</string>
+    <string name="reservation_error_online_area_required">Aquest dia tots els torns han de ser específics i d\'una àrea que permeti fer-los online.</string>
+    <string name="reservation_error_save_failed">No s\'ha pogut desar la reserva. Comprova la connexió i torna-ho a provar.</string>
 </resources>

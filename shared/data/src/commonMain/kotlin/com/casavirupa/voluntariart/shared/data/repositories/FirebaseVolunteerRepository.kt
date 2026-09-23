@@ -67,8 +67,12 @@ class FirebaseVolunteerRepository(
                 .where { "user_id" equalTo id.value }
                 .get()
                 .documents
-                .map { document ->
-                    document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                // A single malformed (legacy or console-edited) booking must not make the
+                // whole read fail: the booking form relies on it to detect a duplicate day.
+                .mapNotNull { document ->
+                    runCatching {
+                        document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                    }.getOrNull()
                 }
         }
 

@@ -38,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.casavirupa.voluntariat.features.calendar.viewmodels.AdditionalOption
 import com.casavirupa.voluntariat.features.calendar.viewmodels.FormVolunteerTypeUi
 import com.casavirupa.voluntariat.features.calendar.viewmodels.RemoteDialog
+import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormError
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftInfoSummary
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
@@ -56,6 +57,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -81,6 +83,12 @@ import voluntariatcv.features.calendar.generated.resources.not_available_volunte
 import voluntariatcv.features.calendar.generated.resources.online_shift_label
 import voluntariatcv.features.calendar.generated.resources.online_tag
 import voluntariatcv.features.calendar.generated.resources.sleep_notice_non_member
+import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_date
+import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_shift
+import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_specific_area
+import voluntariatcv.features.calendar.generated.resources.reservation_error_online_area_required
+import voluntariatcv.features.calendar.generated.resources.reservation_error_save_failed
+import voluntariatcv.features.calendar.generated.resources.reservation_error_title
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
 import voluntariatcv.features.calendar.generated.resources.select_date
 import voluntariatcv.features.calendar.generated.resources.select_specific_area
@@ -197,6 +205,16 @@ internal fun ReservationFormScreen(
             onCancel = viewModel::closeExistVolunteerDialog,
             confirmText = stringResource(Res.string.accept),
             onConfirm = viewModel::closeExistVolunteerDialog,
+        )
+    }
+
+    uiState.error?.let { error ->
+        WarningDialog(
+            onDismiss = viewModel::dismissError,
+            title = stringResource(Res.string.reservation_error_title),
+            description = stringResource(error.message()),
+            confirmText = stringResource(Res.string.accept),
+            onConfirm = viewModel::dismissError,
         )
     }
 
@@ -714,6 +732,14 @@ private fun FormVolunteerTypeUi.getBackgroundColor() =
         FormVolunteerTypeUi.Specific -> Color(0xFF9E816E)
     }
 
+private fun ReservationFormError.message(): StringResource =
+    when (this) {
+        ReservationFormError.MissingDate -> Res.string.reservation_error_missing_date
+        ReservationFormError.MissingShift -> Res.string.reservation_error_missing_shift
+        ReservationFormError.MissingSpecificArea -> Res.string.reservation_error_missing_specific_area
+        ReservationFormError.OnlineAreaRequired -> Res.string.reservation_error_online_area_required
+        ReservationFormError.SaveFailed -> Res.string.reservation_error_save_failed
+    }
 
 private val OnlineTagColor = Color(0xFF7BA7BC)
 

@@ -69,4 +69,10 @@
     <string name="online_shift_label">I\'m volunteering online</string>
     <string name="online_tag">Online</string>
     <string name="sleep_notice_non_member">If you want to stay overnight, let the guesthouse know.</string>
+    <string name="reservation_error_title">Couldn\'t confirm</string>
+    <string name="reservation_error_missing_date">Choose the date of your volunteering.</string>
+    <string name="reservation_error_missing_shift">Choose at least one shift (morning or afternoon).</string>
+    <string name="reservation_error_missing_specific_area">Choose the specific area of each specific shift.</string>
+    <string name="reservation_error_online_area_required">On this day every shift has to be specific and in an area that allows working online.</string>
+    <string name="reservation_error_save_failed">The booking couldn\'t be saved. Check your connection and try again.</string>
 </resources>

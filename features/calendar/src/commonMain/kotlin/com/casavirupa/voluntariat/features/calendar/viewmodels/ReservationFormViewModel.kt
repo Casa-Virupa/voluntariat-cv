@@ -61,6 +61,9 @@ class ReservationFormViewModel(
 ) : ViewModel() {
     private val throttler = Throttler()
 
+    // Own throttler so a tap on CONFIRMAR right after a shift modal's confirm isn't swallowed
+    private val confirmThrottler = Throttler()
+
     // Dashboard-published list of areas whose volunteering may be done online.
     val areaConfig: StateFlow<AreaConfig> =
         areaConfigRepository
@@ -468,38 +471,44 @@ class ReservationFormViewModel(
     }
 
     fun onConfirm() {
-        throttler.throttle {
+        confirmThrottler.throttle {
             viewModelScope.launch {
-                if (!formInputsAreValid()) {
-                    // TODO: Show error
+                formError()?.let { error ->
+                    showError(error)
                     return@launch
                 }
-                if (existVolunteerFromUser()) {
+                val user = authRepository.getCurrentUser().getOrElse { error ->
+                    Logger.e(error, LOG_TAG) { "Error getting current user when reserving a day" }
+                    showError(ReservationFormError.SaveFailed)
+                    return@launch
+                }
+                val alreadyBooked = existVolunteerFromUser(user.id).getOrElse { error ->
+                    Logger.e(error, LOG_TAG) { "Error reading the user's volunteers" }
+                    showError(ReservationFormError.SaveFailed)
+                    return@launch
+                }
+                if (alreadyBooked) {
                     _showExistingVolunteerDialogError.update { true }
                     return@launch
                 }
-                // Fallback area for a specific shift when there was no picker (a single
-                // selectable area). On a forced-online day this is the first ONLINE area,
-                // not the user's first area — which may not allow remote work.
-                val specificArea = specificAreas.value.firstOrNull() ?: return@launch
-                val volunteer = buildReservation(specificArea)
-                authRepository
-                    .getCurrentUser()
-                    .onSuccess { user ->
-                        volunteerRepository
-                            .reserveDay(user.id, volunteer)
-                            .onSuccess {
-                                navigateBack()
-                            }.onFailure {
-                                // TODO: Show error
-                                Logger.d(LOG_TAG) { "Error reserving a day" }
-                            }
-                    }.onFailure {
-                        // TODO: Show error
-                        Logger.d(LOG_TAG) { "Error getting current user when reserving a day" }
+                volunteerRepository
+                    .reserveDay(user.id, buildReservation())
+                    .onSuccess {
+                        navigateBack()
+                    }.onFailure { error ->
+                        Logger.e(error, LOG_TAG) { "Error reserving a day" }
+                        showError(ReservationFormError.SaveFailed)
                     }
             }
         }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(error = null) }
+    }
+
+    private fun showError(error: ReservationFormError) {
+        _uiState.update { it.copy(error = error) }
     }
 
     fun onNavigationHandled() {
@@ -515,17 +524,21 @@ class ReservationFormViewModel(
         temporalDate = null
     }
 
-    private fun formInputsAreValid() =
-        date.value != null &&
-                shifts.value.isNotEmpty() &&
-                (morningVolunteerTypeIsValid() || afternoonVolunteerTypeIsValid()) &&
-                onlineConstraintsAreValid()
+    // First reason the form can't be saved yet, or null when it's ready
+    private fun formError(): ReservationFormError? =
+        when {
+            date.value == null -> ReservationFormError.MissingDate
+            shifts.value.isEmpty() -> ReservationFormError.MissingShift
+            !shifts.value.all(::shiftAreaIsValid) -> ReservationFormError.MissingSpecificArea
+            !onlineConstraintsAreValid() -> ReservationFormError.OnlineAreaRequired
+            else -> null
+        }
 
     // On a forced-online day every confirmed shift must be specific, in an online area
     private fun onlineConstraintsAreValid(): Boolean {
         if (!_forcedOnline.value) return true
         val config = areaConfig.value
-        val fallbackArea = specificAreas.value.firstOrNull()
+        val fallbackArea = fallbackSpecificArea()
         val confirmed = shiftsInfo.value
         return confirmed.isNotEmpty() && confirmed.all { info ->
             info.type == FormVolunteerTypeUi.Specific &&
@@ -533,22 +546,26 @@ class ReservationFormViewModel(
         }
     }
 
-    private fun morningVolunteerTypeIsValid() =
-       (morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
-                selectedMorningSpecificArea.value == null) ||
-                morningVolunteerType.value == FormVolunteerTypeUi.General
+    // A general shift needs nothing more; a specific one needs an area, either picked or
+    // the only one the user can choose (there's no picker then).
+    private fun shiftAreaIsValid(shift: ShiftUi): Boolean =
+        when (shift) {
+            ShiftUi.Morning -> morningVolunteerType.value == FormVolunteerTypeUi.General ||
+                (selectedMorningSpecificArea.value ?: fallbackSpecificArea()) != null
+            ShiftUi.Afternoon -> afternoonVolunteerType.value == FormVolunteerTypeUi.General ||
+                (selectedAfternoonSpecificArea.value ?: fallbackSpecificArea()) != null
+        }
 
-    private fun afternoonVolunteerTypeIsValid() =
-        (afternoonVolunteerType.value == FormVolunteerTypeUi.Specific &&
-                selectedAfternoonSpecificArea.value == null) ||
-                afternoonVolunteerType.value == FormVolunteerTypeUi.General
+    // Area used by a specific shift when there was no picker: the single selectable area.
+    // On a forced-online day that's the single ONLINE area, not the user's first area.
+    private fun fallbackSpecificArea(): SpecificArea? = specificAreas.value.singleOrNull()
 
-    private fun buildReservation(userSpecificArea: SpecificArea) =
+    private fun buildReservation() =
         Volunteer(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shifts = shifts.value.toDomainModel(userSpecificArea),
+            shifts = shifts.value.toDomainModel(fallbackSpecificArea()),
             meals = additionalOptionsSelected.value.getMeals(),
             sleep = additionalOptionsSelected.value.contains(AdditionalOption.Sleep),
         )
@@ -560,12 +577,12 @@ class ReservationFormViewModel(
     // A shift is online only if the user asked for it AND it is a specific shift in an area
     // that allows remote work; the toggle is hidden otherwise, but the state is re-checked
     // here so a stale value can never be persisted.
-    private fun morningIsOnline(fallbackArea: SpecificArea? = specificAreas.value.singleOrNull()) =
+    private fun morningIsOnline(fallbackArea: SpecificArea? = fallbackSpecificArea()) =
         _morningOnline.value &&
             morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
             areaConfig.value.allowsOnline(selectedMorningSpecificArea.value ?: fallbackArea)
 
-    private fun afternoonIsOnline(fallbackArea: SpecificArea? = specificAreas.value.singleOrNull()) =
+    private fun afternoonIsOnline(fallbackArea: SpecificArea? = fallbackSpecificArea()) =
         _afternoonOnline.value &&
             afternoonVolunteerType.value == FormVolunteerTypeUi.Specific &&
             areaConfig.value.allowsOnline(selectedAfternoonSpecificArea.value ?: fallbackArea)
@@ -631,7 +648,7 @@ class ReservationFormViewModel(
             else -> Meal.Unknown
         }
 
-    private fun List<ShiftUi>.toDomainModel(userSpecificArea: SpecificArea) =
+    private fun List<ShiftUi>.toDomainModel(userSpecificArea: SpecificArea?) =
         when {
             containsAll(ShiftUi.entries.toList()) -> this.map {
                 when (it) {
@@ -647,7 +664,7 @@ class ReservationFormViewModel(
             }
         }
 
-    private fun morningShift(fallbackArea: SpecificArea): Shift.Morning {
+    private fun morningShift(fallbackArea: SpecificArea?): Shift.Morning {
         val specificArea = selectedMorningSpecificArea.value ?: fallbackArea
         return Shift.Morning(
             type = morningVolunteerType.value.toDomainModel(specificArea),
@@ -656,7 +673,7 @@ class ReservationFormViewModel(
         )
     }
 
-    private fun afternoonShift(fallbackArea: SpecificArea): Shift.Afternoon {
+    private fun afternoonShift(fallbackArea: SpecificArea?): Shift.Afternoon {
         val specificArea = selectedAfternoonSpecificArea.value ?: fallbackArea
         return Shift.Afternoon(
             type = afternoonVolunteerType.value.toDomainModel(specificArea),
@@ -671,24 +688,25 @@ class ReservationFormViewModel(
             FormVolunteerTypeUi.Specific -> VolunteerType.Specific(specificArea!!)
         }
 
-    private suspend fun existVolunteerFromUser(): Boolean {
-        var result = false
-        // TODO: Handle this error with a message
-        val user = authRepository.getCurrentUser().getOrNull() ?: return true
+    private suspend fun existVolunteerFromUser(userId: UserId): Result<Boolean> =
         volunteerRepository
-            .getVolunteersByUser(user.id)
-            .onSuccess { volunteers ->
-                result = volunteers.any { it.date == date.value }
-            }.onFailure {
-                result = true
-            }
-        return result
-    }
+            .getVolunteersByUser(userId)
+            .map { volunteers -> volunteers.any { it.date == date.value } }
 }
 
 data class ReservationFormUiState(
     val isFormSavedSuccessfully: Boolean = false,
+    val error: ReservationFormError? = null,
 )
+
+/** Why CONFIRMAR couldn't save the booking; shown to the user in a dialog. */
+enum class ReservationFormError {
+    MissingDate,
+    MissingShift,
+    MissingSpecificArea,
+    OnlineAreaRequired,
+    SaveFailed,
+}
 
 enum class ShiftUi(
     val text: StringResource,

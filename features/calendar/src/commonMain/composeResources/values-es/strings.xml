@@ -69,4 +69,10 @@
     <string name="online_shift_label">Hago el voluntariado online</string>
     <string name="online_tag">Online</string>
     <string name="sleep_notice_non_member">Si quieres quedarte a dormir, avísalo en la hospedería.</string>
+    <string name="reservation_error_title">No se ha podido confirmar</string>
+    <string name="reservation_error_missing_date">Elige la fecha del voluntariado.</string>
+    <string name="reservation_error_missing_shift">Elige al menos un turno (mañana o tarde).</string>
+    <string name="reservation_error_missing_specific_area">Elige el área específica de cada turno específico.</string>
+    <string name="reservation_error_online_area_required">Este día todos los turnos deben ser específicos y de un área que permita hacerlos online.</string>
+    <string name="reservation_error_save_failed">No se ha podido guardar la reserva. Comprueba la conexión y vuelve a intentarlo.</string>
 </resources>
