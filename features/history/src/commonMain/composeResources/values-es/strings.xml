@@ -34,13 +34,9 @@
         <item quantity="one">1 pernoctación</item>
         <item quantity="other">%1$d pernoctaciones</item>
     </plurals>
-    <plurals name="mitra_free_lunches_count">
-        <item quantity="one">1 almuerzo incluido (mitra)</item>
-        <item quantity="other">%1$d almuerzos incluidos (mitra)</item>
-    </plurals>
-    <plurals name="mitra_free_dinners_count">
-        <item quantity="one">1 cena incluida (mitra)</item>
-        <item quantity="other">%1$d cenas incluidas (mitra)</item>
+    <plurals name="mitra_free_meals_count">
+        <item quantity="one">1 comida incluida (mitra)</item>
+        <item quantity="other">%1$d comidas incluidas (mitra)</item>
     </plurals>
     <plurals name="mitra_free_nights_count">
         <item quantity="one">1 pernoctación incluida (mitra)</item>
@@ -53,5 +49,9 @@
     <plurals name="breakfasts_next_day_count">
         <item quantity="one">1 desayuno del día siguiente</item>
         <item quantity="other">%1$d desayunos del día siguiente</item>
+    </plurals>
+    <plurals name="mitra_free_breakfasts_next_day_count">
+        <item quantity="one">1 desayuno del día siguiente incluido (mitra)</item>
+        <item quantity="other">%1$d desayunos del día siguiente incluidos (mitra)</item>
     </plurals>
 </resources>

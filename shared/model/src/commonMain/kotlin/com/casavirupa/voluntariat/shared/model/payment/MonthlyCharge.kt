@@ -15,14 +15,16 @@ data class MonthlyChargeBreakdown(
     val nightsAmount: Double,
     val breakfastsAmount: Double,
     val breakfastsNextDayAmount: Double,
-    val freeLunchesUsed: Int,
-    val freeDinnersUsed: Int,
+    // Lunches, dinners and same-day breakfasts covered by the mitra meal pool
+    val freeMealsUsed: Int,
     val freeNightsUsed: Int,
-    val lunchesDiscount: Double,
-    val dinnersDiscount: Double,
+    // Next-day breakfasts that come with a free night
+    val freeBreakfastsNextDayUsed: Int,
+    val mealsDiscount: Double,
     val nightsDiscount: Double,
+    val breakfastsNextDayDiscount: Double,
 ) {
-    val discount: Double get() = lunchesDiscount + dinnersDiscount + nightsDiscount
+    val discount: Double get() = mealsDiscount + nightsDiscount + breakfastsNextDayDiscount
 
     val total: Double
         get() = lunchesAmount + dinnersAmount + nightsAmount +
@@ -40,22 +42,27 @@ data class MonthlyChargeBreakdown(
             nightsAmount = 0.0,
             breakfastsAmount = 0.0,
             breakfastsNextDayAmount = 0.0,
-            freeLunchesUsed = 0,
-            freeDinnersUsed = 0,
+            freeMealsUsed = 0,
             freeNightsUsed = 0,
-            lunchesDiscount = 0.0,
-            dinnersDiscount = 0.0,
+            freeBreakfastsNextDayUsed = 0,
+            mealsDiscount = 0.0,
             nightsDiscount = 0.0,
+            breakfastsNextDayDiscount = 0.0,
         )
     }
 }
 
 /**
- * Net charge for one calendar month of bookings. For mitra volunteers the first
- * N chronological lunches/dinners/nights are free, each zeroed at its own
- * booking-date price. The allowance is the one in force on the 1st of the month,
- * so a rule change mid-month only affects the following month. [volunteers] must
- * all belong to the same calendar month.
+ * Net charge for one calendar month of bookings. For mitra volunteers:
+ * - the first N chronological meals (lunch, dinner or same-day breakfast, one shared pool)
+ *   are free, and so are the first M nights; each unit is zeroed at its own booking-date
+ *   price, and an item that costs nothing never uses up a unit;
+ * - a free night also makes that stay's next-day breakfast free.
+ * Order: booking date, then booking id, then breakfast → lunch → dinner within the day
+ * (never the order the options were tapped in) — exactly what the dashboard's
+ * `v_charge_discounted` does. The allowance is the one in force on the 1st of the month,
+ * so a rule change mid-month only affects the following month. [volunteers] must all
+ * belong to the same calendar month.
  */
 fun calculateMonthlyCharge(
     volunteers: List<Volunteer>,
@@ -81,53 +88,63 @@ fun calculateMonthlyCharge(
     var nightsAmount = 0.0
     var breakfastsAmount = 0.0
     var breakfastsNextDayAmount = 0.0
-    var freeLunchesUsed = 0
-    var freeDinnersUsed = 0
+    var freeMealsUsed = 0
     var freeNightsUsed = 0
-    var lunchesDiscount = 0.0
-    var dinnersDiscount = 0.0
+    var freeBreakfastsNextDayUsed = 0
+    var mealsDiscount = 0.0
     var nightsDiscount = 0.0
+    var breakfastsNextDayDiscount = 0.0
 
-    volunteers.sortedBy { it.date }.forEach { volunteer ->
-        val prices = priceRules.priceAt(volunteer.date)
-        volunteer.meals.forEach { meal ->
-            when (meal) {
-                Meal.Lunch -> {
-                    lunches++
-                    lunchesAmount += prices.lunch
-                    if (freeLunchesUsed < allowance.freeLunches) {
-                        freeLunchesUsed++
-                        lunchesDiscount += prices.lunch
-                    }
-                }
-                Meal.Dinner -> {
-                    dinners++
-                    dinnersAmount += prices.dinner
-                    if (freeDinnersUsed < allowance.freeDinners) {
-                        freeDinnersUsed++
-                        dinnersDiscount += prices.dinner
-                    }
-                }
-                Meal.Breakfast -> {
-                    breakfasts++
-                    breakfastsAmount += prices.breakfast
-                }
-                Meal.BreakfastNextDay -> {
-                    breakfastsNextDay++
-                    breakfastsNextDayAmount += prices.breakfastNextDay
-                }
-                Meal.Unknown -> Unit
-            }
-        }
-        if (volunteer.sleep) {
-            nights++
-            nightsAmount += prices.sleep
-            if (freeNightsUsed < allowance.freeSleeps) {
-                freeNightsUsed++
-                nightsDiscount += prices.sleep
-            }
+    fun takeFreeMeal(price: Double) {
+        if (price > 0.0 && freeMealsUsed < allowance.freeMeals) {
+            freeMealsUsed++
+            mealsDiscount += price
         }
     }
+
+    volunteers
+        .sortedWith(compareBy<Volunteer> { it.date }.thenBy { it.id.value })
+        .forEach { volunteer ->
+            val prices = priceRules.priceAt(volunteer.date)
+            var nightIsFree = false
+            if (volunteer.sleep) {
+                nights++
+                nightsAmount += prices.sleep
+                if (prices.sleep > 0.0 && freeNightsUsed < allowance.freeSleeps) {
+                    freeNightsUsed++
+                    nightsDiscount += prices.sleep
+                    nightIsFree = true
+                }
+            }
+            volunteer.meals.sortedBy { it.dayOrder() }.forEach { meal ->
+                when (meal) {
+                    Meal.Breakfast -> {
+                        breakfasts++
+                        breakfastsAmount += prices.breakfast
+                        takeFreeMeal(prices.breakfast)
+                    }
+                    Meal.Lunch -> {
+                        lunches++
+                        lunchesAmount += prices.lunch
+                        takeFreeMeal(prices.lunch)
+                    }
+                    Meal.Dinner -> {
+                        dinners++
+                        dinnersAmount += prices.dinner
+                        takeFreeMeal(prices.dinner)
+                    }
+                    Meal.BreakfastNextDay -> {
+                        breakfastsNextDay++
+                        breakfastsNextDayAmount += prices.breakfastNextDay
+                        if (nightIsFree && prices.breakfastNextDay > 0.0) {
+                            freeBreakfastsNextDayUsed++
+                            breakfastsNextDayDiscount += prices.breakfastNextDay
+                        }
+                    }
+                    Meal.Unknown -> Unit
+                }
+            }
+        }
 
     return MonthlyChargeBreakdown(
         lunches = lunches,
@@ -140,11 +157,21 @@ fun calculateMonthlyCharge(
         nightsAmount = nightsAmount,
         breakfastsAmount = breakfastsAmount,
         breakfastsNextDayAmount = breakfastsNextDayAmount,
-        freeLunchesUsed = freeLunchesUsed,
-        freeDinnersUsed = freeDinnersUsed,
+        freeMealsUsed = freeMealsUsed,
         freeNightsUsed = freeNightsUsed,
-        lunchesDiscount = lunchesDiscount,
-        dinnersDiscount = dinnersDiscount,
+        freeBreakfastsNextDayUsed = freeBreakfastsNextDayUsed,
+        mealsDiscount = mealsDiscount,
         nightsDiscount = nightsDiscount,
+        breakfastsNextDayDiscount = breakfastsNextDayDiscount,
     )
 }
+
+// Chronological order of a day's meals; the dashboard ranks them the same way.
+private fun Meal.dayOrder(): Int =
+    when (this) {
+        Meal.Breakfast -> 0
+        Meal.Lunch -> 1
+        Meal.Dinner -> 2
+        Meal.BreakfastNextDay -> 3
+        Meal.Unknown -> 4
+    }

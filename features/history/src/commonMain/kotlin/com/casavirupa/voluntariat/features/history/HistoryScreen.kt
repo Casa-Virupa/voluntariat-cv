@@ -71,8 +71,8 @@ import voluntariatcv.features.history.generated.resources.ic_target
 import voluntariatcv.features.history.generated.resources.breakfasts_count
 import voluntariatcv.features.history.generated.resources.breakfasts_next_day_count
 import voluntariatcv.features.history.generated.resources.lunches_count
-import voluntariatcv.features.history.generated.resources.mitra_free_dinners_count
-import voluntariatcv.features.history.generated.resources.mitra_free_lunches_count
+import voluntariatcv.features.history.generated.resources.mitra_free_breakfasts_next_day_count
+import voluntariatcv.features.history.generated.resources.mitra_free_meals_count
 import voluntariatcv.features.history.generated.resources.mitra_free_nights_count
 import voluntariatcv.features.history.generated.resources.morning
 import voluntariatcv.features.history.generated.resources.my_volunteerings
@@ -513,16 +513,6 @@ private fun PaymentDetailDialog(
                         amount = detail.lunchesAmount,
                     )
                 }
-                if (detail.freeLunches > 0) {
-                    PaymentDetailRow(
-                        concept = pluralStringResource(
-                            Res.plurals.mitra_free_lunches_count,
-                            detail.freeLunches,
-                            detail.freeLunches,
-                        ),
-                        amount = -detail.lunchesDiscount,
-                    )
-                }
                 if (detail.dinners > 0) {
                     PaymentDetailRow(
                         concept = pluralStringResource(
@@ -533,14 +523,15 @@ private fun PaymentDetailDialog(
                         amount = detail.dinnersAmount,
                     )
                 }
-                if (detail.freeDinners > 0) {
+                // One pool for lunches, dinners and same-day breakfasts
+                if (detail.freeMeals > 0) {
                     PaymentDetailRow(
                         concept = pluralStringResource(
-                            Res.plurals.mitra_free_dinners_count,
-                            detail.freeDinners,
-                            detail.freeDinners,
+                            Res.plurals.mitra_free_meals_count,
+                            detail.freeMeals,
+                            detail.freeMeals,
                         ),
-                        amount = -detail.dinnersDiscount,
+                        amount = -detail.mealsDiscount,
                     )
                 }
                 if (detail.nights > 0) {
@@ -571,6 +562,16 @@ private fun PaymentDetailDialog(
                             detail.breakfastsNextDay,
                         ),
                         amount = detail.breakfastsNextDayAmount,
+                    )
+                }
+                if (detail.freeBreakfastsNextDay > 0) {
+                    PaymentDetailRow(
+                        concept = pluralStringResource(
+                            Res.plurals.mitra_free_breakfasts_next_day_count,
+                            detail.freeBreakfastsNextDay,
+                            detail.freeBreakfastsNextDay,
+                        ),
+                        amount = -detail.breakfastsNextDayDiscount,
                     )
                 }
                 if (detail.total == 0.0) {

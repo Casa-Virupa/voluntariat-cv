@@ -34,13 +34,9 @@
         <item quantity="one">1 overnight stay</item>
         <item quantity="other">%1$d overnight stays</item>
     </plurals>
-    <plurals name="mitra_free_lunches_count">
-        <item quantity="one">1 lunch included (mitra)</item>
-        <item quantity="other">%1$d lunches included (mitra)</item>
-    </plurals>
-    <plurals name="mitra_free_dinners_count">
-        <item quantity="one">1 dinner included (mitra)</item>
-        <item quantity="other">%1$d dinners included (mitra)</item>
+    <plurals name="mitra_free_meals_count">
+        <item quantity="one">1 meal included (mitra)</item>
+        <item quantity="other">%1$d meals included (mitra)</item>
     </plurals>
     <plurals name="mitra_free_nights_count">
         <item quantity="one">1 overnight stay included (mitra)</item>
@@ -53,5 +49,9 @@
     <plurals name="breakfasts_next_day_count">
         <item quantity="one">1 next-morning breakfast</item>
         <item quantity="other">%1$d next-morning breakfasts</item>
+    </plurals>
+    <plurals name="mitra_free_breakfasts_next_day_count">
+        <item quantity="one">1 next-morning breakfast included (mitra)</item>
+        <item quantity="other">%1$d next-morning breakfasts included (mitra)</item>
     </plurals>
 </resources>

@@ -12,6 +12,9 @@ data class FirebasePriceRule(
     val breakfast: Double = Prices.DEFAULT_BREAKFAST_PRICE,
     @SerialName("breakfast_next_day") val breakfastNextDay: Double = Prices.DEFAULT_BREAKFAST_PRICE,
     val sleep: Double = Prices.DEFAULT_SLEEP_PRICE,
+    // Shared mitra meal pool (lunch, dinner, same-day breakfast). Docs published before it
+    // existed only carry the per-item lunch/dinner quotas, which then add up to the pool.
+    @SerialName("mitra_free_meals") val mitraFreeMeals: Int? = null,
     @SerialName("mitra_free_lunches") val mitraFreeLunches: Int = 0,
     @SerialName("mitra_free_dinners") val mitraFreeDinners: Int = 0,
     @SerialName("mitra_free_sleeps") val mitraFreeSleeps: Int = 0,
