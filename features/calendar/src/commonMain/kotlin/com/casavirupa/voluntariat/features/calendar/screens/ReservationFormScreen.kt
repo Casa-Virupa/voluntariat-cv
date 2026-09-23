@@ -85,6 +85,7 @@ import voluntariatcv.features.calendar.generated.resources.online_tag
 import voluntariatcv.features.calendar.generated.resources.sleep_notice_non_member
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_date
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_shift
+import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_shift_or_option
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_specific_area
 import voluntariatcv.features.calendar.generated.resources.reservation_error_online_area_required
 import voluntariatcv.features.calendar.generated.resources.reservation_error_save_failed
@@ -93,6 +94,7 @@ import voluntariatcv.features.calendar.generated.resources.reservation_form_titl
 import voluntariatcv.features.calendar.generated.resources.select_date
 import voluntariatcv.features.calendar.generated.resources.select_specific_area
 import voluntariatcv.features.calendar.generated.resources.shift_label
+import voluntariatcv.features.calendar.generated.resources.shift_optional_hint
 import voluntariatcv.features.calendar.generated.resources.start_label
 import kotlin.time.Clock
 
@@ -353,6 +355,15 @@ private fun ReservationForm(
                 shiftsInfo = shiftsInfo,
                 onEditInfo = onEditShiftInfo,
             )
+            // Meals and a bed can be booked on their own (issue #108)
+            if (shifts.isEmpty() && options.isNotEmpty()) {
+                Text(
+                    text = stringResource(Res.string.shift_optional_hint),
+                    modifier = Modifier.padding(top = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         // Long-stay volunteers have no meals or nights to book, and forced-online days have
         // none either, so the section is hidden
@@ -736,6 +747,7 @@ private fun ReservationFormError.message(): StringResource =
     when (this) {
         ReservationFormError.MissingDate -> Res.string.reservation_error_missing_date
         ReservationFormError.MissingShift -> Res.string.reservation_error_missing_shift
+        ReservationFormError.MissingShiftOrOption -> Res.string.reservation_error_missing_shift_or_option
         ReservationFormError.MissingSpecificArea -> Res.string.reservation_error_missing_specific_area
         ReservationFormError.OnlineAreaRequired -> Res.string.reservation_error_online_area_required
         ReservationFormError.SaveFailed -> Res.string.reservation_error_save_failed

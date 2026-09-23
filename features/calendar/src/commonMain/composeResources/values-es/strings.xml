@@ -75,4 +75,7 @@
     <string name="reservation_error_missing_specific_area">Elige el área específica de cada turno específico.</string>
     <string name="reservation_error_online_area_required">Este día todos los turnos deben ser específicos y de un área que permita hacerlos online.</string>
     <string name="reservation_error_save_failed">No se ha podido guardar la reserva. Comprueba la conexión y vuelve a intentarlo.</string>
+    <string name="reservation_error_missing_shift_or_option">Elige al menos un turno, o una comida o una pernoctación.</string>
+    <string name="shift_optional_hint">Si solo vienes a comer o a dormir, no hace falta que elijas ningún turno.</string>
+    <string name="services_only_title">Solo comidas o pernoctación</string>
 </resources>

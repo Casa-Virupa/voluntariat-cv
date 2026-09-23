@@ -1,8 +1,11 @@
 package com.casavirupa.voluntariat.shared.model.payment
 
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -26,11 +29,17 @@ class MonthlyChargeTest {
         meals: List<Meal> = emptyList(),
         sleep: Boolean = false,
         id: String = "",
+        // false = only meals / a bed, no shift that day
+        withVolunteering: Boolean = true,
     ) = Volunteer(
         id = VolunteerId(id),
         userId = UserId.Empty,
         date = date,
-        shifts = emptyList(),
+        shifts = if (withVolunteering) {
+            listOf(Shift.Morning(type = VolunteerType.General, timeRange = TimeRange.DefaultMorning))
+        } else {
+            emptyList()
+        },
         meals = meals,
         sleep = sleep,
     )
@@ -280,6 +289,48 @@ class MonthlyChargeTest {
         assertEquals(0.0, calculateMonthlyCharge(january, defaultRules, isMitra = true).total, TOLERANCE)
         val result = calculateMonthlyCharge(february, defaultRules, isMitra = true)
         assertEquals(4, result.freeMealsUsed)
+        assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    // Issue #93
+    @Test
+    fun bookingWithoutVolunteeringUsesItsOwnPricesAndStaysOutsideTheQuota() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    mitraAllowance = allowance42,
+                    withoutVolunteering = ItemPrices(lunch = 12.0, sleep = 15.0),
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(
+                LocalDate(2026, 12, 1),
+                meals = listOf(Meal.Lunch, Meal.Dinner),
+                sleep = true,
+                withVolunteering = false,
+            ),
+            booking(LocalDate(2026, 12, 2), meals = listOf(Meal.Lunch)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+
+        // only the day with volunteering is inside the quota
+        assertEquals(1, result.freeMealsUsed)
+        assertEquals(0, result.freeNightsUsed)
+        // lunch at 12 €, dinner keeps its ordinary 8 € (no override), night at 15 €
+        assertEquals(12.0 + 8.0 + 15.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun withoutOverridesABookingWithoutVolunteeringPaysOrdinaryPrices() {
+        val volunteers = listOf(
+            booking(LocalDate(2026, 12, 1), meals = listOf(Meal.Lunch), withVolunteering = false),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = false)
+
         assertEquals(8.0, result.total, TOLERANCE)
     }
 

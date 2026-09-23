@@ -71,6 +71,8 @@ class CalendarViewModel(
         combine(upcomingVolunteers, currentUser, filter) { volunteers, user, filter ->
             if (user == null) return@combine emptyMap()
             volunteers
+                // A booking with only meals or a bed isn't a volunteer on that day
+                .filter { it.shifts.isNotEmpty() }
                 .filter { it.isVisibleTo(user) && (filter == null || filter.matches(it, user)) }
                 .groupBy { it.date }
                 .mapValues { (_, volunteers) -> volunteers.size }

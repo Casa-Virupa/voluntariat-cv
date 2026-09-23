@@ -57,7 +57,9 @@ data class MonthlyChargeBreakdown(
  * - the first N chronological meals (lunch, dinner or same-day breakfast, one shared pool)
  *   are free, and so are the first M nights; each unit is zeroed at its own booking-date
  *   price, and an item that costs nothing never uses up a unit;
- * - a free night also makes that stay's next-day breakfast free.
+ * - a free night also makes that stay's next-day breakfast free;
+ * - a booking without volunteering (no shifts: only meals or a bed) is priced with the
+ *   "without volunteering" prices and stays outside the allowance altogether.
  * Order: booking date, then booking id, then breakfast → lunch → dinner within the day
  * (never the order the options were tapped in) — exactly what the dashboard's
  * `v_charge_discounted` does. The allowance is the one in force on the 1st of the month,
@@ -105,12 +107,13 @@ fun calculateMonthlyCharge(
     volunteers
         .sortedWith(compareBy<Volunteer> { it.date }.thenBy { it.id.value })
         .forEach { volunteer ->
-            val prices = priceRules.priceAt(volunteer.date)
+            val withVolunteering = volunteer.shifts.isNotEmpty()
+            val prices = priceRules.priceAt(volunteer.date).forBooking(withVolunteering)
             var nightIsFree = false
             if (volunteer.sleep) {
                 nights++
                 nightsAmount += prices.sleep
-                if (prices.sleep > 0.0 && freeNightsUsed < allowance.freeSleeps) {
+                if (withVolunteering && prices.sleep > 0.0 && freeNightsUsed < allowance.freeSleeps) {
                     freeNightsUsed++
                     nightsDiscount += prices.sleep
                     nightIsFree = true
@@ -121,17 +124,17 @@ fun calculateMonthlyCharge(
                     Meal.Breakfast -> {
                         breakfasts++
                         breakfastsAmount += prices.breakfast
-                        takeFreeMeal(prices.breakfast)
+                        if (withVolunteering) takeFreeMeal(prices.breakfast)
                     }
                     Meal.Lunch -> {
                         lunches++
                         lunchesAmount += prices.lunch
-                        takeFreeMeal(prices.lunch)
+                        if (withVolunteering) takeFreeMeal(prices.lunch)
                     }
                     Meal.Dinner -> {
                         dinners++
                         dinnersAmount += prices.dinner
-                        takeFreeMeal(prices.dinner)
+                        if (withVolunteering) takeFreeMeal(prices.dinner)
                     }
                     Meal.BreakfastNextDay -> {
                         breakfastsNextDay++

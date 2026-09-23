@@ -75,4 +75,7 @@
     <string name="reservation_error_missing_specific_area">Tria l\'àrea específica de cada torn específic.</string>
     <string name="reservation_error_online_area_required">Aquest dia tots els torns han de ser específics i d\'una àrea que permeti fer-los online.</string>
     <string name="reservation_error_save_failed">No s\'ha pogut desar la reserva. Comprova la connexió i torna-ho a provar.</string>
+    <string name="reservation_error_missing_shift_or_option">Tria almenys un torn, o un àpat o una pernocta.</string>
+    <string name="shift_optional_hint">Si només vens a menjar o a dormir, no cal que triïs cap torn.</string>
+    <string name="services_only_title">Només àpats o pernocta</string>
 </resources>

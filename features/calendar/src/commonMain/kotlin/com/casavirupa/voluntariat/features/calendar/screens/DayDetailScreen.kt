@@ -54,6 +54,7 @@ import voluntariatcv.features.calendar.generated.resources.overnight_stay
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon_sunday_with_puja
 import voluntariatcv.features.calendar.generated.resources.shift_afternoon_sunday_without_puja
+import voluntariatcv.features.calendar.generated.resources.services_only_title
 import voluntariatcv.features.calendar.generated.resources.shift_morning
 import voluntariatcv.features.calendar.generated.resources.shift_morning_sunday
 import voluntariatcv.features.calendar.generated.resources.special_activities
@@ -208,6 +209,17 @@ private fun DayShiftsAndEvents(
                 onClickDelete = { onDeleteVolunteer(volunteer.id) },
             )
         }
+        if (dayShifts.servicesOnlyVolunteers.isNotEmpty()) {
+            item {
+                ShiftTitle(text = stringResource(Res.string.services_only_title))
+            }
+            items(dayShifts.servicesOnlyVolunteers) { volunteer ->
+                VolunteerShiftItem(
+                    volunteer = volunteer,
+                    onClickDelete = { onDeleteVolunteer(volunteer.id) },
+                )
+            }
+        }
     }
 }
 
@@ -302,11 +314,13 @@ private fun VolunteerShiftItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                CVTag(
-                    text = volunteer.type.displayName(),
-                    icon = volunteer.type.getIcon(),
-                    backgroundColor = volunteer.type.getBackgroundColor(),
-                )
+                volunteer.type?.let { type ->
+                    CVTag(
+                        text = type.displayName(),
+                        icon = type.getIcon(),
+                        backgroundColor = type.getBackgroundColor(),
+                    )
+                }
                 if (volunteer.online) {
                     CVTag(
                         text = stringResource(Res.string.online_tag),

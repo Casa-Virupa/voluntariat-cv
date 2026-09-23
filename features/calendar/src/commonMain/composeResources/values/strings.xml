@@ -75,4 +75,7 @@
     <string name="reservation_error_missing_specific_area">Choose the specific area of each specific shift.</string>
     <string name="reservation_error_online_area_required">On this day every shift has to be specific and in an area that allows working online.</string>
     <string name="reservation_error_save_failed">The booking couldn\'t be saved. Check your connection and try again.</string>
+    <string name="reservation_error_missing_shift_or_option">Choose at least one shift, or a meal or overnight stay.</string>
+    <string name="shift_optional_hint">Only coming to eat or sleep? You don\'t need to choose a shift.</string>
+    <string name="services_only_title">Only meals or overnight stay</string>
 </resources>

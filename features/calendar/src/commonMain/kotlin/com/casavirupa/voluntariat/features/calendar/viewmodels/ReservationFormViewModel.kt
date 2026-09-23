@@ -528,7 +528,13 @@ class ReservationFormViewModel(
     private fun formError(): ReservationFormError? =
         when {
             date.value == null -> ReservationFormError.MissingDate
-            shifts.value.isEmpty() -> ReservationFormError.MissingShift
+            // No shift is fine when the volunteer only comes to eat or sleep (issue #108)
+            shifts.value.isEmpty() && _additionalOptionsSelected.value.isEmpty() ->
+                if (additionalOptions.value.isEmpty()) {
+                    ReservationFormError.MissingShift
+                } else {
+                    ReservationFormError.MissingShiftOrOption
+                }
             !shifts.value.all(::shiftAreaIsValid) -> ReservationFormError.MissingSpecificArea
             !onlineConstraintsAreValid() -> ReservationFormError.OnlineAreaRequired
             else -> null
@@ -650,6 +656,7 @@ class ReservationFormViewModel(
 
     private fun List<ShiftUi>.toDomainModel(userSpecificArea: SpecificArea?) =
         when {
+            isEmpty() -> emptyList()
             containsAll(ShiftUi.entries.toList()) -> this.map {
                 when (it) {
                     ShiftUi.Morning -> morningShift(userSpecificArea)
@@ -703,6 +710,8 @@ data class ReservationFormUiState(
 enum class ReservationFormError {
     MissingDate,
     MissingShift,
+    // Meals or a bed can be booked without a shift, so any of them would do
+    MissingShiftOrOption,
     MissingSpecificArea,
     OnlineAreaRequired,
     SaveFailed,

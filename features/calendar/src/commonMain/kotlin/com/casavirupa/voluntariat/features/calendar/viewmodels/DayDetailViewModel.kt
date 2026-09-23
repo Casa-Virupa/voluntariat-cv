@@ -123,7 +123,10 @@ class DayDetailViewModel(
                     _uiState.update {
                         it.copy(
                             dayShifts = buildDayShifts(visibleVolunteers, users, currentUser),
-                            headerUi = it.headerUi.copy(numOfVolunteers = visibleVolunteers.size),
+                            // Someone who only eats or sleeps isn't volunteering that day
+                            headerUi = it.headerUi.copy(
+                                numOfVolunteers = visibleVolunteers.count { v -> v.shifts.isNotEmpty() },
+                            ),
                         )
                     }
                 }
@@ -140,6 +143,15 @@ class DayDetailViewModel(
     ) = DayShifts(
         morningVolunteers = volunteers.toShiftItems<Shift.Morning>(users, viewer),
         afternoonVolunteers = volunteers.toShiftItems<Shift.Afternoon>(users, viewer),
+        // Bookings with meals or a bed but no shift (issue #108); only their owner and the
+        // coordination team can see them (Volunteer.isVisibleTo)
+        servicesOnlyVolunteers = volunteers
+            .filter { it.shifts.isEmpty() }
+            .mapNotNull { volunteer ->
+                users
+                    .find { user -> user.id == volunteer.userId }
+                    ?.let { user -> volunteer.toUiModel(user.name, viewer, shift = null) }
+            },
     )
 
     private inline fun <reified T : Shift> List<Volunteer>.toShiftItems(
@@ -167,27 +179,29 @@ data class DetailHeaderUi(
 data class DayShifts(
     val morningVolunteers: List<VolunteerItemUi> = emptyList(),
     val afternoonVolunteers: List<VolunteerItemUi> = emptyList(),
+    val servicesOnlyVolunteers: List<VolunteerItemUi> = emptyList(),
 )
 
 data class VolunteerItemUi(
     val id: VolunteerId,
     val name: String,
     val schedule: String,
-    val type: VolunteerType,
+    // null for a booking with only meals or a bed
+    val type: VolunteerType?,
     val online: Boolean,
     val meals: List<Meal>,
     val sleep: Boolean,
     val canBeDeleted: Boolean,
 )
 
-private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift): VolunteerItemUi {
+private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift?): VolunteerItemUi {
     val showsServices = viewer != null && areServicesVisibleTo(viewer)
     return VolunteerItemUi(
         id = id,
         name = name,
-        schedule = shift.formatSchedule(),
-        type = shift.type,
-        online = shift.online,
+        schedule = shift?.formatSchedule().orEmpty(),
+        type = shift?.type,
+        online = shift?.online == true,
         meals = if (showsServices) meals else emptyList(),
         sleep = showsServices && sleep,
         canBeDeleted = viewer != null && isOwnedBy(viewer),
