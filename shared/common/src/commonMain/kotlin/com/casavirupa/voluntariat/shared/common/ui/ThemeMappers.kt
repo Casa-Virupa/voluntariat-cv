@@ -9,6 +9,7 @@ import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import voluntariatcv.shared.common.generated.resources.Res
+import voluntariatcv.shared.common.generated.resources.area_amrita
 import voluntariatcv.shared.common.generated.resources.area_animals
 import voluntariatcv.shared.common.generated.resources.area_audiovisual
 import voluntariatcv.shared.common.generated.resources.area_communication
@@ -98,6 +99,7 @@ fun VolunteerType.getIcon() =
 @Composable
 fun SpecificArea.displayName() =
     when (this) {
+        SpecificArea.Amrita -> stringResource(Res.string.area_amrita)
         SpecificArea.Animals -> stringResource(Res.string.area_animals)
         SpecificArea.Shop -> stringResource(Res.string.area_shop)
         SpecificArea.Audiovisual -> stringResource(Res.string.area_audiovisual)

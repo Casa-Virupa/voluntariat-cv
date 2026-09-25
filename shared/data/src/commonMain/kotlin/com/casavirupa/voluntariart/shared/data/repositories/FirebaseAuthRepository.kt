@@ -151,6 +151,7 @@ fun String?.toVolunteerType() =
 
 fun String.toSpecificArea() =
     when (this) {
+        "amrita" -> SpecificArea.Amrita
         "animals" -> SpecificArea.Animals
         "shop" -> SpecificArea.Shop
         "technical_and_audiovisual" -> SpecificArea.Audiovisual

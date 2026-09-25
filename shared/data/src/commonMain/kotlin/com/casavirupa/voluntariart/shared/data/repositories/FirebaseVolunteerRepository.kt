@@ -269,6 +269,7 @@ private fun FirebaseTimeRange.toDomainModel() =
 
 private fun SpecificArea.toFirebaseValue() =
     when (this) {
+        SpecificArea.Amrita -> "amrita"
         SpecificArea.Animals -> "animals"
         SpecificArea.Shop -> "shop"
         SpecificArea.Audiovisual -> "technical_and_audiovisual"
