@@ -9,6 +9,7 @@ package com.casavirupa.voluntariat.shared.model.user
  * «Exteriors i Jardineria», `community_health` is «Salut» and `technical_and_texts` is «Textos».
  */
 enum class SpecificArea {
+    Amrita,
     Animals,
     Shop,
     Audiovisual,

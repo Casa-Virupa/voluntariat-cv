@@ -78,10 +78,12 @@ class HistoryViewModel(
             initialValue = null,
         )
 
-    // Global outstanding balance: charges over ALL the user's bookings (past and
-    // future) minus everything the admin has recorded in the ledger. Charges are
-    // netted per calendar month so the mitra allowance never carries over. Null
-    // until all three sources have emitted, so the UI never shows a wrong amount.
+    // Outstanding balance up to the end of the current month: charges of every booking
+    // until then minus the ledger entries until then. Bookings in later months aren't
+    // owed yet — same cut-off as the dashboard's /coordinacio on its default (current
+    // month) view, so both show the same amount. Charges are netted per calendar month
+    // so the mitra allowance never carries over. Null until all three sources have
+    // emitted, so the UI never shows a wrong amount.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val pendingBalance: StateFlow<Double?> =
         user.flatMapLatest { user ->
@@ -91,12 +93,14 @@ class HistoryViewModel(
                 priceRepository.getPriceRules(),
                 ledgerRepository.getEntriesByUser(user.id),
             ) { allVolunteers, priceRules, ledger ->
+                val cutoff = Clock.System.now().toDate().firstDayOfNextMonth()
                 allVolunteers
+                    .filter { it.date < cutoff }
                     .groupBy { it.date.year to it.date.month }
                     .values
                     .sumOf { monthVolunteers ->
                         calculateMonthlyCharge(monthVolunteers, priceRules, user.isMitra).total
-                    } - ledger.sumOf { it.amount }
+                    } - ledger.filter { it.date < cutoff }.sumOf { it.amount }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -383,6 +387,9 @@ private fun Shift.getHoursFromVolunteerType(type: VolunteerType) =
             }
         }
     }
+
+private fun LocalDate.firstDayOfNextMonth(): LocalDate =
+    LocalDate(year, month, 1).plus(DatePeriod(months = 1))
 
 private operator fun LocalTime.minus(other: LocalTime): Double {
     val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()
