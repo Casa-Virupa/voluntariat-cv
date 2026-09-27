@@ -127,7 +127,9 @@ private fun GoogleCalendarEventDb.toDomainModel() =
         start = start.toLocalDateTime(),
         end = end.toLocalDateTime(),
         isAllDay = isAllDay,
-        available = title != NOT_AVAILABLE_TITLE
+        available = !title.contains(NOT_AVAILABLE_TITLE, ignoreCase = true)
     )
 
+// Matched anywhere in the title: the timed blocks carry extra text
+// («NO VOLUNTARIAT A LA TARDA», «AGO - NO VOLUNTARIAT»…); only the all-day ones are bare.
 private const val NOT_AVAILABLE_TITLE = "NO VOLUNTARIAT"

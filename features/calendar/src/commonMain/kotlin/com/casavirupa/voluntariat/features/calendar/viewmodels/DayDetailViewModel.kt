@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.viewmodels
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.features.calendar.navigation.DayDetailNavKey
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.collections.emptyList
 import kotlin.time.Clock
@@ -70,7 +70,7 @@ class DayDetailViewModel(
 
     // The reservation form only accepts today or later, so past days offer no «+» button.
     val canAddVolunteering: Boolean =
-        date >= Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        date >= Clock.System.now().toLocalDateTime(CasaVirupaTimeZone).date
 
     private var selectedVolunteerToDelete: VolunteerId? = null
 

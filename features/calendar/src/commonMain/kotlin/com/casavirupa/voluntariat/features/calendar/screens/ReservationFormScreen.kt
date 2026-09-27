@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.screens
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -55,7 +56,6 @@ import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
@@ -341,7 +341,7 @@ private fun ReservationForm(
                 placeholder = stringResource(Res.string.date_placeholder),
                 pattern = DATE_PATTERN,
                 minDate = Clock.System.now()
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .toLocalDateTime(CasaVirupaTimeZone)
                     .date,
             )
         }

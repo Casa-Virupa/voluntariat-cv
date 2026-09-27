@@ -9,6 +9,7 @@ import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
+import com.casavirupa.voluntariat.shared.model.calendar.DayCoverage
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.configuration.AreaConfig
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -16,6 +17,7 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.calendar.unavailabilityOn
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -290,8 +292,9 @@ class ReservationFormViewModel(
     }
 
     /**
-     * A day is not available for on-site volunteering when any Google Calendar event happening
-     * on it (all-day or multi-day included) is flagged as not available ("NO VOLUNTARIAT").
+     * A day is not available for on-site volunteering when its «NO VOLUNTARIAT» events
+     * (all-day or multi-day included) cover the whole of it; a timed one covering only the
+     * morning or the afternoon leaves the day bookable.
      * If the events can't be read, the day is treated as available so the user isn't blocked.
      */
     private suspend fun isVolunteeringAvailableOn(date: LocalDate): Boolean =
@@ -299,7 +302,7 @@ class ReservationFormViewModel(
             calendarRepository
                 .getGoogleCalendarEventsByDate(date)
                 .first()
-                .all { it.available }
+                .unavailabilityOn(date) != DayCoverage.WholeDay
         }.getOrElse { error ->
             Logger.e(error, LOG_TAG) { "Error checking availability on $date" }
             true
