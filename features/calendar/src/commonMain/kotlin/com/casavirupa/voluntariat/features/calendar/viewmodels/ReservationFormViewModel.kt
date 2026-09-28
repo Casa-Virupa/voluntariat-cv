@@ -17,21 +17,28 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
+import com.casavirupa.voluntariat.shared.model.calendar.bookableServices
 import com.casavirupa.voluntariat.shared.model.calendar.unavailabilityOn
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import voluntariatcv.features.calendar.generated.resources.Res
@@ -100,21 +107,51 @@ class ReservationFormViewModel(
     val additionalOptionsSelected: StateFlow<List<AdditionalOption>> =
         _additionalOptionsSelected.asStateFlow()
 
-    // Sleeping over is reserved to members; the next-day breakfast only makes sense
-    // together with an overnight stay, so it appears once "Sleep" is selected.
+    private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
+    val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
+
+    // The user's own booking on the day after the chosen date: an on-site morning shift there
+    // lets a non-mitra book the night before. A read error only hides that option.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val nextDayBooking: Flow<Volunteer?> =
+        combine(
+            authRepository.getCurrentUserFlow()
+                .flatMapLatest { user -> volunteerRepository.getVolunteersByUserFlow(user.id) }
+                .catch { error ->
+                    Logger.e(error, LOG_TAG) { "Error reading the user's volunteers" }
+                    emit(emptyList())
+                },
+            _date,
+        ) { volunteers, date ->
+            date?.let { volunteers.firstOrNull { it.date == date.plus(1, DateTimeUnit.DAY) } }
+        }
+
+    // Mitras may book meals and nights freely; everyone else only what the day's confirmed
+    // on-site shifts justify (see BookableServices). Sleeping over is reserved to members, and
+    // the next-day breakfast only makes sense with an overnight stay, so it appears once
+    // "Sleep" is selected.
     val additionalOptions: StateFlow<List<AdditionalOption>> =
         combine(
             authRepository.getCurrentUserFlow(),
             _additionalOptionsSelected,
             _forcedOnline,
-        ) { user, selected, forcedOnline ->
+            _shiftsInfo,
+            nextDayBooking,
+        ) { user, selected, forcedOnline, shiftsInfo, nextDay ->
             if (!user.paysForServices || forcedOnline) return@combine emptyList()
+            val onSite = shiftsInfo.filterNot { it.online }.map { it.shift }
+            val bookable = user.bookableServices(
+                morning = ShiftUi.Morning in onSite,
+                afternoon = ShiftUi.Afternoon in onSite,
+                nextDay = nextDay,
+            )
             AdditionalOption.entries.filter { option ->
                 when (option) {
-                    AdditionalOption.Sleep -> user.isMember
+                    AdditionalOption.Sleep -> user.isMember && bookable.sleep
                     AdditionalOption.BreakfastNextDay ->
-                        user.isMember && AdditionalOption.Sleep in selected
-                    else -> true
+                        user.isMember && AdditionalOption.Sleep in selected &&
+                            option.toMeal() in bookable.meals
+                    else -> option.toMeal() in bookable.meals
                 }
             }
         }.stateIn(
@@ -152,9 +189,6 @@ class ReservationFormViewModel(
 
     private val _afternoonTimeRange = MutableStateFlow(TimeRange.DefaultAfternoon)
     val afternoonTimeRange: StateFlow<TimeRange> = _afternoonTimeRange.asStateFlow()
-
-    private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
-    val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
 
     private val _showExistingVolunteerDialogError = MutableStateFlow(false)
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
@@ -264,6 +298,14 @@ class ReservationFormViewModel(
         // Opened from a day's detail: go through the same path as a manual pick so the
         // «NO VOLUNTARIAT» check (and its online dialog) also applies to the pre-filled date.
         navKey.initialDate?.let(::onDateChanged)
+        // Removing a shift, making it online or changing the date can withdraw options that
+        // were already picked: drop them so they're never booked (converges, since dropping
+        // Sleep also withdraws the next-day breakfast).
+        viewModelScope.launch {
+            additionalOptions.collect { offered ->
+                _additionalOptionsSelected.update { selected -> selected.filter { it in offered } }
+            }
+        }
     }
 
     fun onDateChanged(date: LocalDate) {
@@ -543,7 +585,8 @@ class ReservationFormViewModel(
     private fun formError(): ReservationFormError? =
         when {
             date.value == null -> ReservationFormError.MissingDate
-            // No shift is fine when the volunteer only comes to eat or sleep (issue #108)
+            // No shift is fine when a mitra only comes to eat or sleep (issue #108), or for
+            // the night before a booked on-site morning shift
             shifts.value.isEmpty() && _additionalOptionsSelected.value.isEmpty() ->
                 if (additionalOptions.value.isEmpty()) {
                     ReservationFormError.MissingShift
@@ -581,15 +624,18 @@ class ReservationFormViewModel(
     // On a forced-online day that's the single ONLINE area, not the user's first area.
     private fun fallbackSpecificArea(): SpecificArea? = specificAreas.value.singleOrNull()
 
-    private fun buildReservation() =
-        Volunteer(
+    private fun buildReservation(): Volunteer {
+        // Selections are pruned as options are withdrawn; re-checked so a stale one never slips in
+        val options = additionalOptionsSelected.value.filter { it in additionalOptions.value }
+        return Volunteer(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
             shifts = shifts.value.toDomainModel(fallbackSpecificArea()),
-            meals = additionalOptionsSelected.value.getMeals(),
-            sleep = additionalOptionsSelected.value.contains(AdditionalOption.Sleep),
+            meals = options.getMeals(),
+            sleep = options.contains(AdditionalOption.Sleep),
         )
+    }
 
     private fun navigateBack() {
         _uiState.update { it.copy(isFormSavedSuccessfully = true) }
