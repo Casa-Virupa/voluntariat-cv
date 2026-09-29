@@ -7,6 +7,22 @@ data class BookableServices(
     val meals: Set<Meal>,
     val sleep: Boolean,
 ) {
+    /**
+     * Drops the breakfast a neighbouring booking already covers, so a morning never gets two
+     * (issue #86): the previous day's «esmorzar de l'endemà» is this day's breakfast, and this
+     * day's next-day breakfast is the following day's.
+     */
+    fun withoutDuplicateBreakfasts(previousDay: Volunteer?, nextDay: Volunteer?): BookableServices =
+        copy(
+            meals = meals.filterNot { meal ->
+                when (meal) {
+                    Meal.Breakfast -> previousDay?.meals.orEmpty().contains(Meal.BreakfastNextDay)
+                    Meal.BreakfastNextDay -> nextDay?.meals.orEmpty().contains(Meal.Breakfast)
+                    else -> false
+                }
+            }.toSet(),
+        )
+
     companion object {
         val All = BookableServices(
             meals = setOf(Meal.Breakfast, Meal.Lunch, Meal.Dinner, Meal.BreakfastNextDay),
@@ -20,8 +36,7 @@ data class BookableServices(
          * Online shifts don't count: the volunteer isn't at the house.
          *
          * @param nextDay the user's booking on the following day, if any: an on-site morning
-         * shift there lets them sleep the night before (and have breakfast, unless that booking
-         * already has it).
+         * shift there lets them sleep the night before.
          */
         fun forVolunteering(
             morning: Boolean,
@@ -34,9 +49,7 @@ data class BookableServices(
                 if (morning) add(Meal.Breakfast)
                 if (morning || afternoon) add(Meal.Lunch)
                 if (afternoon) add(Meal.Dinner)
-                if (sleep && nextDay?.meals.orEmpty().none { it == Meal.Breakfast }) {
-                    add(Meal.BreakfastNextDay)
-                }
+                if (sleep) add(Meal.BreakfastNextDay)
             }
             return BookableServices(meals = meals, sleep = sleep)
         }
@@ -45,12 +58,16 @@ data class BookableServices(
 
 /**
  * Mitras may book meals and nights freely, even without volunteering that day (issue #108);
- * everyone else only what their on-site shifts justify.
+ * everyone else only what their on-site shifts justify. Either way, a breakfast already booked
+ * by the previous or next day's booking isn't offered again.
+ *
+ * @param previousDay / [nextDay] the user's own bookings on the neighbouring days, if any.
  */
 fun User.bookableServices(
     morning: Boolean,
     afternoon: Boolean,
     nextDay: Volunteer?,
+    previousDay: Volunteer? = null,
 ): BookableServices =
-    if (isMitra) BookableServices.All
-    else BookableServices.forVolunteering(morning, afternoon, nextDay)
+    (if (isMitra) BookableServices.All else BookableServices.forVolunteering(morning, afternoon, nextDay))
+        .withoutDuplicateBreakfasts(previousDay = previousDay, nextDay = nextDay)

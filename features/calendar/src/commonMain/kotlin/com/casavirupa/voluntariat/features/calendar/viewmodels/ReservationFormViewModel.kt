@@ -8,10 +8,12 @@ import com.casavirupa.voluntariat.shared.core.utils.Throttler
 import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
 import com.casavirupa.voluntariat.shared.domain.AuthRepository
 import com.casavirupa.voluntariat.shared.domain.CalendarRepository
+import com.casavirupa.voluntariat.shared.domain.ScheduleConfigRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.DayCoverage
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.configuration.AreaConfig
+import com.casavirupa.voluntariat.shared.model.configuration.ScheduleConfig
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
@@ -38,6 +40,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
@@ -66,6 +69,7 @@ class ReservationFormViewModel(
     private val volunteerRepository: VolunteerRepository,
     private val calendarRepository: CalendarRepository,
     private val areaConfigRepository: AreaConfigRepository,
+    scheduleConfigRepository: ScheduleConfigRepository,
 ) : ViewModel() {
     private val throttler = Throttler()
 
@@ -80,6 +84,17 @@ class ReservationFormViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = AreaConfig.Empty,
+            )
+
+    // When on-site volunteering ends on Sundays (`configuration/schedule`). Started eagerly so
+    // it's usually loaded by the time a date is picked and the default times are applied.
+    private val scheduleConfig: StateFlow<ScheduleConfig> =
+        scheduleConfigRepository
+            .getScheduleConfig()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = ScheduleConfig.Default,
             )
 
     // True once the user accepted to volunteer on a day with no on-site volunteering
@@ -110,10 +125,11 @@ class ReservationFormViewModel(
     private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
     val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
 
-    // The user's own booking on the day after the chosen date: an on-site morning shift there
-    // lets a non-mitra book the night before. A read error only hides that option.
+    // The user's own bookings on the days around the chosen date: an on-site morning shift the
+    // next day lets a non-mitra book the night before, and a breakfast either of them already
+    // covers isn't offered again. A read error only hides / keeps those options.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val nextDayBooking: Flow<Volunteer?> =
+    private val neighbourBookings: Flow<NeighbourBookings> =
         combine(
             authRepository.getCurrentUserFlow()
                 .flatMapLatest { user -> volunteerRepository.getVolunteersByUserFlow(user.id) }
@@ -123,7 +139,11 @@ class ReservationFormViewModel(
                 },
             _date,
         ) { volunteers, date ->
-            date?.let { volunteers.firstOrNull { it.date == date.plus(1, DateTimeUnit.DAY) } }
+            if (date == null) return@combine NeighbourBookings()
+            NeighbourBookings(
+                previousDay = volunteers.firstOrNull { it.date == date.minus(1, DateTimeUnit.DAY) },
+                nextDay = volunteers.firstOrNull { it.date == date.plus(1, DateTimeUnit.DAY) },
+            )
         }
 
     // Mitras may book meals and nights freely; everyone else only what the day's confirmed
@@ -136,14 +156,15 @@ class ReservationFormViewModel(
             _additionalOptionsSelected,
             _forcedOnline,
             _shiftsInfo,
-            nextDayBooking,
-        ) { user, selected, forcedOnline, shiftsInfo, nextDay ->
+            neighbourBookings,
+        ) { user, selected, forcedOnline, shiftsInfo, neighbours ->
             if (!user.paysForServices || forcedOnline) return@combine emptyList()
             val onSite = shiftsInfo.filterNot { it.online }.map { it.shift }
             val bookable = user.bookableServices(
                 morning = ShiftUi.Morning in onSite,
                 afternoon = ShiftUi.Afternoon in onSite,
-                nextDay = nextDay,
+                nextDay = neighbours.nextDay,
+                previousDay = neighbours.previousDay,
             )
             AdditionalOption.entries.filter { option ->
                 when (option) {
@@ -189,6 +210,40 @@ class ReservationFormViewModel(
 
     private val _afternoonTimeRange = MutableStateFlow(TimeRange.DefaultAfternoon)
     val afternoonTimeRange: StateFlow<TimeRange> = _afternoonTimeRange.asStateFlow()
+
+    // The Sunday end time to warn about while the open shift modal's times go past it (issue
+    // #105), or null. Only a warning: the shift can still be confirmed.
+    val sundayEndWarning: StateFlow<LocalTime?> =
+        combine(
+            shownModal,
+            _date,
+            scheduleConfig,
+            combine(_morningTimeRange, _morningOnline, ::Pair),
+            combine(_afternoonTimeRange, _afternoonOnline, ::Pair),
+        ) { modal, date, config, morning, afternoon ->
+            val (timeRange, online) = when (modal) {
+                ShownModal.MorningShift -> morning
+                ShownModal.AfternoonShift -> afternoon
+                ShownModal.None -> return@combine null
+            }
+            config.sundayEndTime.takeIf { config.isLateOnSunday(date, timeRange, online) }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
+        )
+
+    // Confirmed shifts that end after the Sunday limit, flagged in the summary with that limit.
+    val lateSundayShifts: StateFlow<Map<ShiftUi, LocalTime>> =
+        combine(_shiftsInfo, _date, scheduleConfig) { shiftsInfo, date, config ->
+            shiftsInfo
+                .filter { config.isLateOnSunday(date, it.timeRange, it.online) }
+                .associate { it.shift to config.sundayEndTime }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = emptyMap(),
+        )
 
     private val _showExistingVolunteerDialogError = MutableStateFlow(false)
     val showExistingVolunteerDialogError: StateFlow<Boolean> =
@@ -383,7 +438,11 @@ class ReservationFormViewModel(
             _morningTimeRange.update { TimeRange.defaultMorning(isSunday) }
         }
         if (_shiftsInfo.value.none { it.shift == ShiftUi.Afternoon }) {
-            _afternoonTimeRange.update { TimeRange.defaultAfternoon(isSunday) }
+            // On Sundays the afternoon ends when the house says so, never past the warning
+            val default = TimeRange.defaultAfternoon(isSunday)
+            _afternoonTimeRange.update {
+                if (isSunday) default.copy(end = scheduleConfig.value.sundayEndTime) else default
+            }
         }
     }
 
@@ -858,3 +917,9 @@ data class ShiftInfoSummary(
 )
 
 private const val LOG_TAG = "ReservationFormViewModel"
+
+/** The user's own bookings on the days before and after the chosen date. */
+private data class NeighbourBookings(
+    val previousDay: Volunteer? = null,
+    val nextDay: Volunteer? = null,
+)

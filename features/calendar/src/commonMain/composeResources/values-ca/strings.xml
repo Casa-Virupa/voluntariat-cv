@@ -37,7 +37,7 @@
         <item quantity="other">%1$d voluntaris</item>
     </plurals>
     <string name="delete_volunteering_title">Eliminar voluntariat</string>
-    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d\'aquest dia? Aquesta acció no es pot desfer.</string>
+    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d'aquest dia? Aquesta acció no es pot desfer.</string>
     <string name="delete">Eliminar</string>
     <string name="monday_short">Dl</string>
     <string name="tuesday_short">Dt</string>
@@ -55,27 +55,28 @@
     <string name="morning_label">Matí: %1$s</string>
     <string name="afternoon_label">Tarda: %1$s</string>
     <string name="existing_volunteer_dialog_title">Voluntariat ja registrat</string>
-    <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l\'existent primerament.</string>
+    <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l'existent primerament.</string>
     <string name="accept">Acceptar</string>
     <string name="special_activities">Activitats especials</string>
     <string name="not_available_volunteering_title">Voluntariat no disponible</string>
     <string name="not_available_volunteering_description">Aquest dia no hi ha voluntariat presencial. Si continues, el voluntariat quedarà registrat com a online i només podràs triar les àrees que ho permeten.</string>
     <string name="select_specific_area">Selecciona l'àrea específica</string>
-    <string name="breakfast_next_day">Esmorzar de l\'endemà</string>
+    <string name="breakfast_next_day">Esmorzar de l'endemà</string>
     <string name="filter_general_volunteering">Voluntariat general</string>
     <string name="filter_specific_volunteering">Voluntariat específic</string>
     <string name="filter_my_volunteering">Els meus voluntariats</string>
     <string name="not_available_no_online_areas_description">Aquest dia no hi ha voluntariat presencial i cap de les teves àrees permet fer-lo online.</string>
     <string name="online_shift_label">Faig el voluntariat online</string>
     <string name="online_tag">Online</string>
-    <string name="sleep_notice_non_member">Si vols quedar-te a dormir, avisa-ho a l\'hostatgeria.</string>
-    <string name="reservation_error_title">No s\'ha pogut confirmar</string>
+    <string name="sleep_notice_non_member">Si vols quedar-te a dormir, avisa-ho a l'hostatgeria.</string>
+    <string name="reservation_error_title">No s'ha pogut confirmar</string>
     <string name="reservation_error_missing_date">Tria la data del voluntariat.</string>
     <string name="reservation_error_missing_shift">Tria almenys un torn (matí o tarda).</string>
-    <string name="reservation_error_missing_specific_area">Tria l\'àrea específica de cada torn específic.</string>
-    <string name="reservation_error_online_area_required">Aquest dia tots els torns han de ser específics i d\'una àrea que permeti fer-los online.</string>
-    <string name="reservation_error_save_failed">No s\'ha pogut desar la reserva. Comprova la connexió i torna-ho a provar.</string>
+    <string name="reservation_error_missing_specific_area">Tria l'àrea específica de cada torn específic.</string>
+    <string name="reservation_error_online_area_required">Aquest dia tots els torns han de ser específics i d'una àrea que permeti fer-los online.</string>
+    <string name="reservation_error_save_failed">No s'ha pogut desar la reserva. Comprova la connexió i torna-ho a provar.</string>
     <string name="reservation_error_missing_shift_or_option">Tria almenys un torn, un àpat o una pernoctació.</string>
     <string name="shift_optional_hint">Si només vens a menjar o a dormir, no cal que triïs cap torn.</string>
+    <string name="sunday_end_warning">Els diumenges el voluntariat presencial acaba a les %1$s.</string>
     <string name="services_only_title">Només àpats o pernoctació</string>
 </resources>

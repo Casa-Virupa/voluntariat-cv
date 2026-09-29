@@ -77,5 +77,6 @@
     <string name="reservation_error_save_failed">No se ha podido guardar la reserva. Comprueba la conexión y vuelve a intentarlo.</string>
     <string name="reservation_error_missing_shift_or_option">Elige al menos un turno, o una comida o una pernoctación.</string>
     <string name="shift_optional_hint">Si solo vienes a comer o a dormir, no hace falta que elijas ningún turno.</string>
+    <string name="sunday_end_warning">Los domingos el voluntariado presencial termina a las %1$s.</string>
     <string name="services_only_title">Solo comidas o pernoctación</string>
 </resources>

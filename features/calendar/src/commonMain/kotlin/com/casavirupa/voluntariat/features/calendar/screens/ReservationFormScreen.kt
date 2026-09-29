@@ -95,6 +95,7 @@ import voluntariatcv.features.calendar.generated.resources.select_date
 import voluntariatcv.features.calendar.generated.resources.select_specific_area
 import voluntariatcv.features.calendar.generated.resources.shift_label
 import voluntariatcv.features.calendar.generated.resources.shift_optional_hint
+import voluntariatcv.features.calendar.generated.resources.sunday_end_warning
 import voluntariatcv.features.calendar.generated.resources.start_label
 import kotlin.time.Clock
 
@@ -130,12 +131,15 @@ internal fun ReservationFormScreen(
     val forcedOnline by viewModel.forcedOnline.collectAsStateWithLifecycle()
     val morningOnline by viewModel.morningOnline.collectAsStateWithLifecycle()
     val afternoonOnline by viewModel.afternoonOnline.collectAsStateWithLifecycle()
+    val sundayEndWarning by viewModel.sundayEndWarning.collectAsStateWithLifecycle()
+    val lateSundayShifts by viewModel.lateSundayShifts.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
         date = date,
         shifts = shifts,
         shiftsInfo = shiftsInfo,
+        lateSundayShifts = lateSundayShifts,
         optionsSelected = optionsSelected,
         options = options,
         showSleepNotice = showSleepNotice,
@@ -163,6 +167,7 @@ internal fun ReservationFormScreen(
             onlineLocked = forcedOnline,
             onOnlineChanged = viewModel::onMorningOnlineChanged,
             timeRange = morningTimeRange,
+            sundayEndWarning = sundayEndWarning,
             onDismiss = viewModel::dismissModal,
             onStartTimeChanged = viewModel::onMorningStartTimeChanged,
             onEndTimeChanged = viewModel::onMorningEndTimeChanged,
@@ -185,6 +190,7 @@ internal fun ReservationFormScreen(
             onlineLocked = forcedOnline,
             onOnlineChanged = viewModel::onAfternoonOnlineChanged,
             timeRange = afternoonTimeRange,
+            sundayEndWarning = sundayEndWarning,
             onDismiss = viewModel::dismissModal,
             onStartTimeChanged = viewModel::onAfternoonStartTimeChanged,
             onEndTimeChanged = viewModel::onAfternoonEndTimeChanged,
@@ -255,6 +261,7 @@ private fun ReservationFormContent(
     date: LocalDate?,
     shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
+    lateSundayShifts: Map<ShiftUi, LocalTime>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     showSleepNotice: Boolean,
@@ -291,6 +298,7 @@ private fun ReservationFormContent(
                 date = date,
                 shifts = shifts,
                 shiftsInfo = shiftsInfo,
+                lateSundayShifts = lateSundayShifts,
                 optionsSelected = optionsSelected,
                 options = options,
                 showSleepNotice = showSleepNotice,
@@ -317,6 +325,7 @@ private fun ReservationForm(
     date: LocalDate?,
     shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
+    lateSundayShifts: Map<ShiftUi, LocalTime>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     showSleepNotice: Boolean,
@@ -353,6 +362,7 @@ private fun ReservationForm(
                 selectedShifts = shifts,
                 onSelectShift = onShiftSelected,
                 shiftsInfo = shiftsInfo,
+                lateSundayShifts = lateSundayShifts,
                 onEditInfo = onEditShiftInfo,
             )
             // Meals and a bed can be booked on their own (issue #108)
@@ -421,6 +431,7 @@ private fun ShiftSelector(
     selectedShifts: List<ShiftUi>,
     onSelectShift: (ShiftUi) -> Unit,
     shiftsInfo: List<ShiftInfoSummary>,
+    lateSundayShifts: Map<ShiftUi, LocalTime>,
     onEditInfo: (ShiftUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -447,6 +458,7 @@ private fun ShiftSelector(
             shiftsInfo.forEach { shift ->
                 ShiftScheduleInfo(
                     shift = shift,
+                    sundayEndTime = lateSundayShifts[shift.shift],
                     onClickEditInfo = { onEditInfo(shift.shift) },
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -480,6 +492,32 @@ private fun AdditionalOptionsSelector(
 }
 
 // Non-member habituals can't book a night in the app; they arrange it with the guesthouse.
+// On-site volunteering ends earlier on Sundays (issue #105): only a warning, not a block.
+@Composable
+private fun SundayEndWarning(
+    endTime: LocalTime,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_clock),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(16.dp),
+            tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = stringResource(Res.string.sunday_end_warning, endTime.format("HH:mm")),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
 @Composable
 private fun SleepNotice(modifier: Modifier = Modifier) {
     Row(
@@ -552,6 +590,7 @@ private fun FormChip(
 @Composable
 private fun ShiftScheduleInfo(
     shift: ShiftInfoSummary,
+    sundayEndTime: LocalTime?,
     onClickEditInfo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -586,6 +625,9 @@ private fun ShiftScheduleInfo(
                     )
                 }
             }
+            if (sundayEndTime != null) {
+                SundayEndWarning(endTime = sundayEndTime, modifier = Modifier.padding(top = 8.dp))
+            }
         }
         IconButton(onClick = onClickEditInfo) {
             Icon(
@@ -609,6 +651,7 @@ private fun ShiftModal(
     onlineLocked: Boolean,
     onOnlineChanged: (Boolean) -> Unit,
     timeRange: TimeRange,
+    sundayEndWarning: LocalTime?,
     onDismiss: () -> Unit,
     onStartTimeChanged: (LocalTime) -> Unit,
     onEndTimeChanged: (LocalTime) -> Unit,
@@ -715,6 +758,9 @@ private fun ShiftModal(
                     label = stringResource(Res.string.end_label),
                     leadingIcon = painterResource(Res.drawable.ic_clock),
                 )
+            }
+            AnimatedVisibility(visible = sundayEndWarning != null) {
+                sundayEndWarning?.let { SundayEndWarning(endTime = it) }
             }
             CVButton(
                 text = stringResource(Res.string.confirm),

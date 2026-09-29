@@ -79,6 +79,37 @@ class BookableServicesTest {
     }
 
     @Test
+    fun `no breakfast when the previous day's booking has next-day breakfast`() {
+        val previousDay = booking(meals = listOf(Meal.BreakfastNextDay))
+        assertEquals(
+            BookableServices(setOf(Meal.Lunch), sleep = false),
+            habitual.bookableServices(morning = true, afternoon = false, nextDay = null, previousDay = previousDay),
+        )
+        assertEquals(
+            BookableServices(setOf(Meal.Lunch, Meal.Dinner, Meal.BreakfastNextDay), sleep = true),
+            mitra.bookableServices(morning = false, afternoon = false, nextDay = null, previousDay = previousDay),
+        )
+    }
+
+    @Test
+    fun `breakfast stays offered when the previous day has no next-day breakfast`() {
+        val previousDay = booking(meals = listOf(Meal.Breakfast, Meal.Dinner))
+        assertEquals(
+            BookableServices(setOf(Meal.Breakfast, Meal.Lunch), sleep = false),
+            habitual.bookableServices(morning = true, afternoon = false, nextDay = null, previousDay = previousDay),
+        )
+    }
+
+    @Test
+    fun `mitra gets no next-day breakfast when the next day's booking already has breakfast`() {
+        val nextDay = booking(meals = listOf(Meal.Breakfast))
+        assertEquals(
+            BookableServices(setOf(Meal.Breakfast, Meal.Lunch, Meal.Dinner), sleep = true),
+            mitra.bookableServices(morning = false, afternoon = false, nextDay = nextDay),
+        )
+    }
+
+    @Test
     fun `a user without volunteer type is restricted like a habitual`() {
         assertEquals(nothing, user(null).bookableServices(morning = false, afternoon = false, nextDay = null))
     }
