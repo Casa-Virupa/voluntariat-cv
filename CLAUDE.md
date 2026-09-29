@@ -66,7 +66,16 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
 - **Meals/bed-only bookings** (issue #108): a booking may have **no shifts** when it has meals or
   a bed. It is priced with the `<item>_no_volunteering` fields of `price_rules` (issue #93,
   `Prices.forBooking`), stays outside the mitra quota, isn't counted as a volunteer (calendar /
-  day header) and shows under «Només àpats o pernoctació» in `DayDetailScreen`.
+  day header) and shows under «Només àpats o pernoctació» in `DayDetailScreen`. The form only lets
+  **mitras** create them freely; others only for the night before a booked morning shift (below).
+- **Meals/nights tied to shifts for non-mitras** (`BookableServices.kt`, `User.bookableServices`):
+  a mitra books anything; everyone else only what the day's confirmed **on-site** shifts justify
+  (online ones don't count): morning → breakfast + lunch; afternoon → lunch, dinner, night and
+  next-day breakfast. The night *before* a morning shift on D is a sleep-only booking on D‑1,
+  offered when the user's booking on D has an on-site morning shift (so D must be booked first;
+  priced at `_no_volunteering` rates since it has no shifts). Next-day breakfast is withheld when
+  D+1's booking already has breakfast. `ReservationFormViewModel` prunes selections that stop
+  being offered. Sleep stays member-only. The dashboard doesn't enforce this.
 - **Mitra quota** (`MonthlyCharge.kt`, issue #90): `mitra_free_meals` is one pool for lunch,
   dinner and same-day breakfast (fallback `mitra_free_lunches + mitra_free_dinners` on old docs);
   `mitra_free_sleeps` nights, and a free night frees its next-day breakfast. Zero-priced items

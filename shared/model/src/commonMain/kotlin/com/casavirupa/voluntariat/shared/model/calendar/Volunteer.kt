@@ -7,6 +7,8 @@ import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 data class Volunteer(
     val id: VolunteerId,
@@ -30,7 +32,7 @@ data class Volunteer(
         return mealsTotal + sleepTotal
     }
 
-    fun calculateHours(): Int = shifts.sumOf { it.getHour() }
+    fun calculateMinutes(): Int = shifts.sumOf { it.minutes() }
 
     fun isOwnedBy(viewer: User): Boolean = userId == viewer.id
 
@@ -77,10 +79,18 @@ sealed class Shift {
         override val online: Boolean = false,
     ) : Shift()
 
-    fun getHour(): Int = HALF_JOURNEY
+    // Minutes actually booked, from the shift's own time range (volunteers can shorten a
+    // shift). Mirrors the dashboard's `shiftMinutes` (lib/dates.ts): an empty or implausibly
+    // long range counts as 0 rather than inflating someone's total.
+    fun minutes(): Int {
+        val seconds = abs(timeRange.end.toSecondOfDay() - timeRange.start.toSecondOfDay())
+        val minutes = (seconds / SECONDS_PER_MINUTE.toDouble()).roundToInt()
+        return if (minutes == 0 || minutes > MAX_PLAUSIBLE_SHIFT_MINUTES) 0 else minutes
+    }
 
     companion object {
-        private const val HALF_JOURNEY = 4
+        private const val SECONDS_PER_MINUTE = 60
+        private const val MAX_PLAUSIBLE_SHIFT_MINUTES = 720
     }
 }
 
