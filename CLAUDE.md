@@ -70,8 +70,13 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
 - **Several shifts per half-day** (issue #113): a booking may hold any number of `Shift.Morning` /
   `Shift.Afternoon` entries (e.g. 2 h Temple + 2 h Transcripcions in one afternoon); the only
   stopper is an overlap (`TimeRange.overlaps`, half-open: 16:30–18:30 + 18:30–20:30 is fine). In
-  `ReservationFormViewModel` the «Matí»/«Tarda» chips always add a new shift (`ShiftEditor`), each
-  summary row edits/removes its own. `DayDetailScreen` shows one card per shift and each meal/night
+  `ReservationFormViewModel` the «Matí»/«Tarda» chips always add a new shift (`ShiftEditor`; shown
+  as «+ Matí» once one exists), each summary row edits/removes its own. Still **one booking per
+  user per day**: booking an already-booked day silently **merges** into it
+  (`Volunteer.mergedWith`) unless a new shift overlaps a booked one (`firstOverlapWith` →
+  `OverlapsBookedShift`). Booked shifts also count for the modal's overlap warning, the default
+  start time and the bookable meals. Bookings stay immutable: the merge is an atomic
+  `replaceVolunteer` (batch delete old doc + create new one), so the doc id changes. `DayDetailScreen` shows one card per shift and each meal/night
   once (`Volunteer.servicesOnCard`: breakfast + lunch on the first morning card, dinner + night +
   next-day breakfast on the first afternoon card, falling back to the other side when one is
   missing). The dashboard already stores/sums them (`fs_booking_shift` PK `(doc_id, seq)`) but

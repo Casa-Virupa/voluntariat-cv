@@ -155,6 +155,19 @@ class FirebaseVolunteerRepository(
             .add(volunteer.toFirebaseModel(id))
     }
 
+    override suspend fun replaceVolunteer(
+        old: VolunteerId,
+        id: UserId,
+        volunteer: Volunteer,
+    ): Result<Unit> = runCatching {
+        val volunteers = firestore.collection("volunteers")
+        firestore
+            .batch()
+            .delete(volunteers.document(old.value))
+            .set(volunteers.document, volunteer.toFirebaseModel(id))
+            .commit()
+    }
+
     override suspend fun deleteVolunteer(id: VolunteerId): Result<Unit> =
         runCatching {
             firestore

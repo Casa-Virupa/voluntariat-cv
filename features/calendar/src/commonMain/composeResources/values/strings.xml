@@ -54,8 +54,6 @@
     <string name="end_label">End</string>
     <string name="morning_label">Morning: %1$s</string>
     <string name="afternoon_label">Afternoon: %1$s</string>
-    <string name="existing_volunteer_dialog_title">Volunteer already registered</string>
-    <string name="existing_volunteer_dialog_description">You already have a volunteering on this day. If you want to add a new one, you must delete the existing one first.</string>
     <string name="accept">Accept</string>
     <string name="special_activities">Special activities</string>
     <string name="not_available_volunteering_title">Volunteering not available</string>
@@ -75,6 +73,7 @@
     <string name="reservation_error_missing_specific_area">Choose the specific area of each specific shift.</string>
     <string name="reservation_error_online_area_required">On this day every shift has to be specific and in an area that allows working online.</string>
     <string name="reservation_error_overlapping_shifts">Some of your shifts overlap. Please check their times.</string>
+    <string name="reservation_error_overlaps_booked_shift">You already have a shift booked this day at the same time as one of the new ones. Please check their times.</string>
     <string name="reservation_error_save_failed">The booking couldn't be saved. Check your connection and try again.</string>
     <string name="reservation_error_missing_shift_or_option">Choose at least one shift, or a meal or overnight stay.</string>
     <string name="shift_optional_hint">Only coming to eat or sleep? You don't need to choose a shift.</string>

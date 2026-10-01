@@ -24,7 +24,6 @@ import com.casavirupa.voluntariat.shared.model.calendar.unavailabilityOn
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -121,11 +120,13 @@ class ReservationFormViewModel(
     // Local key of the next confirmed shift, so each summary row can be edited or removed
     private var nextShiftId = 0L
 
-    // The user's own bookings on the days around the chosen date: an on-site morning shift the
+    // The user's own bookings on and around the chosen date: an on-site morning shift the
     // next day lets a non-mitra book the night before, and a breakfast either of them already
-    // covers isn't offered again. A read error only hides / keeps those options.
+    // covers isn't offered again. A booking on the date itself is extended on save (issue
+    // #113), so its shifts count for overlaps and for the meals they justify. A read error only
+    // hides / keeps those options; the save re-reads the day.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val neighbourBookings: Flow<NeighbourBookings> =
+    private val neighbourBookings: StateFlow<NeighbourBookings> =
         combine(
             authRepository.getCurrentUserFlow()
                 .flatMapLatest { user -> volunteerRepository.getVolunteersByUserFlow(user.id) }
@@ -138,9 +139,14 @@ class ReservationFormViewModel(
             if (date == null) return@combine NeighbourBookings()
             NeighbourBookings(
                 previousDay = volunteers.firstOrNull { it.date == date.minus(1, DateTimeUnit.DAY) },
+                sameDay = volunteers.firstOrNull { it.date == date },
                 nextDay = volunteers.firstOrNull { it.date == date.plus(1, DateTimeUnit.DAY) },
             )
-        }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = NeighbourBookings(),
+        )
 
     // Mitras may book meals and nights freely; everyone else only what the day's confirmed
     // on-site shifts justify (see BookableServices). Sleeping over is reserved to members, and
@@ -156,19 +162,24 @@ class ReservationFormViewModel(
         ) { user, selected, forcedOnline, shiftsInfo, neighbours ->
             if (!user.paysForServices || forcedOnline) return@combine emptyList()
             val onSite = shiftsInfo.filterNot { it.online }.map { it.shift }
+            val booked = neighbours.sameDay
+            val bookedOnSite = booked?.shifts.orEmpty().filterNot { it.online }
             val bookable = user.bookableServices(
-                morning = ShiftUi.Morning in onSite,
-                afternoon = ShiftUi.Afternoon in onSite,
+                morning = ShiftUi.Morning in onSite || bookedOnSite.any { it is Shift.Morning },
+                afternoon = ShiftUi.Afternoon in onSite || bookedOnSite.any { it is Shift.Afternoon },
                 nextDay = neighbours.nextDay,
                 previousDay = neighbours.previousDay,
             )
+            // What the day's booking already has isn't offered again
+            val bookedSleep = booked?.sleep == true
+            val bookedMeals = booked?.meals.orEmpty()
             AdditionalOption.entries.filter { option ->
                 when (option) {
-                    AdditionalOption.Sleep -> user.isMember && bookable.sleep
+                    AdditionalOption.Sleep -> user.isMember && bookable.sleep && !bookedSleep
                     AdditionalOption.BreakfastNextDay ->
-                        user.isMember && AdditionalOption.Sleep in selected &&
-                            option.toMeal() in bookable.meals
-                    else -> option.toMeal() in bookable.meals
+                        user.isMember && (AdditionalOption.Sleep in selected || bookedSleep) &&
+                            option.toMeal() in bookable.meals && option.toMeal() !in bookedMeals
+                    else -> option.toMeal() in bookable.meals && option.toMeal() !in bookedMeals
                 }
             }
         }.stateIn(
@@ -221,20 +232,17 @@ class ReservationFormViewModel(
             initialValue = emptyMap(),
         )
 
-    // The confirmed shift the open modal's times overlap, if any: the only thing that stops a
-    // shift from being added (issue #113).
+    // The shift the open modal's times overlap, if any, among those confirmed in the form and
+    // those already booked that day: the only thing that stops a shift from being added
+    // (issue #113).
     val overlappingShift: StateFlow<ShiftInfoSummary?> =
-        combine(_editor, _shiftsInfo) { editor, shiftsInfo ->
-            editor?.let { shiftsInfo.overlapping(it) }
+        combine(_editor, _shiftsInfo, neighbourBookings) { editor, shiftsInfo, neighbours ->
+            editor?.let { (shiftsInfo + neighbours.bookedSummaries()).overlapping(it) }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = null,
         )
-
-    private val _showExistingVolunteerDialogError = MutableStateFlow(false)
-    val showExistingVolunteerDialogError: StateFlow<Boolean> =
-        _showExistingVolunteerDialogError.asStateFlow()
 
     // The areas the user may pick for a specific shift: all their areas normally, only the
     // online-capable ones on a day without on-site volunteering.
@@ -415,7 +423,7 @@ class ReservationFormViewModel(
                 if (isSunday) afternoon.copy(end = scheduleConfig.value.sundayEndTime) else afternoon
             }
         }
-        val lastEnd = _shiftsInfo.value
+        val lastEnd = (_shiftsInfo.value + neighbourBookings.value.bookedSummaries())
             .filter { it.shift == shift }
             .maxOfOrNull { it.timeRange.end }
             ?: return default
@@ -480,7 +488,8 @@ class ReservationFormViewModel(
     fun onConfirmShift() {
         throttler.throttle {
             val editor = _editor.value ?: return@throttle
-            if (_shiftsInfo.value.overlapping(editor) != null) return@throttle
+            val taken = _shiftsInfo.value + neighbourBookings.value.bookedSummaries()
+            if (taken.overlapping(editor) != null) return@throttle
             val info = ShiftInfoSummary(
                 id = editor.editingId ?: nextShiftId++,
                 shift = editor.shift,
@@ -523,17 +532,26 @@ class ReservationFormViewModel(
             showError(ReservationFormError.SaveFailed)
             return false
         }
-        val alreadyBooked = existVolunteerFromUser(user.id).getOrElse { error ->
+        // Read fresh rather than from the form's stream: a booking made meanwhile (another
+        // device, a double tap) must be extended, not duplicated
+        val booked = bookingOnDate(user.id).getOrElse { error ->
             Logger.e(error, LOG_TAG) { "Error reading the user's volunteers" }
             showError(ReservationFormError.SaveFailed)
             return false
         }
-        if (alreadyBooked) {
-            _showExistingVolunteerDialogError.update { true }
+        val reservation = buildReservation()
+        // One booking per day: booking a booked day again adds to it, unless a new shift
+        // overlaps one already booked (issue #113)
+        if (booked != null && booked.firstOverlapWith(reservation.shifts) != null) {
+            showError(ReservationFormError.OverlapsBookedShift)
             return false
         }
-        return volunteerRepository
-            .reserveDay(user.id, buildReservation())
+        val write = if (booked == null) {
+            volunteerRepository.reserveDay(user.id, reservation)
+        } else {
+            volunteerRepository.replaceVolunteer(booked.id, user.id, booked.mergedWith(reservation))
+        }
+        return write
             .onSuccess {
                 navigateBack()
             }.onFailure { error ->
@@ -552,10 +570,6 @@ class ReservationFormViewModel(
 
     fun onNavigationHandled() {
         _uiState.update { it.copy(isFormSavedSuccessfully = false) }
-    }
-
-    fun closeExistVolunteerDialog() {
-        _showExistingVolunteerDialogError.update { false }
     }
 
     fun closeRemoteDialog() {
@@ -668,10 +682,10 @@ class ReservationFormViewModel(
             FormVolunteerTypeUi.Specific -> VolunteerType.Specific(specificArea!!)
         }
 
-    private suspend fun existVolunteerFromUser(userId: UserId): Result<Boolean> =
+    private suspend fun bookingOnDate(userId: UserId): Result<Volunteer?> =
         volunteerRepository
             .getVolunteersByUser(userId)
-            .map { volunteers -> volunteers.any { it.date == date.value } }
+            .map { volunteers -> volunteers.firstOrNull { it.date == date.value } }
 }
 
 data class ReservationFormUiState(
@@ -689,6 +703,8 @@ enum class ReservationFormError {
     MissingShiftOrOption,
     MissingSpecificArea,
     OverlappingShifts,
+    // A new shift overlaps one the user already booked that day
+    OverlapsBookedShift,
     OnlineAreaRequired,
     SaveFailed,
 }
@@ -777,8 +793,28 @@ data class ShiftInfoSummary(
 
 private const val LOG_TAG = "ReservationFormViewModel"
 
-/** The user's own bookings on the days before and after the chosen date. */
+/** The user's own bookings on the chosen date and the days before and after it. */
 private data class NeighbourBookings(
     val previousDay: Volunteer? = null,
+    val sameDay: Volunteer? = null,
     val nextDay: Volunteer? = null,
-)
+) {
+    // The day's booked shifts in the form's terms, to check overlaps against. Negative ids
+    // never clash with the form's own shifts.
+    fun bookedSummaries(): List<ShiftInfoSummary> =
+        sameDay?.shifts.orEmpty().mapIndexed { index, shift ->
+            val type = shift.type
+            ShiftInfoSummary(
+                id = -1L - index,
+                shift = if (shift is Shift.Morning) ShiftUi.Morning else ShiftUi.Afternoon,
+                timeRange = shift.timeRange,
+                type = if (type is VolunteerType.Specific) {
+                    FormVolunteerTypeUi.Specific
+                } else {
+                    FormVolunteerTypeUi.General
+                },
+                specificArea = (type as? VolunteerType.Specific)?.specificArea,
+                online = shift.online,
+            )
+        }
+}

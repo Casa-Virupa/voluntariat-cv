@@ -68,8 +68,6 @@ import voluntariatcv.features.calendar.generated.resources.afternoon_shift_title
 import voluntariatcv.features.calendar.generated.resources.confirm
 import voluntariatcv.features.calendar.generated.resources.date_placeholder
 import voluntariatcv.features.calendar.generated.resources.end_label
-import voluntariatcv.features.calendar.generated.resources.existing_volunteer_dialog_description
-import voluntariatcv.features.calendar.generated.resources.existing_volunteer_dialog_title
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
@@ -90,6 +88,7 @@ import voluntariatcv.features.calendar.generated.resources.reservation_error_mis
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_specific_area
 import voluntariatcv.features.calendar.generated.resources.reservation_error_online_area_required
 import voluntariatcv.features.calendar.generated.resources.reservation_error_overlapping_shifts
+import voluntariatcv.features.calendar.generated.resources.reservation_error_overlaps_booked_shift
 import voluntariatcv.features.calendar.generated.resources.reservation_error_save_failed
 import voluntariatcv.features.calendar.generated.resources.reservation_error_title
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
@@ -114,8 +113,6 @@ internal fun ReservationFormScreen(
     val options by viewModel.additionalOptions.collectAsStateWithLifecycle()
     val editor by viewModel.editor.collectAsStateWithLifecycle()
     val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
-    val showExistingVolunteerDialog by viewModel
-        .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
     val specificAreas by viewModel.specificAreas.collectAsStateWithLifecycle()
     val showSpecificAreaSelector by viewModel.showSpecificAreaSelector.collectAsStateWithLifecycle()
     val remoteDialog by viewModel.remoteDialog.collectAsStateWithLifecycle()
@@ -163,17 +160,6 @@ internal fun ReservationFormScreen(
         )
     }
     
-    if (showExistingVolunteerDialog) {
-        WarningDialog(
-            onDismiss = viewModel::closeExistVolunteerDialog,
-            title = stringResource(Res.string.existing_volunteer_dialog_title),
-            description = stringResource(Res.string.existing_volunteer_dialog_description),
-            onCancel = viewModel::closeExistVolunteerDialog,
-            confirmText = stringResource(Res.string.accept),
-            onConfirm = viewModel::closeExistVolunteerDialog,
-        )
-    }
-
     uiState.error?.let { error ->
         WarningDialog(
             onDismiss = viewModel::dismissError,
@@ -399,12 +385,14 @@ private fun ShiftSelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // A chip always adds a new shift (issue #113): it stays highlighted while its
-            // half-day has any, and each one is removed from its own row
+            // A chip always adds a new shift (issue #113): once its half-day has one it's
+            // highlighted and shows a «+» to say another can be added; each shift is removed
+            // from its own row
             ShiftUi.entries.forEach { shift ->
+                val hasShifts = shiftsInfo.any { it.shift == shift }
                 FormChip(
-                    text = stringResource(shift.text),
-                    isSelected = shiftsInfo.any { it.shift == shift },
+                    text = if (hasShifts) "+ ${stringResource(shift.text)}" else stringResource(shift.text),
+                    isSelected = hasShifts,
                     icon = painterResource(shift.icon),
                     onClick = { onAddShift(shift) },
                 )
@@ -783,6 +771,7 @@ private fun ReservationFormError.message(): StringResource =
         ReservationFormError.MissingShiftOrOption -> Res.string.reservation_error_missing_shift_or_option
         ReservationFormError.MissingSpecificArea -> Res.string.reservation_error_missing_specific_area
         ReservationFormError.OverlappingShifts -> Res.string.reservation_error_overlapping_shifts
+        ReservationFormError.OverlapsBookedShift -> Res.string.reservation_error_overlaps_booked_shift
         ReservationFormError.OnlineAreaRequired -> Res.string.reservation_error_online_area_required
         ReservationFormError.SaveFailed -> Res.string.reservation_error_save_failed
     }

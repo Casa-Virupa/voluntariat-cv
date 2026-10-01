@@ -54,8 +54,6 @@
     <string name="end_label">Fi</string>
     <string name="morning_label">Matí: %1$s</string>
     <string name="afternoon_label">Tarda: %1$s</string>
-    <string name="existing_volunteer_dialog_title">Voluntariat ja registrat</string>
-    <string name="existing_volunteer_dialog_description">Ja tens un voluntariat en aquest dia. Si vols afegir un nou, has de eliminar l'existent primerament.</string>
     <string name="accept">Acceptar</string>
     <string name="special_activities">Activitats especials</string>
     <string name="not_available_volunteering_title">Voluntariat no disponible</string>
@@ -75,6 +73,7 @@
     <string name="reservation_error_missing_specific_area">Tria l'àrea específica de cada torn específic.</string>
     <string name="reservation_error_online_area_required">Aquest dia tots els torns han de ser específics i d'una àrea que permeti fer-los online.</string>
     <string name="reservation_error_overlapping_shifts">Hi ha torns amb horaris que coincideixen. Revisa'ls.</string>
+    <string name="reservation_error_overlaps_booked_shift">Aquest dia ja tens reservat un torn que coincideix amb l'horari d'un dels nous. Revisa'n els horaris.</string>
     <string name="reservation_error_save_failed">No s'ha pogut desar la reserva. Comprova la connexió i torna-ho a provar.</string>
     <string name="reservation_error_missing_shift_or_option">Tria almenys un torn, un àpat o una pernoctació.</string>
     <string name="shift_optional_hint">Si només vens a menjar o a dormir, no cal que triïs cap torn.</string>

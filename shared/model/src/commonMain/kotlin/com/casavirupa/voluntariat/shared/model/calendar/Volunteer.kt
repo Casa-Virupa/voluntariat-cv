@@ -71,6 +71,21 @@ data class Volunteer(
         )
     }
 
+    // The first of this booking's shifts that overlaps one of `others`, or null. A volunteer
+    // can't book a second shift on a day at a time they're already booked (issue #113).
+    fun firstOverlapWith(others: List<Shift>): Shift? =
+        shifts.firstOrNull { shift -> others.any { it.timeRange.overlaps(shift.timeRange) } }
+
+    // This booking with `addition`'s shifts, meals and night added: a user has one booking per
+    // day, so booking again on a booked day extends it (issue #113). Callers check for overlaps
+    // first (firstOverlapWith).
+    fun mergedWith(addition: Volunteer): Volunteer =
+        copy(
+            shifts = (shifts + addition.shifts).sortedBy { it.timeRange.start },
+            meals = (meals + addition.meals).distinct(),
+            sleep = sleep || addition.sleep,
+        )
+
     private inline fun <reified T : Shift> firstShiftIndex(): Int? =
         shifts.indices
             .filter { shifts[it] is T }
