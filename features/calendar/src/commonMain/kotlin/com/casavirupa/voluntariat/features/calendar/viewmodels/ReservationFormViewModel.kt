@@ -103,27 +103,23 @@ class ReservationFormViewModel(
     private val _forcedOnline = MutableStateFlow(false)
     val forcedOnline: StateFlow<Boolean> = _forcedOnline.asStateFlow()
 
-    private val _morningOnline = MutableStateFlow(false)
-    val morningOnline: StateFlow<Boolean> = _morningOnline.asStateFlow()
-
-    private val _afternoonOnline = MutableStateFlow(false)
-    val afternoonOnline: StateFlow<Boolean> = _afternoonOnline.asStateFlow()
-
     private val _uiState = MutableStateFlow(ReservationFormUiState())
     val uiState: StateFlow<ReservationFormUiState> = _uiState.asStateFlow()
 
     private val _date = MutableStateFlow<LocalDate?>(null)
     val date: StateFlow<LocalDate?> = _date.asStateFlow()
 
-    private val _shifts = MutableStateFlow<List<ShiftUi>>(emptyList())
-    val shifts: StateFlow<List<ShiftUi>> = _shifts.asStateFlow()
-
     private val _additionalOptionsSelected = MutableStateFlow<List<AdditionalOption>>(emptyList())
     val additionalOptionsSelected: StateFlow<List<AdditionalOption>> =
         _additionalOptionsSelected.asStateFlow()
 
+    // The confirmed shifts, in start order. A morning or afternoon may hold several of them as
+    // long as no two overlap (issue #113).
     private val _shiftsInfo = MutableStateFlow<List<ShiftInfoSummary>>(emptyList())
     val shiftsInfo: StateFlow<List<ShiftInfoSummary>> = _shiftsInfo.asStateFlow()
+
+    // Local key of the next confirmed shift, so each summary row can be edited or removed
+    private var nextShiftId = 0L
 
     // The user's own bookings on the days around the chosen date: an on-site morning shift the
     // next day lets a non-mitra book the night before, and a breakfast either of them already
@@ -195,54 +191,45 @@ class ReservationFormViewModel(
             initialValue = false,
         )
 
-    private val _shownModal = MutableStateFlow(ShownModal.None)
-    val shownModal: StateFlow<ShownModal> = _shownModal.asStateFlow()
-
-    private val _morningVolunteerType = MutableStateFlow(FormVolunteerTypeUi.General)
-    val morningVolunteerType: StateFlow<FormVolunteerTypeUi> = _morningVolunteerType.asStateFlow()
-
-    private val _afternoonVolunteerType = MutableStateFlow(FormVolunteerTypeUi.General)
-    val afternoonVolunteerType: StateFlow<FormVolunteerTypeUi> =
-        _afternoonVolunteerType.asStateFlow()
-
-    private val _morningTimeRange = MutableStateFlow(TimeRange.DefaultMorning)
-    val morningTimeRange: StateFlow<TimeRange> = _morningTimeRange.asStateFlow()
-
-    private val _afternoonTimeRange = MutableStateFlow(TimeRange.DefaultAfternoon)
-    val afternoonTimeRange: StateFlow<TimeRange> = _afternoonTimeRange.asStateFlow()
+    // The shift being added or edited in the modal, or null when it's closed
+    private val _editor = MutableStateFlow<ShiftEditor?>(null)
+    val editor: StateFlow<ShiftEditor?> = _editor.asStateFlow()
 
     // The Sunday end time to warn about while the open shift modal's times go past it (issue
     // #105), or null. Only a warning: the shift can still be confirmed.
     val sundayEndWarning: StateFlow<LocalTime?> =
-        combine(
-            shownModal,
-            _date,
-            scheduleConfig,
-            combine(_morningTimeRange, _morningOnline, ::Pair),
-            combine(_afternoonTimeRange, _afternoonOnline, ::Pair),
-        ) { modal, date, config, morning, afternoon ->
-            val (timeRange, online) = when (modal) {
-                ShownModal.MorningShift -> morning
-                ShownModal.AfternoonShift -> afternoon
-                ShownModal.None -> return@combine null
+        combine(_editor, _date, scheduleConfig) { editor, date, config ->
+            editor ?: return@combine null
+            config.sundayEndTime.takeIf {
+                config.isLateOnSunday(date, editor.timeRange, editor.online)
             }
-            config.sundayEndTime.takeIf { config.isLateOnSunday(date, timeRange, online) }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = null,
         )
 
-    // Confirmed shifts that end after the Sunday limit, flagged in the summary with that limit.
-    val lateSundayShifts: StateFlow<Map<ShiftUi, LocalTime>> =
+    // Confirmed shifts (by id) that end after the Sunday limit, flagged in the summary with it.
+    val lateSundayShifts: StateFlow<Map<Long, LocalTime>> =
         combine(_shiftsInfo, _date, scheduleConfig) { shiftsInfo, date, config ->
             shiftsInfo
                 .filter { config.isLateOnSunday(date, it.timeRange, it.online) }
-                .associate { it.shift to config.sundayEndTime }
+                .associate { it.id to config.sundayEndTime }
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = emptyMap(),
+        )
+
+    // The confirmed shift the open modal's times overlap, if any: the only thing that stops a
+    // shift from being added (issue #113).
+    val overlappingShift: StateFlow<ShiftInfoSummary?> =
+        combine(_editor, _shiftsInfo) { editor, shiftsInfo ->
+            editor?.let { shiftsInfo.overlapping(it) }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = null,
         )
 
     private val _showExistingVolunteerDialogError = MutableStateFlow(false)
@@ -280,64 +267,25 @@ class ReservationFormViewModel(
             )
 
     val showSpecificAreaSelector: StateFlow<Boolean> =
-        combine(
-            morningVolunteerType,
-            afternoonVolunteerType,
-            specificAreas,
-            shownModal,
-        ) { morningVolunteerType, afternoonVolunteerType, specificAreas, shownModal ->
-            (specificAreas.size > 1) &&
-                    ((morningVolunteerType == FormVolunteerTypeUi.Specific
-                            && shownModal == ShownModal.MorningShift)
-                            ||
-                            (afternoonVolunteerType == FormVolunteerTypeUi.Specific
-                                    && shownModal == ShownModal.AfternoonShift)
-                    )
+        combine(_editor, specificAreas) { editor, specificAreas ->
+            specificAreas.size > 1 && editor?.type == FormVolunteerTypeUi.Specific
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = false,
         )
 
-    private val _selectedMorningSpecificArea = MutableStateFlow<SpecificArea?>(null)
-    val selectedMorningSpecificArea: StateFlow<SpecificArea?> =
-        _selectedMorningSpecificArea.asStateFlow()
-
-    private val _selectedAfternoonSpecificArea = MutableStateFlow<SpecificArea?>(null)
-    val selectedAfternoonSpecificArea: StateFlow<SpecificArea?> =
-        _selectedAfternoonSpecificArea.asStateFlow()
-
-    // Type and area of the shift whose modal is open, or null when none is.
-    private val openShiftSelection: StateFlow<Pair<FormVolunteerTypeUi, SpecificArea?>?> =
-        combine(
-            shownModal,
-            morningVolunteerType,
-            afternoonVolunteerType,
-            selectedMorningSpecificArea,
-            selectedAfternoonSpecificArea,
-        ) { modal, morningType, afternoonType, morningArea, afternoonArea ->
-            when (modal) {
-                ShownModal.MorningShift -> morningType to morningArea
-                ShownModal.AfternoonShift -> afternoonType to afternoonArea
-                ShownModal.None -> null
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = null,
-        )
-
     // The online switch appears only for a specific shift whose area allows remote work.
     // With a single selectable area there is no area picker, so that area is the one used.
     val showOnlineToggle: StateFlow<Boolean> =
         combine(
-            openShiftSelection,
+            _editor,
             specificAreas,
             areaConfig,
-        ) { selection, areas, config ->
-            selection != null &&
-                selection.first == FormVolunteerTypeUi.Specific &&
-                config.allowsOnline(selection.second ?: areas.singleOrNull())
+        ) { editor, areas, config ->
+            editor != null &&
+                editor.type == FormVolunteerTypeUi.Specific &&
+                config.allowsOnline(editor.specificArea ?: areas.singleOrNull())
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
@@ -367,7 +315,7 @@ class ReservationFormViewModel(
         viewModelScope.launch {
             if (isVolunteeringAvailableOn(date)) {
                 _forcedOnline.update { false }
-                applySelectedDate(date)
+                _date.update { date }
             } else {
                 temporalDate = date
                 _remoteDialog.update {
@@ -413,55 +361,68 @@ class ReservationFormViewModel(
     fun workOnRemoteOnDate() {
         temporalDate?.let { date ->
             _forcedOnline.update { true }
-            _shifts.update { emptyList() }
             _shiftsInfo.update { emptyList() }
             _additionalOptionsSelected.update { emptyList() }
-            _morningVolunteerType.update { FormVolunteerTypeUi.Specific }
-            _afternoonVolunteerType.update { FormVolunteerTypeUi.Specific }
-            _morningOnline.update { true }
-            _afternoonOnline.update { true }
-            _selectedMorningSpecificArea.update { null }
-            _selectedAfternoonSpecificArea.update { null }
-            applySelectedDate(date)
+            _editor.update { null }
+            _date.update { date }
         }
         closeRemoteDialog()
     }
 
-    private fun applySelectedDate(date: LocalDate) {
-        _date.update { date }
-        applyDefaultTimeRanges(date)
-    }
-
-    private fun applyDefaultTimeRanges(date: LocalDate) {
-        val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
-        if (_shiftsInfo.value.none { it.shift == ShiftUi.Morning }) {
-            _morningTimeRange.update { TimeRange.defaultMorning(isSunday) }
-        }
-        if (_shiftsInfo.value.none { it.shift == ShiftUi.Afternoon }) {
-            // On Sundays the afternoon ends when the house says so, never past the warning
-            val default = TimeRange.defaultAfternoon(isSunday)
-            _afternoonTimeRange.update {
-                if (isSunday) default.copy(end = scheduleConfig.value.sundayEndTime) else default
-            }
-        }
-    }
-
-    fun onShiftSelected(shift: ShiftUi) {
+    // Tapping «Matí» or «Tarda» always opens a new shift of that half-day: a volunteer may do
+    // several in one morning or afternoon, e.g. in two of their areas (issue #113).
+    fun onAddShift(shift: ShiftUi) {
         throttler.throttle {
-            _shifts.update { shifts ->
-                val mutableShifts = shifts.toMutableList()
-                if (shifts.contains(shift)) {
-                    mutableShifts.remove(shift)
-                    removeShiftInfo(shift)
-                } else {
-                    mutableShifts.add(shift)
-                    when (shift) {
-                        ShiftUi.Morning -> openMorningModal()
-                        ShiftUi.Afternoon -> openAfternoonModal()
-                    }
-                }
-                mutableShifts.toList()
+            val forcedOnline = _forcedOnline.value
+            _editor.update {
+                ShiftEditor(
+                    editingId = null,
+                    shift = shift,
+                    type = if (forcedOnline) FormVolunteerTypeUi.Specific else FormVolunteerTypeUi.General,
+                    timeRange = defaultTimeRange(shift),
+                    online = forcedOnline,
+                )
             }
+        }
+    }
+
+    fun onEditShift(id: Long) {
+        val info = _shiftsInfo.value.find { it.id == id } ?: return
+        _editor.update {
+            ShiftEditor(
+                editingId = info.id,
+                shift = info.shift,
+                type = info.type,
+                timeRange = info.timeRange,
+                specificArea = info.specificArea,
+                online = info.online,
+            )
+        }
+    }
+
+    fun onRemoveShift(id: Long) {
+        _shiftsInfo.update { shiftsInfo -> shiftsInfo.filterNot { it.id == id } }
+    }
+
+    // The house's usual hours for the half-day; on Sundays the afternoon ends when the house
+    // says so, never past the warning. A further shift in the same half-day starts where the
+    // last one ends, so it doesn't open overlapping.
+    private fun defaultTimeRange(shift: ShiftUi): TimeRange {
+        val isSunday = _date.value?.dayOfWeek == DayOfWeek.SUNDAY
+        val default = when (shift) {
+            ShiftUi.Morning -> TimeRange.defaultMorning(isSunday)
+            ShiftUi.Afternoon -> TimeRange.defaultAfternoon(isSunday).let { afternoon ->
+                if (isSunday) afternoon.copy(end = scheduleConfig.value.sundayEndTime) else afternoon
+            }
+        }
+        val lastEnd = _shiftsInfo.value
+            .filter { it.shift == shift }
+            .maxOfOrNull { it.timeRange.end }
+            ?: return default
+        return if (lastEnd < default.end) {
+            default.copy(start = maxOf(lastEnd, default.start))
+        } else {
+            default
         }
     }
 
@@ -481,100 +442,62 @@ class ReservationFormViewModel(
         }
     }
 
-    fun openMorningModal() {
-        _shownModal.update { ShownModal.MorningShift }
-    }
-
-    fun openAfternoonModal() {
-        _shownModal.update { ShownModal.AfternoonShift }
-    }
-
     fun dismissModal() {
-        when (_shownModal.value) {
-            ShownModal.MorningShift -> {
-                val hasSavedInfo = shiftsInfo.value.map { it.shift }.contains(ShiftUi.Morning)
-                if (!hasSavedInfo) {
-                    val mutableShifts = _shifts.value.toMutableList()
-                    mutableShifts.remove(ShiftUi.Morning)
-                    _shifts.update { mutableShifts.toList() }
-                }
-            }
-            ShownModal.AfternoonShift -> {
-                val hasSavedInfo = shiftsInfo.value.map { it.shift }.contains(ShiftUi.Afternoon)
-                if (!hasSavedInfo) {
-                    val mutableShifts = _shifts.value.toMutableList()
-                    mutableShifts.remove(ShiftUi.Afternoon)
-                    _shifts.update { mutableShifts.toList() }
-                }
-            }
-            else -> {}
-        }
-        _shownModal.update { ShownModal.None }
+        _editor.update { null }
     }
 
-    fun onMorningVolunteerTypeChanged(type: FormVolunteerTypeUi) {
-        _morningVolunteerType.update { type }
+    fun onVolunteerTypeChanged(type: FormVolunteerTypeUi) {
         // General volunteering is always on-site
-        if (type == FormVolunteerTypeUi.General) _morningOnline.update { false }
+        _editor.update { editor ->
+            editor?.copy(type = type, online = editor.online && type == FormVolunteerTypeUi.Specific)
+        }
     }
 
-    fun onAfternoonVolunteerTypeChanged(type: FormVolunteerTypeUi) {
-        _afternoonVolunteerType.update { type }
-        if (type == FormVolunteerTypeUi.General) _afternoonOnline.update { false }
+    fun onOnlineChanged(online: Boolean) {
+        if (!_forcedOnline.value) _editor.update { it?.copy(online = online) }
     }
 
-    fun onMorningOnlineChanged(online: Boolean) {
-        if (!_forcedOnline.value) _morningOnline.update { online }
+    fun onStartTimeChanged(time: LocalTime) {
+        _editor.update { it?.copy(timeRange = it.timeRange.copy(start = time)) }
     }
 
-    fun onAfternoonOnlineChanged(online: Boolean) {
-        if (!_forcedOnline.value) _afternoonOnline.update { online }
+    fun onEndTimeChanged(time: LocalTime) {
+        _editor.update { it?.copy(timeRange = it.timeRange.copy(end = time)) }
     }
 
-    fun onMorningStartTimeChanged(time: LocalTime) {
-        _morningTimeRange.update { it.copy(start = time) }
-    }
-
-    fun onMorningEndTimeChanged(time: LocalTime) {
-        _morningTimeRange.update { it.copy(end = time) }
-    }
-
-    fun onAfternoonStartTimeChanged(time: LocalTime) {
-        _afternoonTimeRange.update { it.copy(start = time) }
-    }
-
-    fun onAfternoonEndTimeChanged(time: LocalTime) {
-        _afternoonTimeRange.update { it.copy(end = time) }
-    }
-
-    fun onMorningSpecificAreaChanged(specificArea: SpecificArea) {
-        _selectedMorningSpecificArea.update { specificArea }
+    fun onSpecificAreaChanged(specificArea: SpecificArea) {
         // Switching to an area that can't be worked remotely drops the online choice
-        if (!areaConfig.value.allowsOnline(specificArea)) _morningOnline.update { false }
+        _editor.update { editor ->
+            editor?.copy(
+                specificArea = specificArea,
+                online = editor.online && areaConfig.value.allowsOnline(specificArea),
+            )
+        }
     }
 
-    fun onAfternoonSpecificAreaChanged(specificArea: SpecificArea) {
-        _selectedAfternoonSpecificArea.update { specificArea }
-        if (!areaConfig.value.allowsOnline(specificArea)) _afternoonOnline.update { false }
-    }
-
+    // An overlapping shift is refused (the modal shows why); otherwise it's added, or replaces
+    // the one being edited.
     fun onConfirmShift() {
         throttler.throttle {
-            when (_shownModal.value) {
-                ShownModal.MorningShift -> {
-                    _shiftsInfo.update { shifts -> addMorningShiftInfo(shifts) }
-                }
-                ShownModal.AfternoonShift -> {
-                    _shiftsInfo.update { shifts -> addAfternoonShiftInfo(shifts) }
-                }
-                ShownModal.None -> {}
+            val editor = _editor.value ?: return@throttle
+            if (_shiftsInfo.value.overlapping(editor) != null) return@throttle
+            val info = ShiftInfoSummary(
+                id = editor.editingId ?: nextShiftId++,
+                shift = editor.shift,
+                timeRange = editor.timeRange,
+                type = editor.type,
+                specificArea = editor.specificArea,
+                online = isOnline(editor.online, editor.type, editor.specificArea),
+            )
+            _shiftsInfo.update { shiftsInfo ->
+                (shiftsInfo.filterNot { it.id == info.id } + info).sortedBy { it.timeRange.start }
             }
             closeModal()
         }
     }
 
     private fun closeModal() {
-        _shownModal.update { ShownModal.None }
+        _editor.update { null }
     }
 
     fun onConfirm() {
@@ -646,13 +569,16 @@ class ReservationFormViewModel(
             date.value == null -> ReservationFormError.MissingDate
             // No shift is fine when a mitra only comes to eat or sleep (issue #108), or for
             // the night before a booked on-site morning shift
-            shifts.value.isEmpty() && _additionalOptionsSelected.value.isEmpty() ->
+            shiftsInfo.value.isEmpty() && _additionalOptionsSelected.value.isEmpty() ->
                 if (additionalOptions.value.isEmpty()) {
                     ReservationFormError.MissingShift
                 } else {
                     ReservationFormError.MissingShiftOrOption
                 }
-            !shifts.value.all(::shiftAreaIsValid) -> ReservationFormError.MissingSpecificArea
+            !shiftsInfo.value.all(::shiftAreaIsValid) -> ReservationFormError.MissingSpecificArea
+            // Already refused shift by shift; re-checked so an overlap never gets booked
+            shiftsInfo.value.any { info -> shiftsInfo.value.overlapping(info) != null } ->
+                ReservationFormError.OverlappingShifts
             !onlineConstraintsAreValid() -> ReservationFormError.OnlineAreaRequired
             else -> null
         }
@@ -671,13 +597,9 @@ class ReservationFormViewModel(
 
     // A general shift needs nothing more; a specific one needs an area, either picked or
     // the only one the user can choose (there's no picker then).
-    private fun shiftAreaIsValid(shift: ShiftUi): Boolean =
-        when (shift) {
-            ShiftUi.Morning -> morningVolunteerType.value == FormVolunteerTypeUi.General ||
-                (selectedMorningSpecificArea.value ?: fallbackSpecificArea()) != null
-            ShiftUi.Afternoon -> afternoonVolunteerType.value == FormVolunteerTypeUi.General ||
-                (selectedAfternoonSpecificArea.value ?: fallbackSpecificArea()) != null
-        }
+    private fun shiftAreaIsValid(info: ShiftInfoSummary): Boolean =
+        info.type == FormVolunteerTypeUi.General ||
+            (info.specificArea ?: fallbackSpecificArea()) != null
 
     // Area used by a specific shift when there was no picker: the single selectable area.
     // On a forced-online day that's the single ONLINE area, not the user's first area.
@@ -690,7 +612,7 @@ class ReservationFormViewModel(
             id = VolunteerId.Empty,
             userId = UserId.Empty,
             date = date.value!!,
-            shifts = shifts.value.toDomainModel(fallbackSpecificArea()),
+            shifts = shiftsInfo.value.map { it.toDomainModel(fallbackSpecificArea()) },
             meals = options.getMeals(),
             sleep = options.contains(AdditionalOption.Sleep),
         )
@@ -703,64 +625,21 @@ class ReservationFormViewModel(
     // A shift is online only if the user asked for it AND it is a specific shift in an area
     // that allows remote work; the toggle is hidden otherwise, but the state is re-checked
     // here so a stale value can never be persisted.
-    private fun morningIsOnline(fallbackArea: SpecificArea? = fallbackSpecificArea()) =
-        _morningOnline.value &&
-            morningVolunteerType.value == FormVolunteerTypeUi.Specific &&
-            areaConfig.value.allowsOnline(selectedMorningSpecificArea.value ?: fallbackArea)
+    private fun isOnline(
+        online: Boolean,
+        type: FormVolunteerTypeUi,
+        specificArea: SpecificArea?,
+        fallbackArea: SpecificArea? = fallbackSpecificArea(),
+    ) = online &&
+        type == FormVolunteerTypeUi.Specific &&
+        areaConfig.value.allowsOnline(specificArea ?: fallbackArea)
 
-    private fun afternoonIsOnline(fallbackArea: SpecificArea? = fallbackSpecificArea()) =
-        _afternoonOnline.value &&
-            afternoonVolunteerType.value == FormVolunteerTypeUi.Specific &&
-            areaConfig.value.allowsOnline(selectedAfternoonSpecificArea.value ?: fallbackArea)
+    // The first other confirmed shift whose time range overlaps the given one's
+    private fun List<ShiftInfoSummary>.overlapping(editor: ShiftEditor): ShiftInfoSummary? =
+        firstOrNull { it.id != editor.editingId && it.timeRange.overlaps(editor.timeRange) }
 
-    private fun addMorningShiftInfo(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
-        val newShift = ShiftInfoSummary(
-            shift = ShiftUi.Morning,
-            timeRange = morningTimeRange.value,
-            type = morningVolunteerType.value,
-            specificArea = selectedMorningSpecificArea.value,
-            online = morningIsOnline(),
-        )
-        if (shiftsInfo.isEmpty()) {
-            return listOf(newShift)
-        }
-        val mutableInfo = shiftsInfo.toMutableList()
-        if (shiftsInfo.any { it.shift == ShiftUi.Morning }) {
-            mutableInfo.set(index = 0, element = newShift)
-        } else {
-            mutableInfo.add(index = 0, element = newShift)
-        }
-        return mutableInfo.toList()
-    }
-
-    private fun addAfternoonShiftInfo(shiftsInfo: List<ShiftInfoSummary>): List<ShiftInfoSummary> {
-        val newShift = ShiftInfoSummary(
-            shift = ShiftUi.Afternoon,
-            timeRange = afternoonTimeRange.value,
-            type = afternoonVolunteerType.value,
-            specificArea = selectedAfternoonSpecificArea.value,
-            online = afternoonIsOnline(),
-        )
-        if (shiftsInfo.isEmpty()) {
-            return listOf(newShift)
-        }
-        val mutableInfo = shiftsInfo.toMutableList()
-        if (shiftsInfo.any { it.shift == ShiftUi.Afternoon }) {
-            val index = shiftsInfo.indexOfFirst { it.shift == ShiftUi.Afternoon }
-            mutableInfo.set(index = index, element = newShift)
-        } else {
-            mutableInfo.add(newShift)
-        }
-        return mutableInfo.toList()
-    }
-
-    private fun removeShiftInfo(from: ShiftUi) {
-        _shiftsInfo.update { shiftsInfo ->
-            val mutableInfo = shiftsInfo.toMutableList()
-            mutableInfo.removeAll { it.shift == from }
-            mutableInfo.toList()
-        }
-    }
+    private fun List<ShiftInfoSummary>.overlapping(info: ShiftInfoSummary): ShiftInfoSummary? =
+        firstOrNull { it.id != info.id && it.timeRange.overlaps(info.timeRange) }
 
     private fun List<AdditionalOption>.getMeals() =
         filter { it != AdditionalOption.Sleep }.map { it.toMeal() }
@@ -774,39 +653,13 @@ class ReservationFormViewModel(
             else -> Meal.Unknown
         }
 
-    private fun List<ShiftUi>.toDomainModel(userSpecificArea: SpecificArea?) =
-        when {
-            isEmpty() -> emptyList()
-            containsAll(ShiftUi.entries.toList()) -> this.map {
-                when (it) {
-                    ShiftUi.Morning -> morningShift(userSpecificArea)
-                    ShiftUi.Afternoon -> afternoonShift(userSpecificArea)
-                }
-            }
-            else -> {
-                when (this.first()) {
-                    ShiftUi.Morning -> listOf(morningShift(userSpecificArea))
-                    ShiftUi.Afternoon -> listOf(afternoonShift(userSpecificArea))
-                }
-            }
+    private fun ShiftInfoSummary.toDomainModel(fallbackArea: SpecificArea?): Shift {
+        val volunteerType = type.toDomainModel(specificArea ?: fallbackArea)
+        val online = isOnline(online, type, specificArea, fallbackArea)
+        return when (shift) {
+            ShiftUi.Morning -> Shift.Morning(volunteerType, timeRange, online)
+            ShiftUi.Afternoon -> Shift.Afternoon(volunteerType, timeRange, online)
         }
-
-    private fun morningShift(fallbackArea: SpecificArea?): Shift.Morning {
-        val specificArea = selectedMorningSpecificArea.value ?: fallbackArea
-        return Shift.Morning(
-            type = morningVolunteerType.value.toDomainModel(specificArea),
-            timeRange = morningTimeRange.value,
-            online = morningIsOnline(fallbackArea),
-        )
-    }
-
-    private fun afternoonShift(fallbackArea: SpecificArea?): Shift.Afternoon {
-        val specificArea = selectedAfternoonSpecificArea.value ?: fallbackArea
-        return Shift.Afternoon(
-            type = afternoonVolunteerType.value.toDomainModel(specificArea),
-            timeRange = afternoonTimeRange.value,
-            online = afternoonIsOnline(fallbackArea),
-        )
     }
 
     private fun FormVolunteerTypeUi.toDomainModel(specificArea: SpecificArea? = null) =
@@ -835,6 +688,7 @@ enum class ReservationFormError {
     // Meals or a bed can be booked without a shift, so any of them would do
     MissingShiftOrOption,
     MissingSpecificArea,
+    OverlappingShifts,
     OnlineAreaRequired,
     SaveFailed,
 }
@@ -893,11 +747,15 @@ enum class FormVolunteerTypeUi(
     ),
 }
 
-enum class ShownModal {
-    MorningShift,
-    AfternoonShift,
-    None,
-}
+/** The shift being added (`editingId` null) or edited in the modal. */
+data class ShiftEditor(
+    val editingId: Long?,
+    val shift: ShiftUi,
+    val type: FormVolunteerTypeUi,
+    val timeRange: TimeRange,
+    val specificArea: SpecificArea? = null,
+    val online: Boolean = false,
+)
 
 /** Dialog shown when the chosen day has no on-site volunteering ("NO VOLUNTARIAT"). */
 enum class RemoteDialog {
@@ -909,6 +767,7 @@ enum class RemoteDialog {
 }
 
 data class ShiftInfoSummary(
+    val id: Long,
     val shift: ShiftUi,
     val timeRange: TimeRange,
     val type: FormVolunteerTypeUi,

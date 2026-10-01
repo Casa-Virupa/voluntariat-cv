@@ -67,6 +67,15 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
   only user field the app writes, so the console Firestore rules must allow the owner to update
   exactly those keys. Dashboard shows it as an «Aliments» badge (coordinació, vista d'àpats) and
   Excel column; never label it «Manipulador».
+- **Several shifts per half-day** (issue #113): a booking may hold any number of `Shift.Morning` /
+  `Shift.Afternoon` entries (e.g. 2 h Temple + 2 h Transcripcions in one afternoon); the only
+  stopper is an overlap (`TimeRange.overlaps`, half-open: 16:30–18:30 + 18:30–20:30 is fine). In
+  `ReservationFormViewModel` the «Matí»/«Tarda» chips always add a new shift (`ShiftEditor`), each
+  summary row edits/removes its own. `DayDetailScreen` shows one card per shift and each meal/night
+  once (`Volunteer.servicesOnCard`: breakfast + lunch on the first morning card, dinner + night +
+  next-day breakfast on the first afternoon card, falling back to the other side when one is
+  missing). The dashboard already stores/sums them (`fs_booking_shift` PK `(doc_id, seq)`) but
+  doesn't flag overlaps.
 - Reservation-form notice: a **habitual non-member** sees «avisa-ho a l'hostatgeria» under the
   additional options (`showSleepNotice`) because the sleep chip is member-only.
 - **Meals/bed-only bookings** (issue #108): a booking may have **no shifts** when it has meals or

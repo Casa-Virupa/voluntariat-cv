@@ -659,7 +659,8 @@ private fun ShiftTags(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        shifts.forEach { shift ->
+        // One tag per half-day, even with several shifts in it (issue #113)
+        shifts.distinctBy { it::class }.forEach { shift ->
             when (shift) {
                 is Shift.Morning -> CVTag(
                     text = stringResource(Res.string.morning),

@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,9 +42,9 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.FormVolunteerType
 import com.casavirupa.voluntariat.features.calendar.viewmodels.RemoteDialog
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormError
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
+import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftEditor
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftInfoSummary
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ShiftUi
-import com.casavirupa.voluntariat.features.calendar.viewmodels.ShownModal
 import com.casavirupa.voluntariat.shared.common.ui.displayName
 import com.casavirupa.voluntariat.shared.core.utils.format
 import com.casavirupa.voluntariat.shared.designsystem.components.CVButton
@@ -52,7 +53,6 @@ import com.casavirupa.voluntariat.shared.designsystem.components.DateTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.MediumTopBar
 import com.casavirupa.voluntariat.shared.designsystem.components.TimeTextField
 import com.casavirupa.voluntariat.shared.designsystem.components.WarningDialog
-import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.user.SpecificArea
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -73,6 +73,7 @@ import voluntariatcv.features.calendar.generated.resources.existing_volunteer_di
 import voluntariatcv.features.calendar.generated.resources.ic_calendar_today
 import voluntariatcv.features.calendar.generated.resources.ic_clock
 import voluntariatcv.features.calendar.generated.resources.ic_close
+import voluntariatcv.features.calendar.generated.resources.ic_delete
 import voluntariatcv.features.calendar.generated.resources.ic_edit
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.morning_label
@@ -88,6 +89,7 @@ import voluntariatcv.features.calendar.generated.resources.reservation_error_mis
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_shift_or_option
 import voluntariatcv.features.calendar.generated.resources.reservation_error_missing_specific_area
 import voluntariatcv.features.calendar.generated.resources.reservation_error_online_area_required
+import voluntariatcv.features.calendar.generated.resources.reservation_error_overlapping_shifts
 import voluntariatcv.features.calendar.generated.resources.reservation_error_save_failed
 import voluntariatcv.features.calendar.generated.resources.reservation_error_title
 import voluntariatcv.features.calendar.generated.resources.reservation_form_title
@@ -95,6 +97,7 @@ import voluntariatcv.features.calendar.generated.resources.select_date
 import voluntariatcv.features.calendar.generated.resources.select_specific_area
 import voluntariatcv.features.calendar.generated.resources.shift_label
 import voluntariatcv.features.calendar.generated.resources.shift_optional_hint
+import voluntariatcv.features.calendar.generated.resources.shift_overlap_error
 import voluntariatcv.features.calendar.generated.resources.sunday_end_warning
 import voluntariatcv.features.calendar.generated.resources.start_label
 import kotlin.time.Clock
@@ -107,102 +110,57 @@ internal fun ReservationFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val date by viewModel.date.collectAsStateWithLifecycle()
-    val shifts by viewModel.shifts.collectAsStateWithLifecycle()
     val optionsSelected by viewModel.additionalOptionsSelected.collectAsStateWithLifecycle()
     val options by viewModel.additionalOptions.collectAsStateWithLifecycle()
-    val shownModal by viewModel.shownModal.collectAsStateWithLifecycle()
-    val morningVolunteerType by viewModel.morningVolunteerType.collectAsStateWithLifecycle()
-    val afternoonVolunteerType by viewModel.afternoonVolunteerType.collectAsStateWithLifecycle()
-    val morningTimeRange by viewModel.morningTimeRange.collectAsStateWithLifecycle()
-    val afternoonTimeRange by viewModel.afternoonTimeRange.collectAsStateWithLifecycle()
+    val editor by viewModel.editor.collectAsStateWithLifecycle()
     val shiftsInfo by viewModel.shiftsInfo.collectAsStateWithLifecycle()
     val showExistingVolunteerDialog by viewModel
         .showExistingVolunteerDialogError.collectAsStateWithLifecycle()
     val specificAreas by viewModel.specificAreas.collectAsStateWithLifecycle()
     val showSpecificAreaSelector by viewModel.showSpecificAreaSelector.collectAsStateWithLifecycle()
-    val selectedMorningSpecificArea by viewModel
-        .selectedMorningSpecificArea.collectAsStateWithLifecycle()
-    val selectedAfternoonSpecificArea by viewModel
-        .selectedAfternoonSpecificArea.collectAsStateWithLifecycle()
     val remoteDialog by viewModel.remoteDialog.collectAsStateWithLifecycle()
     val showSleepNotice by viewModel.showSleepNotice.collectAsStateWithLifecycle()
     val volunteerTypeOptions by viewModel.volunteerTypeOptions.collectAsStateWithLifecycle()
     val showOnlineToggle by viewModel.showOnlineToggle.collectAsStateWithLifecycle()
     val forcedOnline by viewModel.forcedOnline.collectAsStateWithLifecycle()
-    val morningOnline by viewModel.morningOnline.collectAsStateWithLifecycle()
-    val afternoonOnline by viewModel.afternoonOnline.collectAsStateWithLifecycle()
     val sundayEndWarning by viewModel.sundayEndWarning.collectAsStateWithLifecycle()
+    val overlappingShift by viewModel.overlappingShift.collectAsStateWithLifecycle()
     val lateSundayShifts by viewModel.lateSundayShifts.collectAsStateWithLifecycle()
 
     ReservationFormContent(
         onNavBack = onNavBack,
         date = date,
-        shifts = shifts,
         shiftsInfo = shiftsInfo,
         lateSundayShifts = lateSundayShifts,
         optionsSelected = optionsSelected,
         options = options,
         showSleepNotice = showSleepNotice,
         onDateChanged = viewModel::onDateChanged,
-        onShiftSelected = viewModel::onShiftSelected,
+        onAddShift = viewModel::onAddShift,
         onAdditionalOptionSelected = viewModel::onAdditionOptionSelected,
-        onEditShiftInfo = { shift ->
-            when (shift) {
-                ShiftUi.Morning -> viewModel.openMorningModal()
-                ShiftUi.Afternoon -> viewModel.openAfternoonModal()
-            }
-        },
+        onEditShift = viewModel::onEditShift,
+        onRemoveShift = viewModel::onRemoveShift,
         onConfirm = viewModel::onConfirm,
     )
 
-    when (shownModal) {
-        ShownModal.MorningShift -> ShiftModal(
-            shownModal = shownModal,
-            title = stringResource(Res.string.morning_shift_title),
-            type = morningVolunteerType,
+    editor?.let { shift ->
+        ShiftModal(
+            editor = shift,
             typeOptions = volunteerTypeOptions,
-            onVolunteerTypeChanged = viewModel::onMorningVolunteerTypeChanged,
+            onVolunteerTypeChanged = viewModel::onVolunteerTypeChanged,
             showOnlineToggle = showOnlineToggle,
-            online = morningOnline,
             onlineLocked = forcedOnline,
-            onOnlineChanged = viewModel::onMorningOnlineChanged,
-            timeRange = morningTimeRange,
+            onOnlineChanged = viewModel::onOnlineChanged,
             sundayEndWarning = sundayEndWarning,
+            overlappingShift = overlappingShift,
             onDismiss = viewModel::dismissModal,
-            onStartTimeChanged = viewModel::onMorningStartTimeChanged,
-            onEndTimeChanged = viewModel::onMorningEndTimeChanged,
+            onStartTimeChanged = viewModel::onStartTimeChanged,
+            onEndTimeChanged = viewModel::onEndTimeChanged,
             onConfirm = viewModel::onConfirmShift,
             specificAreas = specificAreas,
             showSpecificAreasSelector = showSpecificAreaSelector,
-            selectedMorningSpecificArea = selectedMorningSpecificArea,
-            selectedAfternoonSpecificArea = selectedAfternoonSpecificArea,
-            onMorningSpecificAreaChanged = viewModel::onMorningSpecificAreaChanged,
-            onAfternoonSpecificAreaChanged = viewModel::onAfternoonSpecificAreaChanged,
+            onSpecificAreaChanged = viewModel::onSpecificAreaChanged,
         )
-        ShownModal.AfternoonShift -> ShiftModal(
-            shownModal = shownModal,
-            title = stringResource(Res.string.afternoon_shift_title),
-            type = afternoonVolunteerType,
-            typeOptions = volunteerTypeOptions,
-            onVolunteerTypeChanged = viewModel::onAfternoonVolunteerTypeChanged,
-            showOnlineToggle = showOnlineToggle,
-            online = afternoonOnline,
-            onlineLocked = forcedOnline,
-            onOnlineChanged = viewModel::onAfternoonOnlineChanged,
-            timeRange = afternoonTimeRange,
-            sundayEndWarning = sundayEndWarning,
-            onDismiss = viewModel::dismissModal,
-            onStartTimeChanged = viewModel::onAfternoonStartTimeChanged,
-            onEndTimeChanged = viewModel::onAfternoonEndTimeChanged,
-            onConfirm = viewModel::onConfirmShift,
-            specificAreas = specificAreas,
-            showSpecificAreasSelector = showSpecificAreaSelector,
-            selectedMorningSpecificArea = selectedMorningSpecificArea,
-            selectedAfternoonSpecificArea = selectedAfternoonSpecificArea,
-            onMorningSpecificAreaChanged = viewModel::onMorningSpecificAreaChanged,
-            onAfternoonSpecificAreaChanged = viewModel::onAfternoonSpecificAreaChanged,
-        )
-        else -> {}
     }
     
     if (showExistingVolunteerDialog) {
@@ -259,16 +217,16 @@ internal fun ReservationFormScreen(
 private fun ReservationFormContent(
     onNavBack: () -> Unit,
     date: LocalDate?,
-    shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
-    lateSundayShifts: Map<ShiftUi, LocalTime>,
+    lateSundayShifts: Map<Long, LocalTime>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     showSleepNotice: Boolean,
     onDateChanged: (LocalDate) -> Unit,
-    onShiftSelected: (ShiftUi) -> Unit,
+    onAddShift: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
-    onEditShiftInfo: (ShiftUi) -> Unit,
+    onEditShift: (Long) -> Unit,
+    onRemoveShift: (Long) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -296,16 +254,16 @@ private fun ReservationFormContent(
         ) {
             ReservationForm(
                 date = date,
-                shifts = shifts,
                 shiftsInfo = shiftsInfo,
                 lateSundayShifts = lateSundayShifts,
                 optionsSelected = optionsSelected,
                 options = options,
                 showSleepNotice = showSleepNotice,
                 onDateChanged = onDateChanged,
-                onShiftSelected = onShiftSelected,
+                onAddShift = onAddShift,
                 onAdditionalOptionSelected = onAdditionalOptionSelected,
-                onEditShiftInfo = onEditShiftInfo,
+                onEditShift = onEditShift,
+                onRemoveShift = onRemoveShift,
                 modifier = Modifier.fillMaxSize(),
             )
             CVButton(
@@ -323,16 +281,16 @@ private fun ReservationFormContent(
 @Composable
 private fun ReservationForm(
     date: LocalDate?,
-    shifts: List<ShiftUi>,
     shiftsInfo: List<ShiftInfoSummary>,
-    lateSundayShifts: Map<ShiftUi, LocalTime>,
+    lateSundayShifts: Map<Long, LocalTime>,
     optionsSelected: List<AdditionalOption>,
     options: List<AdditionalOption>,
     showSleepNotice: Boolean,
     onDateChanged: (LocalDate) -> Unit,
-    onShiftSelected: (ShiftUi) -> Unit,
+    onAddShift: (ShiftUi) -> Unit,
     onAdditionalOptionSelected: (AdditionalOption) -> Unit,
-    onEditShiftInfo: (ShiftUi) -> Unit,
+    onEditShift: (Long) -> Unit,
+    onRemoveShift: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -359,14 +317,14 @@ private fun ReservationForm(
             icon = painterResource(Res.drawable.ic_calendar_today),
         ) {
             ShiftSelector(
-                selectedShifts = shifts,
-                onSelectShift = onShiftSelected,
+                onAddShift = onAddShift,
                 shiftsInfo = shiftsInfo,
                 lateSundayShifts = lateSundayShifts,
-                onEditInfo = onEditShiftInfo,
+                onEditInfo = onEditShift,
+                onRemove = onRemoveShift,
             )
             // Meals and a bed can be booked on their own (issue #108)
-            if (shifts.isEmpty() && options.isNotEmpty()) {
+            if (shiftsInfo.isEmpty() && options.isNotEmpty()) {
                 Text(
                     text = stringResource(Res.string.shift_optional_hint),
                     modifier = Modifier.padding(top = 12.dp),
@@ -428,11 +386,11 @@ private fun FormSection(
 
 @Composable
 private fun ShiftSelector(
-    selectedShifts: List<ShiftUi>,
-    onSelectShift: (ShiftUi) -> Unit,
+    onAddShift: (ShiftUi) -> Unit,
     shiftsInfo: List<ShiftInfoSummary>,
-    lateSundayShifts: Map<ShiftUi, LocalTime>,
-    onEditInfo: (ShiftUi) -> Unit,
+    lateSundayShifts: Map<Long, LocalTime>,
+    onEditInfo: (Long) -> Unit,
+    onRemove: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column {
@@ -441,13 +399,14 @@ private fun ShiftSelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // A chip always adds a new shift (issue #113): it stays highlighted while its
+            // half-day has any, and each one is removed from its own row
             ShiftUi.entries.forEach { shift ->
-                val isSelected = shift in selectedShifts
                 FormChip(
                     text = stringResource(shift.text),
-                    isSelected = isSelected,
+                    isSelected = shiftsInfo.any { it.shift == shift },
                     icon = painterResource(shift.icon),
-                    onClick = { onSelectShift(shift) },
+                    onClick = { onAddShift(shift) },
                 )
             }
         }
@@ -456,12 +415,15 @@ private fun ShiftSelector(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             shiftsInfo.forEach { shift ->
-                ShiftScheduleInfo(
-                    shift = shift,
-                    sundayEndTime = lateSundayShifts[shift.shift],
-                    onClickEditInfo = { onEditInfo(shift.shift) },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                key(shift.id) {
+                    ShiftScheduleInfo(
+                        shift = shift,
+                        sundayEndTime = lateSundayShifts[shift.id],
+                        onClickEditInfo = { onEditInfo(shift.id) },
+                        onClickRemove = { onRemove(shift.id) },
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
     }
@@ -512,6 +474,32 @@ private fun SundayEndWarning(
         )
         Text(
             text = stringResource(Res.string.sunday_end_warning, endTime.format("HH:mm")),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+// The only thing that stops a shift from being added: overlapping another one (issue #113)
+@Composable
+private fun OverlapWarning(
+    other: ShiftInfoSummary,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_clock),
+            contentDescription = null,
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(16.dp),
+            tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = stringResource(Res.string.shift_overlap_error, other.displayTime()),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
@@ -592,6 +580,7 @@ private fun ShiftScheduleInfo(
     shift: ShiftInfoSummary,
     sundayEndTime: LocalTime?,
     onClickEditInfo: () -> Unit,
+    onClickRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -635,33 +624,33 @@ private fun ShiftScheduleInfo(
                 contentDescription = null,
             )
         }
+        IconButton(onClick = onClickRemove) {
+            Icon(
+                painter = painterResource(Res.drawable.ic_delete),
+                contentDescription = null,
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShiftModal(
-    shownModal: ShownModal,
-    title: String,
-    type: FormVolunteerTypeUi,
+    editor: ShiftEditor,
     typeOptions: List<FormVolunteerTypeUi>,
     onVolunteerTypeChanged: (FormVolunteerTypeUi) -> Unit,
     showOnlineToggle: Boolean,
-    online: Boolean,
     onlineLocked: Boolean,
     onOnlineChanged: (Boolean) -> Unit,
-    timeRange: TimeRange,
     sundayEndWarning: LocalTime?,
+    overlappingShift: ShiftInfoSummary?,
     onDismiss: () -> Unit,
     onStartTimeChanged: (LocalTime) -> Unit,
     onEndTimeChanged: (LocalTime) -> Unit,
     onConfirm: () -> Unit,
     specificAreas: List<SpecificArea>,
     showSpecificAreasSelector: Boolean,
-    selectedMorningSpecificArea: SpecificArea?,
-    selectedAfternoonSpecificArea: SpecificArea?,
-    onMorningSpecificAreaChanged: (SpecificArea) -> Unit,
-    onAfternoonSpecificAreaChanged: (SpecificArea) -> Unit,
+    onSpecificAreaChanged: (SpecificArea) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(
@@ -673,7 +662,12 @@ private fun ShiftModal(
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             Text(
-                text = title,
+                text = stringResource(
+                    when (editor.shift) {
+                        ShiftUi.Morning -> Res.string.morning_shift_title
+                        ShiftUi.Afternoon -> Res.string.afternoon_shift_title
+                    }
+                ),
                 style = MaterialTheme.typography.titleLarge,
             )
             FlowRow(
@@ -684,7 +678,7 @@ private fun ShiftModal(
                 typeOptions.forEach { volunteerType ->
                     FormChip(
                         text = stringResource(volunteerType.text),
-                        isSelected = type == volunteerType,
+                        isSelected = editor.type == volunteerType,
                         icon = painterResource(volunteerType.icon),
                         onClick = { onVolunteerTypeChanged(volunteerType) },
                     )
@@ -704,21 +698,10 @@ private fun ShiftModal(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         specificAreas.forEach { specificArea ->
-                            val isSelected = if (shownModal == ShownModal.MorningShift) {
-                                specificArea == selectedMorningSpecificArea
-                            } else {
-                                specificArea == selectedAfternoonSpecificArea
-                            }
                             FormChip(
                                 text = specificArea.displayName(),
-                                isSelected = isSelected,
-                                onClick = {
-                                    if (shownModal == ShownModal.MorningShift) {
-                                        onMorningSpecificAreaChanged(specificArea)
-                                    } else {
-                                        onAfternoonSpecificAreaChanged(specificArea)
-                                    }
-                                },
+                                isSelected = specificArea == editor.specificArea,
+                                onClick = { onSpecificAreaChanged(specificArea) },
                             )
                         }
                     }
@@ -737,7 +720,7 @@ private fun ShiftModal(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Switch(
-                        checked = online,
+                        checked = editor.online,
                         onCheckedChange = onOnlineChanged,
                         enabled = !onlineLocked,
                     )
@@ -745,25 +728,29 @@ private fun ShiftModal(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 TimeTextField(
-                    time = timeRange.start,
+                    time = editor.timeRange.start,
                     onTimeChanged = onStartTimeChanged,
                     modifier = Modifier.weight(1f),
                     label = stringResource(Res.string.start_label),
                     leadingIcon = painterResource(Res.drawable.ic_clock),
                 )
                 TimeTextField(
-                    time = timeRange.end,
+                    time = editor.timeRange.end,
                     onTimeChanged = onEndTimeChanged,
                     modifier = Modifier.weight(1f),
                     label = stringResource(Res.string.end_label),
                     leadingIcon = painterResource(Res.drawable.ic_clock),
                 )
             }
+            AnimatedVisibility(visible = overlappingShift != null) {
+                overlappingShift?.let { OverlapWarning(other = it) }
+            }
             AnimatedVisibility(visible = sundayEndWarning != null) {
                 sundayEndWarning?.let { SundayEndWarning(endTime = it) }
             }
             CVButton(
                 text = stringResource(Res.string.confirm),
+                // Refused while the times overlap another shift; the warning above says why
                 onClick = onConfirm,
                 modifier = Modifier
                     .padding(top = 16.dp)
@@ -795,6 +782,7 @@ private fun ReservationFormError.message(): StringResource =
         ReservationFormError.MissingShift -> Res.string.reservation_error_missing_shift
         ReservationFormError.MissingShiftOrOption -> Res.string.reservation_error_missing_shift_or_option
         ReservationFormError.MissingSpecificArea -> Res.string.reservation_error_missing_specific_area
+        ReservationFormError.OverlappingShifts -> Res.string.reservation_error_overlapping_shifts
         ReservationFormError.OnlineAreaRequired -> Res.string.reservation_error_online_area_required
         ReservationFormError.SaveFailed -> Res.string.reservation_error_save_failed
     }

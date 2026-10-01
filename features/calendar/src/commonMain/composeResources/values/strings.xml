@@ -74,9 +74,11 @@
     <string name="reservation_error_missing_shift">Choose at least one shift (morning or afternoon).</string>
     <string name="reservation_error_missing_specific_area">Choose the specific area of each specific shift.</string>
     <string name="reservation_error_online_area_required">On this day every shift has to be specific and in an area that allows working online.</string>
+    <string name="reservation_error_overlapping_shifts">Some of your shifts overlap. Please check their times.</string>
     <string name="reservation_error_save_failed">The booking couldn't be saved. Check your connection and try again.</string>
     <string name="reservation_error_missing_shift_or_option">Choose at least one shift, or a meal or overnight stay.</string>
     <string name="shift_optional_hint">Only coming to eat or sleep? You don't need to choose a shift.</string>
+    <string name="shift_overlap_error">This shift overlaps another one you already have (%1$s).</string>
     <string name="sunday_end_warning">On Sundays on-site volunteering ends at %1$s.</string>
     <string name="services_only_title">Only meals or overnight stay</string>
 </resources>

@@ -10,6 +10,7 @@ import com.casavirupa.voluntariat.shared.domain.CalendarRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import com.casavirupa.voluntariat.shared.model.calendar.GoogleCalendarEvent
+import com.casavirupa.voluntariat.shared.model.calendar.CardServices
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
 import com.casavirupa.voluntariat.shared.model.calendar.Shift
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
@@ -133,9 +134,10 @@ class DayDetailViewModel(
         }
     }
 
-    // One entry per shift: a volunteer booked for both morning and afternoon appears
-    // under each heading (both entries share the booking id, so deleting either
-    // removes the whole day's booking).
+    // One entry per shift: a volunteer booked for both morning and afternoon, or for several
+    // shifts in one of them (issue #113), appears once per shift (all entries share the
+    // booking id, so deleting any removes the whole day's booking). The booking's meals and
+    // night are shown on one card each, not repeated (Volunteer.servicesOnCard).
     private fun buildDayShifts(
         volunteers: List<Volunteer>,
         users: List<User>,
@@ -150,7 +152,14 @@ class DayDetailViewModel(
             .mapNotNull { volunteer ->
                 users
                     .find { user -> user.id == volunteer.userId }
-                    ?.let { user -> volunteer.toUiModel(user.name, viewer, shift = null) }
+                    ?.let { user ->
+                        volunteer.toUiModel(
+                            name = user.name,
+                            viewer = viewer,
+                            shift = null,
+                            services = CardServices(volunteer.meals, volunteer.sleep),
+                        )
+                    }
             },
     )
 
@@ -158,11 +167,21 @@ class DayDetailViewModel(
         users: List<User>,
         viewer: User?,
     ): List<VolunteerItemUi> =
-        mapNotNull { volunteer ->
-            val shift = volunteer.shifts.firstOrNull { it is T } ?: return@mapNotNull null
-            users
-                .find { user -> user.id == volunteer.userId }
-                ?.let { user -> volunteer.toUiModel(user.name, viewer, shift) }
+        flatMap { volunteer ->
+            val user = users.find { user -> user.id == volunteer.userId }
+                ?: return@flatMap emptyList()
+            volunteer.shifts
+                .withIndex()
+                .filter { (_, shift) -> shift is T }
+                .sortedBy { (_, shift) -> shift.timeRange.start }
+                .map { (index, shift) ->
+                    volunteer.toUiModel(
+                        name = user.name,
+                        viewer = viewer,
+                        shift = shift,
+                        services = volunteer.servicesOnCard(index),
+                    )
+                }
         }
 }
 
@@ -194,7 +213,12 @@ data class VolunteerItemUi(
     val canBeDeleted: Boolean,
 )
 
-private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift?): VolunteerItemUi {
+private fun Volunteer.toUiModel(
+    name: String,
+    viewer: User?,
+    shift: Shift?,
+    services: CardServices,
+): VolunteerItemUi {
     val showsServices = viewer != null && areServicesVisibleTo(viewer)
     return VolunteerItemUi(
         id = id,
@@ -202,8 +226,8 @@ private fun Volunteer.toUiModel(name: String, viewer: User?, shift: Shift?): Vol
         schedule = shift?.formatSchedule().orEmpty(),
         type = shift?.type,
         online = shift?.online == true,
-        meals = if (showsServices) meals else emptyList(),
-        sleep = showsServices && sleep,
+        meals = if (showsServices) services.meals else emptyList(),
+        sleep = showsServices && services.sleep,
         canBeDeleted = viewer != null && isOwnedBy(viewer),
     )
 }
