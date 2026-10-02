@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.casavirupa.voluntariat.android"
-        versionCode = 3
+        versionCode = 4
         versionName = "1.1.2"
     }
 
