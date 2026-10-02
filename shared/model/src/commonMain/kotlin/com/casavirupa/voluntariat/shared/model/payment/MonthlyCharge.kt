@@ -58,7 +58,8 @@ data class MonthlyChargeBreakdown(
 }
 
 /**
- * Net charge for one calendar month of bookings. For mitra volunteers:
+ * Net charge for one calendar month of bookings, priced with the volunteer's own timeline
+ * ([priceRules], see `User.priceRules`). When it carries a monthly allowance (mitras):
  * - the first N chronological meals (lunch, dinner or same-day breakfast, one shared pool)
  *   are free, and so are the first M nights; each unit is zeroed at its own booking-date
  *   price, and an item that costs nothing never uses up a unit;
@@ -74,16 +75,11 @@ data class MonthlyChargeBreakdown(
 fun calculateMonthlyCharge(
     volunteers: List<Volunteer>,
     priceRules: PriceRules,
-    isMitra: Boolean,
 ): MonthlyChargeBreakdown {
     if (volunteers.isEmpty()) return MonthlyChargeBreakdown.Empty
 
     val firstDate = volunteers.first().date
-    val allowance = if (isMitra) {
-        priceRules.priceAt(LocalDate(firstDate.year, firstDate.month, 1)).mitraAllowance
-    } else {
-        MitraAllowance.None
-    }
+    val allowance = priceRules.priceAt(LocalDate(firstDate.year, firstDate.month, 1)).mitraAllowance
 
     var lunches = 0
     var dinners = 0
