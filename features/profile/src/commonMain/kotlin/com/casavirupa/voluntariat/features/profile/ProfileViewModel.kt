@@ -208,29 +208,32 @@ data class CommitmentTargets(
     }
 }
 
+// Everything in minutes, from each shift's real time range; the screen converts to hours.
 data class HoursBreakdown(
-    val total: Int = 0,
-    val general: Int = 0,
-    val specificByArea: Map<SpecificArea, Int> = emptyMap(),
+    val totalMinutes: Int = 0,
+    val generalMinutes: Int = 0,
+    val specificMinutesByArea: Map<SpecificArea, Int> = emptyMap(),
 ) {
     companion object {
         operator fun invoke(volunteers: List<Volunteer>): HoursBreakdown {
             val shifts = volunteers.flatMap { it.shifts }
             return HoursBreakdown(
-                total = shifts.sumOf { it.getHour() },
-                general = shifts
+                totalMinutes = shifts.sumOf { it.minutes() },
+                generalMinutes = shifts
                     .filter { it.type is VolunteerType.General }
-                    .sumOf { it.getHour() },
-                specificByArea = shifts
+                    .sumOf { it.minutes() },
+                specificMinutesByArea = shifts
                     .mapNotNull { shift ->
                         (shift.type as? VolunteerType.Specific)
-                            ?.let { it.specificArea to shift.getHour() }
+                            ?.let { it.specificArea to shift.minutes() }
                     }.groupBy({ it.first }, { it.second })
-                    .mapValues { (_, hours) -> hours.sum() },
+                    .mapValues { (_, minutes) -> minutes.sum() },
             )
         }
     }
 }
+
+fun Int.minutesToHours(): Double = this / MINUTES_PER_HOUR.toDouble()
 
 private const val MINUTES_PER_HOUR = 60
 

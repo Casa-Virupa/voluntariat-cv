@@ -307,7 +307,7 @@ private fun DegreeOfCompliance(
     onPreviousQuarter: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val done = hoursBreakdown.total.toDouble()
+    val done = hoursBreakdown.totalMinutes.minutesToHours()
     val targetHours = targets.total?.targetHours?.takeIf { it > 0 }
     val percentage = targetHours?.let {
         ((done / it) * 100).coerceAtMost(100.0).formatString(1)
@@ -416,7 +416,7 @@ private fun DegreeOfCompliance(
                     }
                 }
                 val hasAreaTargets = targets.general != null || targets.byArea.isNotEmpty()
-                if (hoursBreakdown.total > 0 || hasAreaTargets) {
+                if (hoursBreakdown.totalMinutes > 0 || hasAreaTargets) {
                     HoursBreakdownDetail(
                         hoursBreakdown = hoursBreakdown,
                         targets = targets,
@@ -441,17 +441,17 @@ private fun HoursBreakdownDetail(
         HoursBreakdownRow(
             icon = painterResource(Res.drawable.ic_layers),
             title = stringResource(Res.string.general_volunteering),
-            hours = hoursBreakdown.general,
+            hours = hoursBreakdown.generalMinutes.minutesToHours(),
             target = targets.general,
         )
         // Areas with hours done or a commitment target, so a target is visible
         // even before the first hour is registered in its area
-        val areas = hoursBreakdown.specificByArea.keys + targets.byArea.keys
+        val areas = hoursBreakdown.specificMinutesByArea.keys + targets.byArea.keys
         areas.forEach { area ->
             HoursBreakdownRow(
                 icon = painterResource(Res.drawable.ic_target),
                 title = area.displayName(),
-                hours = hoursBreakdown.specificByArea[area] ?: 0,
+                hours = (hoursBreakdown.specificMinutesByArea[area] ?: 0).minutesToHours(),
                 target = targets.byArea[area],
                 modifier = Modifier.padding(top = 4.dp),
             )
@@ -463,7 +463,7 @@ private fun HoursBreakdownDetail(
 private fun HoursBreakdownRow(
     icon: Painter,
     title: String,
-    hours: Int,
+    hours: Double,
     target: CommitmentTarget?,
     modifier: Modifier = Modifier,
 ) {
@@ -485,9 +485,9 @@ private fun HoursBreakdownRow(
         )
         Text(
             text = if (target != null) {
-                "${hours}h / ${target.targetHours.formatHours()}h"
+                "${hours.formatHours()}h / ${target.targetHours.formatHours()}h"
             } else {
-                "${hours}h"
+                "${hours.formatHours()}h"
             },
             style = MaterialTheme.typography.labelMedium,
         )

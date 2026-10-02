@@ -6,6 +6,8 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -93,5 +95,25 @@ class DayEventsTest {
         assertEquals(null, byDay[LocalDate(2026, 9, 28)])
         assertEquals(DayCoverage.WholeDay, byDay[LocalDate(2026, 10, 25)]?.unavailability)
         assertEquals(DayCoverage.Morning, byDay[LocalDate(2026, 10, 26)]?.unavailability)
+    }
+
+    // The Monday «NO VOLUNTARIAT» as the calendar script sends it (Madrid midnight to midnight,
+    // in UTC). Read in the phone's zone in LA it spans Sunday 15:00 → Monday 15:00 and greyed
+    // both days; read in Casa Virupa's zone it is just Monday, wherever the phone is.
+    @Test
+    fun allDayBlockStaysOnItsDayWhenReadInCasaVirupaTimeZone() {
+        fun readIn(zone: TimeZone) = event(
+            start = Instant.parse("2026-09-27T22:00:00Z").toLocalDateTime(zone),
+            end = Instant.parse("2026-09-28T22:00:00Z").toLocalDateTime(zone),
+            isAllDay = true,
+            available = false,
+        )
+
+        val inLosAngeles = listOf(readIn(TimeZone.of("America/Los_Angeles"))).groupByDay()
+        assertEquals(setOf(LocalDate(2026, 9, 27), LocalDate(2026, 9, 28)), inLosAngeles.keys)
+
+        val byDay = listOf(readIn(CasaVirupaTimeZone)).groupByDay()
+        assertEquals(setOf(LocalDate(2026, 9, 28)), byDay.keys)
+        assertEquals(DayCoverage.WholeDay, byDay[LocalDate(2026, 9, 28)]?.unavailability)
     }
 }

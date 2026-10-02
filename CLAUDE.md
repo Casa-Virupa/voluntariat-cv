@@ -47,6 +47,12 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
   forced-online flow on «NO VOLUNTARIAT» days (`RemoteDialog`, `forcedOnline`: only `Specific`
   shifts in online areas, no meals/nights). General volunteering is never online.
   Editor: dashboard `/configuracio?seccio=arees`; shape in `lib/areas-doc.ts`.
+- `configuration/schedule` → `FirebaseScheduleConfigRepository` → `ScheduleConfig.sundayEndTime`
+  (`sunday_end_time: "HH:mm"`, `updated_at`): when on-site volunteering ends on Sundays (issue
+  #105). Missing doc / bad value / error → 19:30. `ReservationFormViewModel` uses it as the Sunday
+  afternoon default end and warns (`sundayEndWarning` in the shift modal, `lateSundayShifts` in
+  the summary) when an on-site Sunday shift ends later. It's a warning only, not a block. No
+  dashboard editor yet: set it by hand in the Firebase console.
 
 ## Fields the app writes / reads beyond the basics
 
@@ -61,12 +67,36 @@ Both follow the same pattern: fetch the whole collection as a snapshots Flow, ma
   only user field the app writes, so the console Firestore rules must allow the owner to update
   exactly those keys. Dashboard shows it as an «Aliments» badge (coordinació, vista d'àpats) and
   Excel column; never label it «Manipulador».
+- **Several shifts per half-day** (issue #113): a booking may hold any number of `Shift.Morning` /
+  `Shift.Afternoon` entries (e.g. 2 h Temple + 2 h Transcripcions in one afternoon); the only
+  stopper is an overlap (`TimeRange.overlaps`, half-open: 16:30–18:30 + 18:30–20:30 is fine). In
+  `ReservationFormViewModel` the «Matí»/«Tarda» chips always add a new shift (`ShiftEditor`; shown
+  as «+ Matí» once one exists), each summary row edits/removes its own. Still **one booking per
+  user per day**: booking an already-booked day silently **merges** into it
+  (`Volunteer.mergedWith`) unless a new shift overlaps a booked one (`firstOverlapWith` →
+  `OverlapsBookedShift`). Booked shifts also count for the modal's overlap warning, the default
+  start time and the bookable meals. Bookings stay immutable: the merge is an atomic
+  `replaceVolunteer` (batch delete old doc + create new one), so the doc id changes. `DayDetailScreen` shows one card per shift and each meal/night
+  once (`Volunteer.servicesOnCard`: breakfast + lunch on the first morning card, dinner + night +
+  next-day breakfast on the first afternoon card, falling back to the other side when one is
+  missing). The dashboard already stores/sums them (`fs_booking_shift` PK `(doc_id, seq)`) but
+  doesn't flag overlaps.
 - Reservation-form notice: a **habitual non-member** sees «avisa-ho a l'hostatgeria» under the
   additional options (`showSleepNotice`) because the sleep chip is member-only.
 - **Meals/bed-only bookings** (issue #108): a booking may have **no shifts** when it has meals or
   a bed. It is priced with the `<item>_no_volunteering` fields of `price_rules` (issue #93,
   `Prices.forBooking`), stays outside the mitra quota, isn't counted as a volunteer (calendar /
-  day header) and shows under «Només àpats o pernoctació» in `DayDetailScreen`.
+  day header) and shows under «Només àpats o pernoctació» in `DayDetailScreen`. The form only lets
+  **mitras** create them freely; others only for the night before a booked morning shift (below).
+- **Meals/nights tied to shifts for non-mitras** (`BookableServices.kt`, `User.bookableServices`):
+  a mitra books anything; everyone else only what the day's confirmed **on-site** shifts justify
+  (online ones don't count): morning → breakfast + lunch; afternoon → lunch, dinner, night and
+  next-day breakfast. The night *before* a morning shift on D is a sleep-only booking on D‑1,
+  offered when the user's booking on D has an on-site morning shift (so D must be booked first;
+  priced at `_no_volunteering` rates since it has no shifts). For **everyone** (mitras too,
+  `withoutDuplicateBreakfasts`, issue #86) next-day breakfast is withheld when D+1's booking
+  already has breakfast, and breakfast when D‑1's booking has next-day breakfast.
+  `ReservationFormViewModel` prunes selections that stop being offered. Sleep stays member-only. The dashboard doesn't enforce this.
 - **Mitra quota** (`MonthlyCharge.kt`, issue #90): `mitra_free_meals` is one pool for lunch,
   dinner and same-day breakfast (fallback `mitra_free_lunches + mitra_free_dinners` on old docs);
   `mitra_free_sleeps` nights, and a free night frees its next-day breakfast. Zero-priced items

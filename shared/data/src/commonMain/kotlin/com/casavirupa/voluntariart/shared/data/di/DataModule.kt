@@ -7,6 +7,7 @@ import com.casavirupa.voluntariart.shared.data.repositories.FirebaseInterestLink
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseLedgerRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebasePriceRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseUserRepository
+import com.casavirupa.voluntariart.shared.data.repositories.FirebaseScheduleConfigRepository
 import com.casavirupa.voluntariart.shared.data.repositories.FirebaseVolunteerRepository
 import com.casavirupa.voluntariart.shared.data.repositories.GoogleCalendarRepository
 import com.casavirupa.voluntariat.shared.domain.AreaConfigRepository
@@ -16,6 +17,7 @@ import com.casavirupa.voluntariat.shared.domain.CommitmentRepository
 import com.casavirupa.voluntariat.shared.domain.InterestLinksRepository
 import com.casavirupa.voluntariat.shared.domain.LedgerRepository
 import com.casavirupa.voluntariat.shared.domain.PriceRepository
+import com.casavirupa.voluntariat.shared.domain.ScheduleConfigRepository
 import com.casavirupa.voluntariat.shared.domain.UserRepository
 import com.casavirupa.voluntariat.shared.domain.VolunteerRepository
 import dev.gitlive.firebase.Firebase
@@ -40,4 +42,5 @@ val dataModule = module {
     singleOf(::FirebaseLedgerRepository) bind LedgerRepository::class
     singleOf(::FirebaseInterestLinksRepository) bind InterestLinksRepository::class
     singleOf(::FirebaseAreaConfigRepository) bind AreaConfigRepository::class
+    singleOf(::FirebaseScheduleConfigRepository) bind ScheduleConfigRepository::class
 }

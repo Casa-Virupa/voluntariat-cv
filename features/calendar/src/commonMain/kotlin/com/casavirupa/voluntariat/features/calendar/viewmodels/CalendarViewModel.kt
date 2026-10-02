@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.features.calendar.viewmodels
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.casavirupa.voluntariat.features.calendar.models.YearMonth
@@ -27,7 +28,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -109,7 +109,7 @@ class CalendarViewModel(
 
     val todayDate
         get() = Clock.System.now()
-            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .toLocalDateTime(CasaVirupaTimeZone)
             .date
 
     fun onNextMonth() {

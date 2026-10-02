@@ -17,7 +17,7 @@ data class DayEvents(
  * per event with plain date arithmetic instead of per cell with instant conversions.
  */
 fun List<GoogleCalendarEvent>.groupByDay(
-    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    timeZone: TimeZone = CasaVirupaTimeZone,
 ): Map<LocalDate, DayEvents> {
     val eventsByDay = mutableMapOf<LocalDate, MutableList<GoogleCalendarEvent>>()
     forEach { event ->

@@ -54,8 +54,6 @@
     <string name="end_label">Fin</string>
     <string name="morning_label">Mañana: %1$s</string>
     <string name="afternoon_label">Tarde: %1$s</string>
-    <string name="existing_volunteer_dialog_title">Voluntariado ya registrado</string>
-    <string name="existing_volunteer_dialog_description">Ya tienes un voluntariado en este día. Si quieres añadir uno nuevo, debes eliminar el existente primero.</string>
     <string name="accept">Aceptar</string>
     <string name="special_activities">Actividades especiales</string>
     <string name="not_available_volunteering_title">Voluntariado no disponible</string>
@@ -74,8 +72,12 @@
     <string name="reservation_error_missing_shift">Elige al menos un turno (mañana o tarde).</string>
     <string name="reservation_error_missing_specific_area">Elige el área específica de cada turno específico.</string>
     <string name="reservation_error_online_area_required">Este día todos los turnos deben ser específicos y de un área que permita hacerlos online.</string>
+    <string name="reservation_error_overlapping_shifts">Hay turnos con horarios que coinciden. Revísalos.</string>
+    <string name="reservation_error_overlaps_booked_shift">Este día ya tienes reservado un turno que coincide con el horario de uno de los nuevos. Revisa sus horarios.</string>
     <string name="reservation_error_save_failed">No se ha podido guardar la reserva. Comprueba la conexión y vuelve a intentarlo.</string>
     <string name="reservation_error_missing_shift_or_option">Elige al menos un turno, o una comida o una pernoctación.</string>
     <string name="shift_optional_hint">Si solo vienes a comer o a dormir, no hace falta que elijas ningún turno.</string>
+    <string name="shift_overlap_error">Este turno coincide con otro que ya tienes (%1$s).</string>
+    <string name="sunday_end_warning">Los domingos el voluntariado presencial termina a las %1$s.</string>
     <string name="services_only_title">Solo comidas o pernoctación</string>
 </resources>

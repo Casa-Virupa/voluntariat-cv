@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseShift
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
@@ -23,7 +24,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
@@ -155,6 +155,19 @@ class FirebaseVolunteerRepository(
             .add(volunteer.toFirebaseModel(id))
     }
 
+    override suspend fun replaceVolunteer(
+        old: VolunteerId,
+        id: UserId,
+        volunteer: Volunteer,
+    ): Result<Unit> = runCatching {
+        val volunteers = firestore.collection("volunteers")
+        firestore
+            .batch()
+            .delete(volunteers.document(old.value))
+            .set(volunteers.document, volunteer.toFirebaseModel(id))
+            .commit()
+    }
+
     override suspend fun deleteVolunteer(id: VolunteerId): Result<Unit> =
         runCatching {
             firestore
@@ -258,7 +271,7 @@ private fun Meal.toFirebaseModel() =
 private fun Timestamp.toDate() =
     Instant
         .fromEpochSeconds(seconds, nanoseconds)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
+        .toLocalDateTime(CasaVirupaTimeZone)
         .date
 
 private fun FirebaseTimeRange.toDomainModel() =

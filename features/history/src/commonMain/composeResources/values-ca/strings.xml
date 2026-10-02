@@ -9,7 +9,7 @@
     <string name="general">General</string>
     <string name="specific">Específic</string>
     <string name="delete_volunteering_title">Eliminar voluntariat</string>
-    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d\'aquest dia? Aquesta acció no es pot desfer.</string>
+    <string name="delete_volunteering_description">Estàs segur que vols eliminar el teu voluntariat d'aquest dia? Aquesta acció no es pot desfer.</string>
     <string name="delete">Eliminar</string>
     <string name="no_volunteering_title">Sense voluntariat</string>
     <string name="no_volunteering_description">Encara has de fer el voluntariat d'aquest mes</string>
@@ -47,11 +47,11 @@
         <item quantity="other">%1$d esmorzars</item>
     </plurals>
     <plurals name="breakfasts_next_day_count">
-        <item quantity="one">1 esmorzar de l\'endemà</item>
-        <item quantity="other">%1$d esmorzars de l\'endemà</item>
+        <item quantity="one">1 esmorzar de l'endemà</item>
+        <item quantity="other">%1$d esmorzars de l'endemà</item>
     </plurals>
     <plurals name="mitra_free_breakfasts_next_day_count">
-        <item quantity="one">1 esmorzar de l\'endemà inclòs (mitra)</item>
-        <item quantity="other">%1$d esmorzars de l\'endemà inclosos (mitra)</item>
+        <item quantity="one">1 esmorzar de l'endemà inclòs (mitra)</item>
+        <item quantity="other">%1$d esmorzars de l'endemà inclosos (mitra)</item>
     </plurals>
 </resources>

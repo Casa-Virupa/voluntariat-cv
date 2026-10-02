@@ -554,8 +554,9 @@ private fun DayCell(
                 )
             }
             if (!isPast && !isFullyUnavailable && dayEvents != null) {
+                // A timed «NO VOLUNTARIAT» keeps its chip: its title says what the half is for.
                 dayEvents.events
-                    .filter { it.available }
+                    .filter { it.available || !it.isAllDay }
                     .forEach {
                         CalendarEvent(
                             text = it.title,
