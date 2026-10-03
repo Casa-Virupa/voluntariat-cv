@@ -17,7 +17,20 @@ DI via Koin, UI in Compose Multiplatform. The admin web dashboard (separate repo
 Both follow the same pattern: fetch the whole collection as a snapshots Flow, map per-doc with
 `runCatching { doc.data<DTO>() }` so malformed docs are skipped, `.catch` on the Flow.
 
-- `price_rules` → `FirebasePriceRepository` → `PriceRules.priceAt(date)`. Errors emit `PriceRules.Empty`.
+- `item_price_rules` + `allowance_rules` → `FirebasePriceRepository.getPricingRules()` →
+  `PricingRules` (`shared/model/.../payment/PricingRules.kt`): the dashboard's full price
+  tables, one doc per row (`dash-<n>`), so mitras pay the mitra prices (5/5/5 €), habituals
+  their own breakfast, etc. Resolution mirrors the dashboard's `v_charge`: most criteria set
+  (type, member, with/without volunteering) wins, then greatest `valid_from`, then greatest
+  `<n>`; **no matching rule = 0 €** («sense preu»). Quota = the allowance rule of the user's own
+  type in force on the 1st of the month. `User.priceRules(pricing, legacy)` turns it into the
+  user's own `PriceRules` timeline, which is what `calculateMonthlyCharge` consumes (it no
+  longer takes `isMitra`: the allowance travels in the timeline). Errors, or an empty
+  `item_price_rules`, emit **null** → fall back to `price_rules`. Spec:
+  `../voluntariat-dashboard/PRICES-APP.md`; console rules must allow reading both collections.
+- `price_rules` → `FirebasePriceRepository.getPriceRules()` → `PriceRules.priceAt(date)`: the
+  GENERIC timeline only (one flat price per item, mitra quota for mitras only), kept for older
+  app builds and as the fallback above. Errors emit `PriceRules.Empty`.
 - `commitment_rules` → `FirebaseCommitmentRepository` → `CommitmentRules.targetFor(...)` (total)
   and `.areaTargetsFor(...)` (per-area, shown in the profile breakdown rows).
   Errors emit **null** (not empty): null means "could not read → fall back to the hardcoded

@@ -51,7 +51,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 10), meals = listOf(Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = false)
+        val result = calculateMonthlyCharge(volunteers, defaultRules.withoutAllowance())
 
         assertEquals(0.0, result.discount, TOLERANCE)
         assertEquals(0, result.freeMealsUsed)
@@ -65,7 +65,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Lunch), sleep = true),
         )
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
 
         assertEquals(1, result.freeMealsUsed)
         assertEquals(1, result.freeNightsUsed)
@@ -79,7 +79,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 10, day * 7), meals = listOf(Meal.Lunch))
         }
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
 
         assertEquals(3, result.freeMealsUsed)
         assertEquals(3 * 8.0, result.mealsDiscount, TOLERANCE)
@@ -96,7 +96,7 @@ class MonthlyChargeTest {
             )
         }
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
 
         assertEquals(4, result.freeMealsUsed)
         assertEquals(2, result.freeNightsUsed)
@@ -122,7 +122,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Dinner, Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         assertEquals(10.0, result.mealsDiscount, TOLERANCE)
         assertEquals(8.0, result.total, TOLERANCE)
@@ -145,7 +145,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Dinner), id = "a"),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         // booking "a" (the dinner) is first, so it takes the only free meal
         assertEquals(5.0, result.mealsDiscount, TOLERANCE)
@@ -172,7 +172,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 20), meals = listOf(Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         assertEquals(8.0 + 10.0, result.mealsDiscount, TOLERANCE)
         assertEquals(10.0, result.total, TOLERANCE)
@@ -198,14 +198,14 @@ class MonthlyChargeTest {
         }
 
         // Mid-month rule change does not apply to August (allowance read on the 1st)...
-        assertEquals(4, calculateMonthlyCharge(august, rules, isMitra = true).freeMealsUsed)
+        assertEquals(4, calculateMonthlyCharge(august, rules).freeMealsUsed)
         // ...but does apply from September on.
-        assertEquals(6, calculateMonthlyCharge(september, rules, isMitra = true).freeMealsUsed)
+        assertEquals(6, calculateMonthlyCharge(september, rules).freeMealsUsed)
     }
 
     @Test
     fun emptyMonthHasNoCharge() {
-        val result = calculateMonthlyCharge(emptyList(), defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(emptyList(), defaultRules)
 
         assertEquals(MonthlyChargeBreakdown.Empty, result)
         assertEquals(0.0, result.total, TOLERANCE)
@@ -223,7 +223,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Lunch, Meal.Breakfast)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         // breakfast comes first in the day, so it is the free one
         assertEquals(1, result.breakfasts)
@@ -244,7 +244,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Breakfast, Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         assertEquals(1, result.freeMealsUsed)
         assertEquals(8.0, result.mealsDiscount, TOLERANCE)
@@ -267,7 +267,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 6), meals = listOf(Meal.BreakfastNextDay), sleep = true),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         assertEquals(2, result.breakfastsNextDay)
         assertEquals(1, result.freeNightsUsed)
@@ -286,8 +286,8 @@ class MonthlyChargeTest {
         }
 
         // January's unused allowance must not grow February's: still only 4 free.
-        assertEquals(0.0, calculateMonthlyCharge(january, defaultRules, isMitra = true).total, TOLERANCE)
-        val result = calculateMonthlyCharge(february, defaultRules, isMitra = true)
+        assertEquals(0.0, calculateMonthlyCharge(january, defaultRules).total, TOLERANCE)
+        val result = calculateMonthlyCharge(february, defaultRules)
         assertEquals(4, result.freeMealsUsed)
         assertEquals(8.0, result.total, TOLERANCE)
     }
@@ -314,7 +314,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 12, 2), meals = listOf(Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         // only the day with volunteering is inside the quota
         assertEquals(1, result.freeMealsUsed)
@@ -329,7 +329,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 12, 1), meals = listOf(Meal.Lunch), withVolunteering = false),
         )
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = false)
+        val result = calculateMonthlyCharge(volunteers, defaultRules.withoutAllowance())
 
         assertEquals(8.0, result.total, TOLERANCE)
     }
@@ -352,7 +352,7 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 4), meals = listOf(Meal.Lunch, Meal.Dinner)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
         // exact comparison on purpose: the dialog shows "nothing to pay" only for 0.0
         assertEquals(0.0, result.total)

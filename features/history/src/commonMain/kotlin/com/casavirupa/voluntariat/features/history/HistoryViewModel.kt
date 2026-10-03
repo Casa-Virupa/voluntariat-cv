@@ -15,6 +15,8 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import com.casavirupa.voluntariat.shared.model.payment.calculateMonthlyCharge
 import com.casavirupa.voluntariat.shared.model.payment.paymentUrl
+import com.casavirupa.voluntariat.shared.model.payment.priceRules
+import com.casavirupa.voluntariat.shared.model.user.User
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,13 +42,21 @@ import kotlin.time.Clock
 class HistoryViewModel(
     private val volunteerRepository: VolunteerRepository,
     authRepository: AuthRepository,
-    priceRepository: PriceRepository,
+    private val priceRepository: PriceRepository,
     ledgerRepository: LedgerRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
     val currentDate: StateFlow<LocalDate> = _currentDate.asStateFlow()
 
     private val user = authRepository.getCurrentUserFlow()
+
+    // What this user is charged: the dashboard's per-type/member prices (the same amounts
+    // the dashboard shows), or the generic price_rules timeline when those can't be read
+    private fun priceRulesFor(user: User) =
+        combine(
+            priceRepository.getPriceRules(),
+            priceRepository.getPricingRules(),
+        ) { legacy, pricing -> user.priceRules(pricing, legacy) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val monthData: StateFlow<MonthData?> =
@@ -62,12 +72,11 @@ class HistoryViewModel(
                     monthNumber = date.month.number,
                     year = date.year
                 ),
-                priceRepository.getPriceRules(),
+                priceRulesFor(user),
             ) { volunteers, priceRules ->
                 MonthData(
                     volunteers = volunteers,
                     priceRules = priceRules,
-                    isMitra = user.isMitra,
                     paysForServices = user.paysForServices,
                     userName = user.name,
                 )
@@ -90,7 +99,7 @@ class HistoryViewModel(
             if (!user.paysForServices) return@flatMapLatest flowOf(0.0)
             combine(
                 volunteerRepository.getVolunteersByUserFlow(user.id),
-                priceRepository.getPriceRules(),
+                priceRulesFor(user),
                 ledgerRepository.getEntriesByUser(user.id),
             ) { allVolunteers, priceRules, ledger ->
                 val cutoff = Clock.System.now().toDate().firstDayOfNextMonth()
@@ -99,7 +108,7 @@ class HistoryViewModel(
                     .groupBy { it.date.year to it.date.month }
                     .values
                     .sumOf { monthVolunteers ->
-                        calculateMonthlyCharge(monthVolunteers, priceRules, user.isMitra).total
+                        calculateMonthlyCharge(monthVolunteers, priceRules).total
                     } - ledger.filter { it.date < cutoff }.sumOf { it.amount }
             }
         }.stateIn(
@@ -120,7 +129,6 @@ class HistoryViewModel(
                 PaymentDetail(
                     volunteers = data.volunteers,
                     priceRules = data.priceRules,
-                    isMitra = data.isMitra,
                     balance = balance ?: 0.0,
                     paymentUrl = pendingBalance?.let { paymentUrl(data.userName, it) },
                 )
@@ -230,8 +238,8 @@ data class HistoryUiState(
 
 private data class MonthData(
     val volunteers: List<Volunteer>,
+    // The user's own price timeline (User.priceRules)
     val priceRules: PriceRules,
-    val isMitra: Boolean,
     val paysForServices: Boolean,
     val userName: String,
 )
@@ -286,11 +294,10 @@ data class PaymentDetail(
         operator fun invoke(
             volunteers: List<Volunteer>,
             priceRules: PriceRules,
-            isMitra: Boolean,
             balance: Double,
             paymentUrl: String?,
         ): PaymentDetail {
-            val breakdown = calculateMonthlyCharge(volunteers, priceRules, isMitra)
+            val breakdown = calculateMonthlyCharge(volunteers, priceRules)
             return PaymentDetail(
                 lunches = breakdown.lunches,
                 dinners = breakdown.dinners,
