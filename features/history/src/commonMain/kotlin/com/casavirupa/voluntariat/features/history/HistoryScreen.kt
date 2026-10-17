@@ -595,6 +595,12 @@ private fun PaymentDetailDialog(
                     amount = detail.balance,
                     emphasized = true,
                 )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(
+                    text = "* Tingueu en compte que el vostre pagament es veurà reflectit en 24-48h",
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                )
                 Row(
                     modifier = Modifier
                         .padding(top = 8.dp)

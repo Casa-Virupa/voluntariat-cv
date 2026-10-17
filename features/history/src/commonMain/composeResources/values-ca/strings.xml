@@ -54,4 +54,5 @@
         <item quantity="one">1 esmorzar de l'endemà inclòs (mitra)</item>
         <item quantity="other">%1$d esmorzars de l'endemà inclosos (mitra)</item>
     </plurals>
+    <string name="payment_note_message">* Tingueu en compte que el vostre pagament es veurà reflectit en 24-48h</string>
 </resources>

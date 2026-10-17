@@ -54,4 +54,5 @@
         <item quantity="one">1 next-morning breakfast included (mitra)</item>
         <item quantity="other">%1$d next-morning breakfasts included (mitra)</item>
     </plurals>
+    <string name="payment_note_message">Please note that your payment will be reflected within 24-48 hours</string>
 </resources>
