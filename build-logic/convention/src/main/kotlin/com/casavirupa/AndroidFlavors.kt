@@ -42,13 +42,18 @@ fun configureFlavors(commonExtension: CommonExtension<*, *, *, *, *, *>) {
     commonExtension.apply {
         FlavorDimension.values().forEach { flavorDimension ->
             flavorDimensions += flavorDimension.name
-        }
 
+        }
         productFlavors {
             VoluntariatFlavor.values().forEach { flavor ->
                 register(flavor.flavorName) {
                     dimension = flavor.dimension.name
                     setFlavorConfigBuild(flavor)
+                    if (commonExtension is ApplicationExtension && this is ApplicationProductFlavor) {
+                        if (flavor.applicationIdSuffix != null) {
+                            applicationIdSuffix = flavor.applicationIdSuffix
+                        }
+                    }
                 }
             }
         }
