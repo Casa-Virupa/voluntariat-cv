@@ -14,6 +14,9 @@ import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.payment.PriceRules
 import com.casavirupa.voluntariat.shared.model.payment.calculateMonthlyCharge
+import com.casavirupa.voluntariat.shared.model.payment.paymentUrl
+import com.casavirupa.voluntariat.shared.model.payment.priceRules
+import com.casavirupa.voluntariat.shared.model.user.User
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,13 +42,21 @@ import kotlin.time.Clock
 class HistoryViewModel(
     private val volunteerRepository: VolunteerRepository,
     authRepository: AuthRepository,
-    priceRepository: PriceRepository,
+    private val priceRepository: PriceRepository,
     ledgerRepository: LedgerRepository,
 ) : ViewModel() {
     private val _currentDate = MutableStateFlow(Clock.System.now().toDate())
     val currentDate: StateFlow<LocalDate> = _currentDate.asStateFlow()
 
     private val user = authRepository.getCurrentUserFlow()
+
+    // What this user is charged: the dashboard's per-type/member prices (the same amounts
+    // the dashboard shows), or the generic price_rules timeline when those can't be read
+    private fun priceRulesFor(user: User) =
+        combine(
+            priceRepository.getPriceRules(),
+            priceRepository.getPricingRules(),
+        ) { legacy, pricing -> user.priceRules(pricing, legacy) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val monthData: StateFlow<MonthData?> =
@@ -61,9 +72,14 @@ class HistoryViewModel(
                     monthNumber = date.month.number,
                     year = date.year
                 ),
-                priceRepository.getPriceRules(),
+                priceRulesFor(user),
             ) { volunteers, priceRules ->
-                MonthData(volunteers, priceRules, user.isMitra, user.paysForServices)
+                MonthData(
+                    volunteers = volunteers,
+                    priceRules = priceRules,
+                    paysForServices = user.paysForServices,
+                    userName = user.name,
+                )
             }
         }.stateIn(
             scope = viewModelScope,
@@ -71,25 +87,29 @@ class HistoryViewModel(
             initialValue = null,
         )
 
-    // Global outstanding balance: charges over ALL the user's bookings (past and
-    // future) minus everything the admin has recorded in the ledger. Charges are
-    // netted per calendar month so the mitra allowance never carries over. Null
-    // until all three sources have emitted, so the UI never shows a wrong amount.
+    // Outstanding balance up to the end of the current month: charges of every booking
+    // until then minus the ledger entries until then. Bookings in later months aren't
+    // owed yet — same cut-off as the dashboard's /coordinacio on its default (current
+    // month) view, so both show the same amount. Charges are netted per calendar month
+    // so the mitra allowance never carries over. Null until all three sources have
+    // emitted, so the UI never shows a wrong amount.
     @OptIn(ExperimentalCoroutinesApi::class)
     private val pendingBalance: StateFlow<Double?> =
         user.flatMapLatest { user ->
             if (!user.paysForServices) return@flatMapLatest flowOf(0.0)
             combine(
                 volunteerRepository.getVolunteersByUserFlow(user.id),
-                priceRepository.getPriceRules(),
+                priceRulesFor(user),
                 ledgerRepository.getEntriesByUser(user.id),
             ) { allVolunteers, priceRules, ledger ->
+                val cutoff = Clock.System.now().toDate().firstDayOfNextMonth()
                 allVolunteers
+                    .filter { it.date < cutoff }
                     .groupBy { it.date.year to it.date.month }
                     .values
                     .sumOf { monthVolunteers ->
-                        calculateMonthlyCharge(monthVolunteers, priceRules, user.isMitra).total
-                    } - ledger.sumOf { it.amount }
+                        calculateMonthlyCharge(monthVolunteers, priceRules).total
+                    } - ledger.filter { it.date < cutoff }.sumOf { it.amount }
             }
         }.stateIn(
             scope = viewModelScope,
@@ -103,20 +123,31 @@ class HistoryViewModel(
             pendingBalance,
         ) { data, balance ->
             val volunteers = data.volunteers.toUiModel()
+            // Only a positive balance is payable; the web reads the amount from the URL.
+            val pendingBalance = balance?.takeIf { it > AMOUNT_TOLERANCE }
+            val paymentDetail = if (data.paysForServices) {
+                PaymentDetail(
+                    volunteers = data.volunteers,
+                    priceRules = data.priceRules,
+                    balance = balance ?: 0.0,
+                    paymentUrl = pendingBalance?.let { paymentUrl(data.userName, it) },
+                )
+            } else {
+                PaymentDetail.Empty
+            }
             HistoryUiState(
                 summary = DetailedSummary.hours(volunteers),
                 volunteers = volunteers,
                 showNoVolunteeringMessage = data.volunteers.isEmpty(),
-                paymentUiState = if (balance != null && balance > AMOUNT_TOLERANCE) {
-                    PaymentUiState.Pending(balance)
+                paymentUiState = if (pendingBalance != null) {
+                    PaymentUiState.Pending(
+                        monthAmount = paymentDetail.total,
+                        balance = pendingBalance,
+                    )
                 } else {
                     PaymentUiState.Hidden
                 },
-                paymentDetail = if (data.paysForServices) {
-                    PaymentDetail(data.volunteers, data.priceRules, data.isMitra)
-                } else {
-                    PaymentDetail.Empty
-                },
+                paymentDetail = paymentDetail,
             )
         }.stateIn(
             scope = viewModelScope,
@@ -207,9 +238,10 @@ data class HistoryUiState(
 
 private data class MonthData(
     val volunteers: List<Volunteer>,
+    // The user's own price timeline (User.priceRules)
     val priceRules: PriceRules,
-    val isMitra: Boolean,
     val paysForServices: Boolean,
+    val userName: String,
 )
 
 data class PaymentDetail(
@@ -223,13 +255,18 @@ data class PaymentDetail(
     val nightsAmount: Double,
     val breakfastsAmount: Double,
     val breakfastsNextDayAmount: Double,
-    val freeLunches: Int,
-    val freeDinners: Int,
+    val freeMeals: Int,
     val freeNights: Int,
-    val lunchesDiscount: Double,
-    val dinnersDiscount: Double,
+    val freeBreakfastsNextDay: Int,
+    val mealsDiscount: Double,
     val nightsDiscount: Double,
+    val breakfastsNextDayDiscount: Double,
+    // Net charge of the month being viewed
     val total: Double,
+    // Outstanding balance over all months (charges minus ledger); what the volunteer pays
+    val balance: Double,
+    // Pre-filled link to the payment page; null when there is nothing to pay
+    val paymentUrl: String?,
 ) {
     companion object {
         val Empty = PaymentDetail(
@@ -243,21 +280,24 @@ data class PaymentDetail(
             nightsAmount = 0.0,
             breakfastsAmount = 0.0,
             breakfastsNextDayAmount = 0.0,
-            freeLunches = 0,
-            freeDinners = 0,
+            freeMeals = 0,
             freeNights = 0,
-            lunchesDiscount = 0.0,
-            dinnersDiscount = 0.0,
+            freeBreakfastsNextDay = 0,
+            mealsDiscount = 0.0,
             nightsDiscount = 0.0,
+            breakfastsNextDayDiscount = 0.0,
             total = 0.0,
+            balance = 0.0,
+            paymentUrl = null,
         )
 
         operator fun invoke(
             volunteers: List<Volunteer>,
             priceRules: PriceRules,
-            isMitra: Boolean,
+            balance: Double,
+            paymentUrl: String?,
         ): PaymentDetail {
-            val breakdown = calculateMonthlyCharge(volunteers, priceRules, isMitra)
+            val breakdown = calculateMonthlyCharge(volunteers, priceRules)
             return PaymentDetail(
                 lunches = breakdown.lunches,
                 dinners = breakdown.dinners,
@@ -269,13 +309,15 @@ data class PaymentDetail(
                 nightsAmount = breakdown.nightsAmount,
                 breakfastsAmount = breakdown.breakfastsAmount,
                 breakfastsNextDayAmount = breakdown.breakfastsNextDayAmount,
-                freeLunches = breakdown.freeLunchesUsed,
-                freeDinners = breakdown.freeDinnersUsed,
+                freeMeals = breakdown.freeMealsUsed,
                 freeNights = breakdown.freeNightsUsed,
-                lunchesDiscount = breakdown.lunchesDiscount,
-                dinnersDiscount = breakdown.dinnersDiscount,
+                freeBreakfastsNextDay = breakdown.freeBreakfastsNextDayUsed,
+                mealsDiscount = breakdown.mealsDiscount,
                 nightsDiscount = breakdown.nightsDiscount,
+                breakfastsNextDayDiscount = breakdown.breakfastsNextDayDiscount,
                 total = breakdown.total,
+                balance = balance,
+                paymentUrl = paymentUrl,
             )
         }
     }
@@ -321,7 +363,12 @@ data class VolunteerHistoryItem(
 
 sealed class PaymentUiState {
     data object Hidden : PaymentUiState()
-    data class Pending(val amount: Double) : PaymentUiState()
+    // [monthAmount] is the net charge of the month being viewed; [balance] the global
+    // outstanding amount the volunteer is asked to pay.
+    data class Pending(
+        val monthAmount: Double,
+        val balance: Double,
+    ) : PaymentUiState()
 }
 
 private fun Shift.getTotalHour() =
@@ -347,6 +394,9 @@ private fun Shift.getHoursFromVolunteerType(type: VolunteerType) =
             }
         }
     }
+
+private fun LocalDate.firstDayOfNextMonth(): LocalDate =
+    LocalDate(year, month, 1).plus(DatePeriod(months = 1))
 
 private operator fun LocalTime.minus(other: LocalTime): Double {
     val diffSeconds = this.toSecondOfDay() - other.toSecondOfDay()

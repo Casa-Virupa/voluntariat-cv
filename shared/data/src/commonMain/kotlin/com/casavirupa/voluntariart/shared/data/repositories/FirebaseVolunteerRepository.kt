@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariart.shared.data.repositories
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseShift
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseTimeRange
 import com.casavirupa.voluntariart.shared.data.repositories.requests.FirebaseVolunteer
@@ -17,22 +18,20 @@ import com.casavirupa.voluntariat.shared.model.user.UserId
 import dev.gitlive.firebase.firestore.FirebaseFirestore
 import dev.gitlive.firebase.firestore.Timestamp
 import dev.gitlive.firebase.firestore.fromMilliseconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 class FirebaseVolunteerRepository(
     private val firestore: FirebaseFirestore,
 ) : VolunteerRepository {
-    override fun getVolunteersByDateRange(
-        year: Int,
-        monthNumber: Int,
-        currentDate: LocalDate,
-    ): Flow<List<Volunteer>> {
-        val timestamp = Timestamp.fromMilliseconds(currentDate.toEpochMilliseconds().toDouble())
+    override fun getVolunteersFrom(from: LocalDate): Flow<List<Volunteer>> {
+        val timestamp = Timestamp.fromMilliseconds(from.toEpochMilliseconds().toDouble())
         return firestore
             .collection("volunteers")
             .where { "timestamp" greaterThanOrEqualTo timestamp }
@@ -42,6 +41,10 @@ class FirebaseVolunteerRepository(
                     doc.data<FirebaseVolunteer>().toDomainModel(doc.id)
                 }
             }
+            // Decoding the whole collection is the expensive part: keep it off the main thread.
+            .flowOn(Dispatchers.Default)
+            // A read error (e.g. rules) must not kill the calendar's state flows.
+            .catch { emit(emptyList()) }
     }
 
     override suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>> =
@@ -64,8 +67,12 @@ class FirebaseVolunteerRepository(
                 .where { "user_id" equalTo id.value }
                 .get()
                 .documents
-                .map { document ->
-                    document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                // A single malformed (legacy or console-edited) booking must not make the
+                // whole read fail: the booking form relies on it to detect a duplicate day.
+                .mapNotNull { document ->
+                    runCatching {
+                        document.data<FirebaseVolunteer>().toDomainModel(document.id)
+                    }.getOrNull()
                 }
         }
 
@@ -146,6 +153,19 @@ class FirebaseVolunteerRepository(
         firestore
             .collection("volunteers")
             .add(volunteer.toFirebaseModel(id))
+    }
+
+    override suspend fun replaceVolunteer(
+        old: VolunteerId,
+        id: UserId,
+        volunteer: Volunteer,
+    ): Result<Unit> = runCatching {
+        val volunteers = firestore.collection("volunteers")
+        firestore
+            .batch()
+            .delete(volunteers.document(old.value))
+            .set(volunteers.document, volunteer.toFirebaseModel(id))
+            .commit()
     }
 
     override suspend fun deleteVolunteer(id: VolunteerId): Result<Unit> =
@@ -251,7 +271,7 @@ private fun Meal.toFirebaseModel() =
 private fun Timestamp.toDate() =
     Instant
         .fromEpochSeconds(seconds, nanoseconds)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
+        .toLocalDateTime(CasaVirupaTimeZone)
         .date
 
 private fun FirebaseTimeRange.toDomainModel() =
@@ -262,27 +282,28 @@ private fun FirebaseTimeRange.toDomainModel() =
 
 private fun SpecificArea.toFirebaseValue() =
     when (this) {
+        SpecificArea.Amrita -> "amrita"
         SpecificArea.Animals -> "animals"
         SpecificArea.Shop -> "shop"
+        SpecificArea.Audiovisual -> "technical_and_audiovisual"
         SpecificArea.Communication -> "communication"
         SpecificArea.VolunteerCoordination -> "volunteer_coordination"
         SpecificArea.Kitchen -> "kitchen"
         SpecificArea.GraphicalDesign -> "graphical_design"
         SpecificArea.VirupaEditions -> "virupa_editions"
-        SpecificArea.Exterior -> "exterior"
-        SpecificArea.CanBordoiEvents -> "can_bordoi_events"
+        SpecificArea.ExteriorsAndGardening -> "gardening"
         SpecificArea.Grove -> "grove"
         SpecificArea.Registrations -> "registrations"
-        SpecificArea.Gardening -> "gardening"
         SpecificArea.Labor -> "labor"
         SpecificArea.Maintenance -> "maintenance"
+        SpecificArea.Works -> "works"
         SpecificArea.Pedagogical -> "pedagogical"
-        SpecificArea.CommunityHealth -> "community_health"
+        SpecificArea.Health -> "community_health"
         SpecificArea.Grants -> "grants"
+        SpecificArea.TechnicalAndProgramming -> "technical_and_programming"
         SpecificArea.Temple -> "temple"
+        SpecificArea.Texts -> "technical_and_texts"
         SpecificArea.Transcriptions -> "transcriptions"
-        SpecificArea.TechnicalAndAudiovisual -> "technical_and_audiovisual"
-        SpecificArea.TechnicalAndTexts -> "technical_and_texts"
         SpecificArea.Unknown -> ""
     }
 

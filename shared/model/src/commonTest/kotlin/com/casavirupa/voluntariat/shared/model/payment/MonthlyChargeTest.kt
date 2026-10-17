@@ -1,8 +1,11 @@
 package com.casavirupa.voluntariat.shared.model.payment
 
 import com.casavirupa.voluntariat.shared.model.calendar.Meal
+import com.casavirupa.voluntariat.shared.model.calendar.Shift
+import com.casavirupa.voluntariat.shared.model.calendar.TimeRange
 import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -10,12 +13,12 @@ import kotlin.test.assertEquals
 
 class MonthlyChargeTest {
 
-    private val allowance222 = MitraAllowance(freeLunches = 2, freeDinners = 2, freeSleeps = 2)
+    private val allowance42 = MitraAllowance(freeMeals = 4, freeSleeps = 2)
 
     private val defaultRules = rules(
         PriceRule(
             validFrom = LocalDate(2020, 1, 1),
-            prices = Prices(mitraAllowance = allowance222),
+            prices = Prices(mitraAllowance = allowance42),
         ),
     )
 
@@ -25,11 +28,18 @@ class MonthlyChargeTest {
         date: LocalDate,
         meals: List<Meal> = emptyList(),
         sleep: Boolean = false,
+        id: String = "",
+        // false = only meals / a bed, no shift that day
+        withVolunteering: Boolean = true,
     ) = Volunteer(
-        id = VolunteerId.Empty,
+        id = VolunteerId(id),
         userId = UserId.Empty,
         date = date,
-        shifts = emptyList(),
+        shifts = if (withVolunteering) {
+            listOf(Shift.Morning(type = VolunteerType.General, timeRange = TimeRange.DefaultMorning))
+        } else {
+            emptyList()
+        },
         meals = meals,
         sleep = sleep,
     )
@@ -41,11 +51,10 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 10), meals = listOf(Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = false)
+        val result = calculateMonthlyCharge(volunteers, defaultRules.withoutAllowance())
 
         assertEquals(0.0, result.discount, TOLERANCE)
-        assertEquals(0, result.freeLunchesUsed)
-        assertEquals(0, result.freeDinnersUsed)
+        assertEquals(0, result.freeMealsUsed)
         assertEquals(0, result.freeNightsUsed)
         assertEquals(2 * 8.0 + 8.0 + 10.0, result.total, TOLERANCE)
     }
@@ -56,15 +65,29 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Lunch), sleep = true),
         )
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
 
-        assertEquals(1, result.freeLunchesUsed)
+        assertEquals(1, result.freeMealsUsed)
         assertEquals(1, result.freeNightsUsed)
         assertEquals(0.0, result.total, TOLERANCE)
     }
 
+    // Issue #90: day volunteers who don't stay for dinner were charged for a 3rd lunch
     @Test
-    fun mitraOverAllowanceGetsExactlyTwoOfEachFree() {
+    fun threeLunchesAndNoDinnerAreAllInsideTheMealPool() {
+        val volunteers = (1..3).map { day ->
+            booking(LocalDate(2026, 10, day * 7), meals = listOf(Meal.Lunch))
+        }
+
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
+
+        assertEquals(3, result.freeMealsUsed)
+        assertEquals(3 * 8.0, result.mealsDiscount, TOLERANCE)
+        assertEquals(0.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun mitraOverAllowanceGetsFourMealsAndTwoNightsFree() {
         val volunteers = (1..3).map { day ->
             booking(
                 LocalDate(2026, 8, day),
@@ -73,25 +96,73 @@ class MonthlyChargeTest {
             )
         }
 
-        val result = calculateMonthlyCharge(volunteers, defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, defaultRules)
 
-        assertEquals(2, result.freeLunchesUsed)
-        assertEquals(2, result.freeDinnersUsed)
+        assertEquals(4, result.freeMealsUsed)
         assertEquals(2, result.freeNightsUsed)
-        assertEquals(2 * 8.0 + 2 * 8.0 + 2 * 10.0, result.discount, TOLERANCE)
+        assertEquals(4 * 8.0 + 2 * 10.0, result.discount, TOLERANCE)
+        // day 3's lunch + dinner and its night are charged
         assertEquals(8.0 + 8.0 + 10.0, result.total, TOLERANCE)
     }
 
     @Test
-    fun discountUsesEachItemsOwnBookingDatePriceInChronologicalOrder() {
+    fun mealsOfADayTakeThePoolInBreakfastLunchDinnerOrderNotTapOrder() {
         val rules = rules(
             PriceRule(
                 validFrom = LocalDate(2020, 1, 1),
-                prices = Prices(lunch = 8.0, mitraAllowance = allowance222),
+                prices = Prices(
+                    lunch = 10.0,
+                    dinner = 8.0,
+                    mitraAllowance = MitraAllowance(freeMeals = 1),
+                ),
+            ),
+        )
+        // Dinner tapped before lunch: the lunch still comes first in the day
+        val volunteers = listOf(
+            booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Dinner, Meal.Lunch)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules)
+
+        assertEquals(10.0, result.mealsDiscount, TOLERANCE)
+        assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun sameDayBookingsAreOrderedByBookingId() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    lunch = 8.0,
+                    dinner = 5.0,
+                    mitraAllowance = MitraAllowance(freeMeals = 1),
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Lunch), id = "b"),
+            booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Dinner), id = "a"),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules)
+
+        // booking "a" (the dinner) is first, so it takes the only free meal
+        assertEquals(5.0, result.mealsDiscount, TOLERANCE)
+        assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun discountUsesEachItemsOwnBookingDatePriceInChronologicalOrder() {
+        val allowance = MitraAllowance(freeMeals = 2)
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(lunch = 8.0, mitraAllowance = allowance),
             ),
             PriceRule(
                 validFrom = LocalDate(2026, 8, 15),
-                prices = Prices(lunch = 10.0, mitraAllowance = allowance222),
+                prices = Prices(lunch = 10.0, mitraAllowance = allowance),
             ),
         )
         // Passed out of order on purpose: the function must sort by date.
@@ -101,9 +172,9 @@ class MonthlyChargeTest {
             booking(LocalDate(2026, 8, 20), meals = listOf(Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
-        assertEquals(8.0 + 10.0, result.lunchesDiscount, TOLERANCE)
+        assertEquals(8.0 + 10.0, result.mealsDiscount, TOLERANCE)
         assertEquals(10.0, result.total, TOLERANCE)
     }
 
@@ -112,97 +183,179 @@ class MonthlyChargeTest {
         val rules = rules(
             PriceRule(
                 validFrom = LocalDate(2020, 1, 1),
-                prices = Prices(mitraAllowance = allowance222),
+                prices = Prices(mitraAllowance = allowance42),
             ),
             PriceRule(
                 validFrom = LocalDate(2026, 8, 15),
-                prices = Prices(mitraAllowance = MitraAllowance(freeLunches = 4)),
+                prices = Prices(mitraAllowance = MitraAllowance(freeMeals = 6)),
             ),
         )
-        val august = (1..4).map { day ->
-            booking(LocalDate(2026, 8, day * 5), meals = listOf(Meal.Lunch))
+        val august = (1..6).map { day ->
+            booking(LocalDate(2026, 8, day * 4), meals = listOf(Meal.Lunch))
         }
-        val september = (1..4).map { day ->
-            booking(LocalDate(2026, 9, day * 5), meals = listOf(Meal.Lunch))
+        val september = (1..6).map { day ->
+            booking(LocalDate(2026, 9, day * 4), meals = listOf(Meal.Lunch))
         }
 
         // Mid-month rule change does not apply to August (allowance read on the 1st)...
-        assertEquals(2, calculateMonthlyCharge(august, rules, isMitra = true).freeLunchesUsed)
+        assertEquals(4, calculateMonthlyCharge(august, rules).freeMealsUsed)
         // ...but does apply from September on.
-        assertEquals(4, calculateMonthlyCharge(september, rules, isMitra = true).freeLunchesUsed)
+        assertEquals(6, calculateMonthlyCharge(september, rules).freeMealsUsed)
     }
 
     @Test
     fun emptyMonthHasNoCharge() {
-        val result = calculateMonthlyCharge(emptyList(), defaultRules, isMitra = true)
+        val result = calculateMonthlyCharge(emptyList(), defaultRules)
 
         assertEquals(MonthlyChargeBreakdown.Empty, result)
         assertEquals(0.0, result.total, TOLERANCE)
     }
 
     @Test
-    fun breakfastsAreChargedButNeverDiscounted() {
+    fun pricedSameDayBreakfastTakesAMealFromThePool() {
         val rules = rules(
             PriceRule(
                 validFrom = LocalDate(2020, 1, 1),
-                prices = Prices(breakfast = 3.0, mitraAllowance = allowance222),
+                prices = Prices(breakfast = 3.0, mitraAllowance = MitraAllowance(freeMeals = 1)),
+            ),
+        )
+        val volunteers = listOf(
+            booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Lunch, Meal.Breakfast)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules)
+
+        // breakfast comes first in the day, so it is the free one
+        assertEquals(1, result.breakfasts)
+        assertEquals(1, result.freeMealsUsed)
+        assertEquals(3.0, result.mealsDiscount, TOLERANCE)
+        assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun freeBreakfastNeverUsesUpTheMealPool() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(breakfast = 0.0, mitraAllowance = MitraAllowance(freeMeals = 1)),
             ),
         )
         val volunteers = listOf(
             booking(LocalDate(2026, 8, 5), meals = listOf(Meal.Breakfast, Meal.Lunch)),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
-        assertEquals(1, result.breakfasts)
-        assertEquals(3.0, result.breakfastsAmount, TOLERANCE)
-        assertEquals(0.0, result.discount - result.lunchesDiscount, TOLERANCE)
-        assertEquals(3.0, result.total, TOLERANCE)
+        assertEquals(1, result.freeMealsUsed)
+        assertEquals(8.0, result.mealsDiscount, TOLERANCE)
+        assertEquals(0.0, result.total, TOLERANCE)
     }
 
     @Test
-    fun nextDayBreakfastUsesItsOwnPriceAndIsNeverDiscounted() {
+    fun nextDayBreakfastIsFreeOnlyWithAFreeNight() {
         val rules = rules(
             PriceRule(
                 validFrom = LocalDate(2020, 1, 1),
                 prices = Prices(
-                    breakfast = 3.0,
                     breakfastNextDay = 4.5,
-                    mitraAllowance = allowance222,
+                    mitraAllowance = MitraAllowance(freeMeals = 4, freeSleeps = 1),
                 ),
             ),
         )
         val volunteers = listOf(
-            booking(
-                LocalDate(2026, 8, 5),
-                meals = listOf(Meal.Dinner, Meal.BreakfastNextDay),
-                sleep = true,
-            ),
-            booking(LocalDate(2026, 8, 6), meals = listOf(Meal.Breakfast)),
+            booking(LocalDate(2026, 8, 5), meals = listOf(Meal.BreakfastNextDay), sleep = true),
+            booking(LocalDate(2026, 8, 6), meals = listOf(Meal.BreakfastNextDay), sleep = true),
         )
 
-        val result = calculateMonthlyCharge(volunteers, rules, isMitra = true)
+        val result = calculateMonthlyCharge(volunteers, rules)
 
-        assertEquals(1, result.breakfasts)
-        assertEquals(1, result.breakfastsNextDay)
-        assertEquals(3.0, result.breakfastsAmount, TOLERANCE)
-        assertEquals(4.5, result.breakfastsNextDayAmount, TOLERANCE)
-        // dinner and night are inside the mitra allowance; only the breakfasts are charged
-        assertEquals(3.0 + 4.5, result.total, TOLERANCE)
+        assertEquals(2, result.breakfastsNextDay)
+        assertEquals(1, result.freeNightsUsed)
+        assertEquals(1, result.freeBreakfastsNextDayUsed)
+        assertEquals(0, result.freeMealsUsed)
+        assertEquals(4.5, result.breakfastsNextDayDiscount, TOLERANCE)
+        // the 6th's night and its breakfast are outside the quota
+        assertEquals(10.0 + 4.5, result.total, TOLERANCE)
     }
 
     @Test
     fun allowanceDoesNotCarryOverBetweenMonths() {
         val january = emptyList<Volunteer>()
-        val february = (1..3).map { day ->
+        val february = (1..5).map { day ->
             booking(LocalDate(2026, 2, day), meals = listOf(Meal.Lunch))
         }
 
-        // January's unused allowance must not grow February's: still only 2 free.
-        assertEquals(0.0, calculateMonthlyCharge(january, defaultRules, isMitra = true).total, TOLERANCE)
-        val result = calculateMonthlyCharge(february, defaultRules, isMitra = true)
-        assertEquals(2, result.freeLunchesUsed)
+        // January's unused allowance must not grow February's: still only 4 free.
+        assertEquals(0.0, calculateMonthlyCharge(january, defaultRules).total, TOLERANCE)
+        val result = calculateMonthlyCharge(february, defaultRules)
+        assertEquals(4, result.freeMealsUsed)
         assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    // Issue #93
+    @Test
+    fun bookingWithoutVolunteeringUsesItsOwnPricesAndStaysOutsideTheQuota() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    mitraAllowance = allowance42,
+                    withoutVolunteering = ItemPrices(lunch = 12.0, sleep = 15.0),
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(
+                LocalDate(2026, 12, 1),
+                meals = listOf(Meal.Lunch, Meal.Dinner),
+                sleep = true,
+                withVolunteering = false,
+            ),
+            booking(LocalDate(2026, 12, 2), meals = listOf(Meal.Lunch)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules)
+
+        // only the day with volunteering is inside the quota
+        assertEquals(1, result.freeMealsUsed)
+        assertEquals(0, result.freeNightsUsed)
+        // lunch at 12 €, dinner keeps its ordinary 8 € (no override), night at 15 €
+        assertEquals(12.0 + 8.0 + 15.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun withoutOverridesABookingWithoutVolunteeringPaysOrdinaryPrices() {
+        val volunteers = listOf(
+            booking(LocalDate(2026, 12, 1), meals = listOf(Meal.Lunch), withVolunteering = false),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, defaultRules.withoutAllowance())
+
+        assertEquals(8.0, result.total, TOLERANCE)
+    }
+
+    @Test
+    fun fullyDiscountedMonthWithCentPricesTotalsExactlyZero() {
+        val rules = rules(
+            PriceRule(
+                validFrom = LocalDate(2020, 1, 1),
+                prices = Prices(
+                    breakfast = 1.10,
+                    lunch = 12.30,
+                    dinner = 9.70,
+                    mitraAllowance = allowance42,
+                ),
+            ),
+        )
+        val volunteers = listOf(
+            booking(LocalDate(2026, 8, 3), meals = listOf(Meal.Breakfast, Meal.Lunch)),
+            booking(LocalDate(2026, 8, 4), meals = listOf(Meal.Lunch, Meal.Dinner)),
+        )
+
+        val result = calculateMonthlyCharge(volunteers, rules)
+
+        // exact comparison on purpose: the dialog shows "nothing to pay" only for 0.0
+        assertEquals(0.0, result.total)
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.casavirupa.voluntariat.shared.core.utils
 
+import com.casavirupa.voluntariat.shared.model.calendar.CasaVirupaTimeZone
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -13,12 +14,12 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-fun getCurrentYear(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
+fun getCurrentYear(timeZone: TimeZone = CasaVirupaTimeZone) =
     Clock.System.now()
         .toLocalDateTime(timeZone)
         .year
 
-fun getCurrentMonth(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
+fun getCurrentMonth(timeZone: TimeZone = CasaVirupaTimeZone) =
     Clock.System.now()
         .toLocalDateTime(timeZone)
         .month
@@ -28,17 +29,17 @@ fun Long.toDate(timeZone: TimeZone = TimeZone.UTC) =
         .fromEpochMilliseconds(this)
         .toDate(timeZone)
 
-fun Instant.toDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): LocalDate =
+fun Instant.toDate(timeZone: TimeZone = CasaVirupaTimeZone): LocalDate =
     toLocalDateTime(timeZone).date
 
-fun LocalDate.toEpochMilliseconds(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
+fun LocalDate.toEpochMilliseconds(timeZone: TimeZone = CasaVirupaTimeZone) =
     this
-        .atStartOfDayIn(TimeZone.currentSystemDefault())
+        .atStartOfDayIn(timeZone)
         .toEpochMilliseconds()
 
 fun String.isoToEpochMilliseconds() = Instant.parse(this).toEpochMilliseconds()
 
-fun Long.toLocalDateTime(timeZone: TimeZone = TimeZone.currentSystemDefault()) =
+fun Long.toLocalDateTime(timeZone: TimeZone = CasaVirupaTimeZone) =
     Instant.fromEpochMilliseconds(this).toLocalDateTime(timeZone)
 
 fun LocalDate.getFirstDayOfMonth() = LocalDate(year, month, 1)

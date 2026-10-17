@@ -7,28 +7,38 @@ import com.casavirupa.voluntariat.database.GoogleCalendarEventDb
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 
 internal class LocalGoogleCalendarEventsDataSource(
     database: CVDatabase,
 ): GoogleCalendarEventsDataSource {
     private val dbQueries = database.cVDatabaseQueries
 
-    override suspend fun insertGoogleCalendarEvent(
+    override suspend fun replaceGoogleCalendarEvents(
+        startMillis: Long,
+        endMillis: Long,
         events: List<GoogleCalendarEventDb>,
+        pruneEndingBeforeMillis: Long,
     ): Result<Unit> = runCatching {
-        dbQueries.transaction {
-            dbQueries.deleteAllGoogleCalendarEvents()
-            events.forEach { event ->
-                with(event) {
-                    dbQueries.insertGoogleCalendarEvent(
-                        id = null,
-                        googleId = googleId,
-                        title = title,
-                        description = description,
-                        start = start,
-                        end = end,
-                        isAllDay = isAllDay,
-                    )
+        withContext(Dispatchers.IO) {
+            dbQueries.transaction {
+                dbQueries.deleteGoogleCalendarEventsOverlapping(
+                    endTimestamp = endMillis,
+                    startTimestamp = startMillis,
+                )
+                dbQueries.deleteGoogleCalendarEventsEndingBefore(pruneEndingBeforeMillis)
+                events.forEach { event ->
+                    with(event) {
+                        dbQueries.insertGoogleCalendarEvent(
+                            id = null,
+                            googleId = googleId,
+                            title = title,
+                            description = description,
+                            start = start,
+                            end = end,
+                            isAllDay = isAllDay,
+                        )
+                    }
                 }
             }
         }
@@ -43,12 +53,6 @@ internal class LocalGoogleCalendarEventsDataSource(
     override fun getGoogleCalendarEventsByDate(millis: Long): Flow<List<GoogleCalendarEventDb>> =
         dbQueries
             .getGoogleCalendarEventsByDate(millis)
-            .asFlow()
-            .mapToList(Dispatchers.IO)
-
-    override fun getGoogleCalendarEventsByRange(startMillis: Long, endMillis: Long): Flow<List<GoogleCalendarEventDb>> =
-        dbQueries
-            .getGoogleCalendarEventsByRange(endMillis, startMillis)
             .asFlow()
             .mapToList(Dispatchers.IO)
 }

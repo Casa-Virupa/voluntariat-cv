@@ -25,13 +25,16 @@ class AppViewModel(
     val initialUserState: StateFlow<InitialUserState?> = _initialUserState.asStateFlow()
 
     init {
+        // Warm the local cache of Google Calendar events around today. It runs on its own so a
+        // slow Apps Script never delays the login decision below.
         viewModelScope.launch {
-            val currentDate = Clock.System.now().toDate()
-            calendarRepository.syncGoogleCalendarEvents(
-                year = currentDate.year,
-                startMonth = currentDate.month.number,
-                endMonth = calculateNextMonth(currentDate),
+            val today = Clock.System.now().toDate()
+            calendarRepository.syncGoogleCalendarEventsAround(
+                year = today.year,
+                month = today.month.number,
             )
+        }
+        viewModelScope.launch {
             authRepository
                 .getCurrentUser()
                 .onSuccess {

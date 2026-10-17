@@ -5,11 +5,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
 interface CalendarRepository {
-    suspend fun syncGoogleCalendarEvents(
-        year: Int,
-        startMonth: Int,
-        endMonth: Int,
-    ): Result<Unit>
+    /**
+     * Makes sure the Google Calendar events of the given month and its two neighbours are in
+     * the local database, fetching them unless they were synced recently. Reads never touch
+     * the network: they observe the local database, which this call updates.
+     */
+    suspend fun syncGoogleCalendarEventsAround(year: Int, month: Int): Result<Unit>
 
     fun getGoogleCalendarEvents(): Flow<List<GoogleCalendarEvent>>
 

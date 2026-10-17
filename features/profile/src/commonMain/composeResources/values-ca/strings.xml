@@ -3,7 +3,7 @@
     <string name="full_name">Nom complet</string>
     <string name="email">Correu electrònic</string>
     <string name="commitment_degree">Grau de compromís</string>
-    <string name="interest_links">Enllaços d\'interès</string>
+    <string name="interest_links">Enllaços d'interès</string>
     <string name="last_updated">Última actualització: %1$s</string>
     <string name="quarterly_hours">Hores trimestrals</string>
     <string name="monthly_hours">Hores mensuals</string>
@@ -28,6 +28,6 @@
     <string name="stay_from">Des del %1$s</string>
     <string name="stay_until">Fins al %1$s</string>
     <string name="certificates_title">Certificats</string>
-    <string name="food_handler_certificate">Carnet de manipulador d\'aliments</string>
+    <string name="food_handler_certificate">Carnet de manipulador d'aliments</string>
     <string name="food_handler_certificate_hint">Activa-ho si tens el carnet en vigor</string>
 </resources>

@@ -28,7 +28,22 @@ data class YearMonth(
     val prevYear = if (month.number == 1) year - 1 else year
 
     val daysInPrevMonth = prevMonth.lengthOfMonth(prevYear.isLeap())
+
+    /**
+     * Months elapsed since January of year 0: an absolute, gap-free index, so consecutive months
+     * always differ by exactly 1 (used to map pager pages to months and back).
+     */
+    val monthIndex: Int get() = year * MONTHS_PER_YEAR + (month.number - 1)
+
+    companion object {
+        fun fromMonthIndex(index: Int) = YearMonth(
+            year = index.floorDiv(MONTHS_PER_YEAR),
+            month = Month(index.mod(MONTHS_PER_YEAR) + 1),
+        )
+    }
 }
+
+private const val MONTHS_PER_YEAR = 12
 
 internal fun Month.lengthOfMonth(isLeap: Boolean): Int =
     when (this) {

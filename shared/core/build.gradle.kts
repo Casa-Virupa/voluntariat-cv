@@ -13,6 +13,8 @@ kotlin {
             implementation(libs.ktor.client.android)
         }
         commonMain.dependencies {
+            implementation(projects.shared.model)
+
             implementation(libs.kotlinx.atomicfu.library)
             implementation(libs.compose.navigation3)
             implementation(libs.compose.viewModel.navigation3)

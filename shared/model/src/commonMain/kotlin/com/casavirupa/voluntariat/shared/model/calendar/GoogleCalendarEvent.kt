@@ -35,7 +35,7 @@ data class GoogleCalendarEvent(
 
 fun GoogleCalendarEvent.isHappeningOn(
     date: LocalDate,
-    timeZone: TimeZone = TimeZone.currentSystemDefault()
+    timeZone: TimeZone = CasaVirupaTimeZone
 ): Boolean {
     val dayStart = date.atStartOfDayIn(timeZone)
     val dayEnd = dayStart.plus(1, DateTimeUnit.DAY, timeZone)
@@ -57,7 +57,7 @@ enum class DayCoverage {
 
 fun GoogleCalendarEvent.coverageOn(
     date: LocalDate,
-    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    timeZone: TimeZone = CasaVirupaTimeZone,
 ): DayCoverage {
     if (!isHappeningOn(date, timeZone)) return DayCoverage.None
     if (isAllDay) return DayCoverage.WholeDay
@@ -81,7 +81,7 @@ fun GoogleCalendarEvent.coverageOn(
 // a timed one only the half it falls in; morning + afternoon blocks add up to the whole day.
 fun List<GoogleCalendarEvent>.unavailabilityOn(
     date: LocalDate,
-    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    timeZone: TimeZone = CasaVirupaTimeZone,
 ): DayCoverage =
     filter { !it.available }
         .map { it.coverageOn(date, timeZone) }

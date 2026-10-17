@@ -7,11 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
 interface VolunteerRepository {
-    fun getVolunteersByDateRange(
-        year: Int,
-        monthNumber: Int,
-        currentDate: LocalDate,
-    ): Flow<List<Volunteer>>
+    /** Realtime stream of every booking dated [from] or later (no upper bound). */
+    fun getVolunteersFrom(from: LocalDate): Flow<List<Volunteer>>
 
     suspend fun getVolunteersByDate(date: LocalDate): Result<List<Volunteer>>
 
@@ -32,6 +29,13 @@ interface VolunteerRepository {
     ): Flow<List<Volunteer>>
 
     suspend fun reserveDay(id: UserId, volunteer: Volunteer): Result<Unit>
+
+    /**
+     * Swaps the booking [old] for [volunteer] in one atomic write (delete + create, never one
+     * without the other). Bookings are never updated in place: the dashboard treats them as
+     * immutable, so extending a booked day replaces its doc (issue #113).
+     */
+    suspend fun replaceVolunteer(old: VolunteerId, id: UserId, volunteer: Volunteer): Result<Unit>
 
     suspend fun deleteVolunteer(id: VolunteerId): Result<Unit>
 }
