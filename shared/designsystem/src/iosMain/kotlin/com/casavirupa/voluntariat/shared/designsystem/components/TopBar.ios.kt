@@ -2,6 +2,8 @@ package com.casavirupa.voluntariat.shared.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -17,30 +19,42 @@ actual fun MediumTopBar(
     modifier: Modifier,
     navigationIcon: (@Composable (() -> Unit))?,
     subtitle: String?,
+    actions: (@Composable RowScope.() -> Unit)?,
 ) {
-    Column(
-        modifier = modifier
+    Row(
+        modifier =  modifier
             .fillMaxWidth()
+            .padding(top = 12.dp)
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .statusBarsPadding()
-            .padding(end = 4.dp, top = 12.dp, bottom = 4.dp),
     ) {
-        if (navigationIcon != null) {
-            navigationIcon()
-        }
-        Text(
-            text = title,
-            modifier = Modifier.padding(top = 12.dp, start = 16.dp),
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.inverseOnSurface,
-        )
-        if (subtitle != null) {
+        Column(
+            modifier = Modifier
+                .padding(end = 4.dp, bottom = 4.dp)
+                .weight(1f),
+        ) {
+            if (navigationIcon != null) {
+                navigationIcon()
+            }
             Text(
-                text = subtitle,
-                modifier = Modifier.padding(start = 16.dp),
-                style = MaterialTheme.typography.labelSmall,
+                text = title,
+                modifier = Modifier.padding(top = 12.dp, start = 16.dp),
+                style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.inverseOnSurface,
             )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    modifier = Modifier.padding(start = 16.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                )
+            }
+        }
+        if (actions != null) {
+            Row {
+                actions()
+            }
         }
     }
 }

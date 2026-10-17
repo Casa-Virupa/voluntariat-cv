@@ -9,6 +9,7 @@ import com.casavirupa.voluntariat.features.calendar.viewmodels.DayDetailViewMode
 import com.casavirupa.voluntariat.features.calendar.viewmodels.ReservationFormViewModel
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavKey
 import com.casavirupa.voluntariat.shared.core.navigation.MainNavigator
+import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
@@ -22,7 +23,10 @@ data object CalendarNavKey : MainNavKey(showNavigationBar = true)
  * (from the calendar FAB) leaves the date empty for the user to pick.
  */
 @Serializable
-data class ReservationFormNavKey(val initialDate: LocalDate? = null) : MainNavKey()
+data class ReservationFormNavKey(
+    val initialDate: LocalDate? = null,
+    val volunteerId: VolunteerId? = null,
+) : MainNavKey()
 
 @Serializable
 data class DayDetailNavKey(val date: LocalDate) : MainNavKey()
@@ -50,6 +54,11 @@ fun EntryProviderScope<NavKey>.calendarEntry(navigator: MainNavigator) {
             onNavBack = { navigator.goBack() },
             onNavToReservationForm = {
                 navigator.navigate(ReservationFormNavKey(initialDate = key.date))
+            },
+            onNavToEditForm = { volunteerId ->
+                navigator.navigate(
+                    ReservationFormNavKey(initialDate = key.date, volunteerId = volunteerId)
+                )
             },
             viewModel = viewModel,
         )

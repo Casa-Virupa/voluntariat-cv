@@ -17,11 +17,13 @@ import com.casavirupa.voluntariat.shared.model.calendar.Volunteer
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerId
 import com.casavirupa.voluntariat.shared.model.calendar.VolunteerType
 import com.casavirupa.voluntariat.shared.model.user.User
+import com.casavirupa.voluntariat.shared.model.user.UserId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -40,10 +42,21 @@ class DayDetailViewModel(
 ) : ViewModel() {
     private val date = navKey.date
 
+    private val currentUserVolunteerId  = MutableStateFlow<VolunteerId?>(null)
+
     private val _uiState = MutableStateFlow(
         DayDetailUiState(headerUi = DetailHeaderUi(date = date.format("dd MMMM"))),
     )
-    val uiState: StateFlow<DayDetailUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<DayDetailUiState> = combine(
+        _uiState,
+        currentUserVolunteerId,
+    ) { uiState, volunteerId ->
+        uiState.copy(showVolunteerActions = volunteerId != null)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000L),
+        initialValue = DayDetailUiState(),
+    )
 
     val events: StateFlow<List<GoogleCalendarEvent>> =
         calendarRepository
@@ -73,37 +86,37 @@ class DayDetailViewModel(
     val canAddVolunteering: Boolean =
         date >= Clock.System.now().toLocalDateTime(CasaVirupaTimeZone).date
 
-    private var selectedVolunteerToDelete: VolunteerId? = null
-
     init {
         refreshVolunteers()
+        getCurrentUserVolunteerId()
     }
 
-    fun onDeleteVolunteer(id: VolunteerId) {
-        selectedVolunteerToDelete = id
+    fun onDeleteVolunteer() {
         _showDeleteDialog.update { true }
     }
 
     fun onCloseDeleteDialog() {
-        selectedVolunteerToDelete = null
         _showDeleteDialog.update { false }
     }
 
     fun deleteVolunteer() {
-        if (selectedVolunteerToDelete == null) {
+        if (currentUserVolunteerId.value == null) {
             return
         }
         viewModelScope.launch {
             volunteerRepository
-                .deleteVolunteer(selectedVolunteerToDelete!!)
+                .deleteVolunteer(currentUserVolunteerId.value!!)
                 .onSuccess {
                     refreshVolunteers()
                     onCloseDeleteDialog()
+                    currentUserVolunteerId.update { null }
                 }.onFailure {
                     // TODO: Handle the failure
                 }
         }
     }
+
+    fun editVolunteerId(): VolunteerId = currentUserVolunteerId.value!!
 
     private fun refreshVolunteers() {
         viewModelScope.launch {
@@ -134,6 +147,22 @@ class DayDetailViewModel(
         }
     }
 
+    private fun getCurrentUserVolunteerId() {
+        viewModelScope.launch {
+            volunteerRepository
+                .getVolunteersByDate(date)
+                .mapCatching { volunteers ->
+                    val currentUser = authRepository.getCurrentUser().getOrElse { null }
+                    volunteers to currentUser
+                }.onSuccess { (volunteers, currentUser) ->
+                    val volunteerId = volunteers
+                        .find { it.userId == currentUser?.id }
+                        ?.id
+                    currentUserVolunteerId.update { volunteerId }
+                }
+        }
+    }
+
     // One entry per shift: a volunteer booked for both morning and afternoon, or for several
     // shifts in one of them (issue #113), appears once per shift (all entries share the
     // booking id, so deleting any removes the whole day's booking). The booking's meals and
@@ -154,6 +183,7 @@ class DayDetailViewModel(
                     .find { user -> user.id == volunteer.userId }
                     ?.let { user ->
                         volunteer.toUiModel(
+                            userId = user.id,
                             name = user.name,
                             viewer = viewer,
                             shift = null,
@@ -176,6 +206,7 @@ class DayDetailViewModel(
                 .sortedBy { (_, shift) -> shift.timeRange.start }
                 .map { (index, shift) ->
                     volunteer.toUiModel(
+                        userId = user.id,
                         name = user.name,
                         viewer = viewer,
                         shift = shift,
@@ -186,8 +217,9 @@ class DayDetailViewModel(
 }
 
 data class DayDetailUiState(
-    val headerUi: DetailHeaderUi,
+    val headerUi: DetailHeaderUi = DetailHeaderUi(),
     val dayShifts: DayShifts = DayShifts(),
+    val showVolunteerActions: Boolean = false,
 )
 
 data class DetailHeaderUi(
@@ -203,6 +235,7 @@ data class DayShifts(
 
 data class VolunteerItemUi(
     val id: VolunteerId,
+    val userId: UserId,
     val name: String,
     val schedule: String,
     // null for a booking with only meals or a bed
@@ -214,6 +247,7 @@ data class VolunteerItemUi(
 )
 
 private fun Volunteer.toUiModel(
+    userId: UserId,
     name: String,
     viewer: User?,
     shift: Shift?,
@@ -222,6 +256,7 @@ private fun Volunteer.toUiModel(
     val showsServices = viewer != null && areServicesVisibleTo(viewer)
     return VolunteerItemUi(
         id = id,
+        userId = userId,
         name = name,
         schedule = shift?.formatSchedule().orEmpty(),
         type = shift?.type,

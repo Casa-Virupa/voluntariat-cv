@@ -7,6 +7,7 @@ import com.casavirupa.voluntariat.shared.model.user.UserId
 import com.casavirupa.voluntariat.shared.model.user.UserRole
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -99,6 +100,7 @@ data class CardServices(
     val sleep: Boolean,
 )
 
+@Serializable
 data class VolunteerId(val value: String) {
     companion object {
         val Empty = VolunteerId("")

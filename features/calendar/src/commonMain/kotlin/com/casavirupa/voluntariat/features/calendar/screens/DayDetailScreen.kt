@@ -48,6 +48,7 @@ import voluntariatcv.features.calendar.generated.resources.delete_volunteering_t
 import voluntariatcv.features.calendar.generated.resources.ic_add
 import voluntariatcv.features.calendar.generated.resources.ic_close
 import voluntariatcv.features.calendar.generated.resources.ic_delete
+import voluntariatcv.features.calendar.generated.resources.ic_edit
 import voluntariatcv.features.calendar.generated.resources.ic_sleep_bed
 import voluntariatcv.features.calendar.generated.resources.online_tag
 import voluntariatcv.features.calendar.generated.resources.overnight_stay
@@ -65,6 +66,7 @@ import voluntariatcv.features.calendar.generated.resources.volunteers_count
 fun DayDetailScreen(
     onNavBack: () -> Unit,
     onNavToReservationForm: () -> Unit,
+    onNavToEditForm: (VolunteerId) -> Unit,
     viewModel: DayDetailViewModel,
     modifier: Modifier = Modifier,
 ) {
@@ -78,7 +80,8 @@ fun DayDetailScreen(
         events = events,
         onClickBack = onNavBack,
         onClickAdd = onNavToReservationForm.takeIf { viewModel.canAddVolunteering },
-        onDeleteVolunteer = viewModel::onDeleteVolunteer,
+        onClickEdit = { onNavToEditForm(viewModel.editVolunteerId()) },
+        onClickDelete = viewModel::onDeleteVolunteer,
         isSunday = viewModel.isSunday,
         thereIsProtectors = thereIsProtectors,
         modifier = modifier,
@@ -102,7 +105,8 @@ private fun DayDetailContent(
     events: List<GoogleCalendarEvent>,
     onClickBack: () -> Unit,
     onClickAdd: (() -> Unit)?,
-    onDeleteVolunteer: (VolunteerId) -> Unit,
+    onClickEdit: () -> Unit,
+    onClickDelete: () -> Unit,
     isSunday: Boolean,
     thereIsProtectors: Boolean,
     modifier: Modifier = Modifier,
@@ -125,6 +129,24 @@ private fun DayDetailContent(
                     uiState.headerUi.numOfVolunteers,
                     uiState.headerUi.numOfVolunteers,
                 ).uppercase(),
+                actions = if (uiState.showVolunteerActions) {
+                    {
+                        IconButton(onClick = onClickEdit) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_edit),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        IconButton(onClick = onClickDelete) {
+                            Icon(
+                                painter = painterResource(Res.drawable.ic_delete),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+                } else null,
             )
         },
         floatingActionButton = {
@@ -140,7 +162,6 @@ private fun DayDetailContent(
         DayShiftsAndEvents(
             dayShifts = uiState.dayShifts,
             events = events,
-            onDeleteVolunteer = onDeleteVolunteer,
             isSunday = isSunday,
             thereIsProtectors = thereIsProtectors,
             modifier = Modifier
@@ -154,7 +175,6 @@ private fun DayDetailContent(
 private fun DayShiftsAndEvents(
     dayShifts: DayShifts,
     events: List<GoogleCalendarEvent>,
-    onDeleteVolunteer: (VolunteerId) -> Unit,
     isSunday: Boolean,
     thereIsProtectors: Boolean,
     modifier: Modifier = Modifier,
@@ -185,10 +205,7 @@ private fun DayShiftsAndEvents(
             )
         }
         items(dayShifts.morningVolunteers) { volunteer ->
-            VolunteerShiftItem(
-                volunteer = volunteer,
-                onClickDelete = { onDeleteVolunteer(volunteer.id) },
-            )
+            VolunteerShiftItem(volunteer = volunteer)
         }
         item {
             when {
@@ -204,20 +221,14 @@ private fun DayShiftsAndEvents(
             }
         }
         items(dayShifts.afternoonVolunteers) { volunteer ->
-            VolunteerShiftItem(
-                volunteer = volunteer,
-                onClickDelete = { onDeleteVolunteer(volunteer.id) },
-            )
+            VolunteerShiftItem(volunteer = volunteer)
         }
         if (dayShifts.servicesOnlyVolunteers.isNotEmpty()) {
             item {
                 ShiftTitle(text = stringResource(Res.string.services_only_title))
             }
             items(dayShifts.servicesOnlyVolunteers) { volunteer ->
-                VolunteerShiftItem(
-                    volunteer = volunteer,
-                    onClickDelete = { onDeleteVolunteer(volunteer.id) },
-                )
+                VolunteerShiftItem(volunteer = volunteer)
             }
         }
     }
@@ -270,7 +281,6 @@ private fun ShiftTitle(
 private fun VolunteerShiftItem(
     volunteer: VolunteerItemUi,
     modifier: Modifier = Modifier,
-    onClickDelete: () -> Unit,
 ) {
     Surface(
         modifier = modifier,
@@ -300,14 +310,6 @@ private fun VolunteerShiftItem(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                }
-                if (volunteer.canBeDeleted) {
-                    IconButton(onClick = onClickDelete) {
-                        Icon(
-                            painter = painterResource(Res.drawable.ic_delete),
-                            contentDescription = null,
-                        )
-                    }
                 }
             }
             FlowRow(

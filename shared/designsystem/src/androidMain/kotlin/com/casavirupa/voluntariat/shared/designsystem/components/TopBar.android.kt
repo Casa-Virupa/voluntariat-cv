@@ -1,6 +1,7 @@
 package com.casavirupa.voluntariat.shared.designsystem.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
@@ -16,6 +17,7 @@ actual fun MediumTopBar(
     modifier: Modifier,
     navigationIcon: (@Composable (() -> Unit))?,
     subtitle: String?,
+    actions: (@Composable RowScope.() -> Unit)?,
 ) {
     MediumTopAppBar(
         title = {
@@ -36,6 +38,7 @@ actual fun MediumTopBar(
         },
         modifier = modifier,
         navigationIcon = if (navigationIcon != null) navigationIcon else { {} },
+        actions = if (actions != null) actions else { {} },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         )
