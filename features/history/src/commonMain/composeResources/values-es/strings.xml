@@ -54,4 +54,5 @@
         <item quantity="one">1 desayuno del día siguiente incluido (mitra)</item>
         <item quantity="other">%1$d desayunos del día siguiente incluidos (mitra)</item>
     </plurals>
+    <string name="payment_note_message">* Ten en cuenta que tu pago aparecerá en tu cuenta en un plazo de 24 a 48 horas</string>
 </resources>
