@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:457239455567:android:9c32bf4ec0af7b37fec73a",
+        "mobilesdk_app_id": "1:457239455567:android:529a7fceaa78a225fec73a",
         "android_client_info": {
-          "package_name": "com.casavirupa.voluntariat.android"
+          "package_name": "com.casavirupa.voluntariat.android.dev"
         }
       },
       "oauth_client": [],

@@ -24,16 +24,19 @@ enum class FlavorDimension {
 enum class VoluntariatFlavor(
     val flavorName: String,
     val dimension: FlavorDimension,
+    val appName: String,
     val applicationIdSuffix: String? = null,
 ) {
     dev(
         flavorName = "dev",
         dimension = FlavorDimension.contentType,
+        appName = "Voluntariat Casa Virupa - Dev",
         applicationIdSuffix = ".dev",
     ),
     prod(
         flavorName = "prod",
-        dimension = FlavorDimension.contentType
+        dimension = FlavorDimension.contentType,
+        appName = "Voluntariat Casa Virupa",
     ),
 }
 
@@ -54,6 +57,7 @@ fun configureFlavors(commonExtension: CommonExtension<*, *, *, *, *, *>) {
                             applicationIdSuffix = flavor.applicationIdSuffix
                         }
                     }
+                    manifestPlaceholders["appName"] = flavor.appName
                 }
             }
         }
